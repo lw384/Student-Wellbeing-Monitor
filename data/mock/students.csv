@@ -1,51 +1,51 @@
 student_id,name,email,modules
-5822155,Jenna Bond,jenna.bond.63@warwick.ac.uk,
-5270913,Kristen Hill,kristen.hill.22@warwick.ac.uk,
-5294403,Johnny Martin,johnny.martin.11@warwick.ac.uk,
-5504713,Zachary Gutierrez,zachary.gutierrez.49@warwick.ac.uk,
-5360697,Leslie Brown,leslie.brown.72@warwick.ac.uk,
-5285187,Darrell Ibarra,darrell.ibarra.44@warwick.ac.uk,
-5085008,Jared Riley,jared.riley.16@warwick.ac.uk,
-5440959,Monique Wiley,monique.wiley.18@warwick.ac.uk,
-5526754,Jared Thomas,jared.thomas.76@warwick.ac.uk,
-5139421,Andrew Simmons,andrew.simmons.73@warwick.ac.uk,
-5936307,Christina Roman,christina.roman.23@warwick.ac.uk,
-5194357,Ann Goodwin,ann.goodwin.5@warwick.ac.uk,
-5430678,Ralph Lee,ralph.lee.75@warwick.ac.uk,
-5819175,Jesse Murray,jesse.murray.53@warwick.ac.uk,
-5859431,Amy Johnson,amy.johnson.72@warwick.ac.uk,
-5831302,Travis Mccarthy DVM,travis.mccarthy.dvm.98@warwick.ac.uk,
-5047729,Andrea Li,andrea.li.88@warwick.ac.uk,
-5930052,Mrs. Kelsey Johnson MD,mrs..kelsey.johnson.md.18@warwick.ac.uk,
-5256596,Anne Durham,anne.durham.45@warwick.ac.uk,
-5752647,Jason Davis,jason.davis.91@warwick.ac.uk,
-5341129,Kimberly Harrington,kimberly.harrington.61@warwick.ac.uk,
-5768495,Megan Peters,megan.peters.66@warwick.ac.uk,
-5596272,Heather Smith,heather.smith.34@warwick.ac.uk,
-5209305,Laura Taylor,laura.taylor.72@warwick.ac.uk,
-5621181,Amy Reyes,amy.reyes.22@warwick.ac.uk,
-5959999,John Brennan,john.brennan.79@warwick.ac.uk,
-5625999,Toni Bailey,toni.bailey.51@warwick.ac.uk,
-5383131,Dana Guerrero,dana.guerrero.38@warwick.ac.uk,
-5893890,Crystal Liu,crystal.liu.5@warwick.ac.uk,
-5513840,Austin Quinn,austin.quinn.5@warwick.ac.uk,
-5504604,Jessica Hull,jessica.hull.24@warwick.ac.uk,
-5952686,Cory Crawford,cory.crawford.11@warwick.ac.uk,
-5126482,Kim Harrell,kim.harrell.42@warwick.ac.uk,
-5926441,David Williams,david.williams.29@warwick.ac.uk,
-5897155,Mr. Troy Johnson MD,mr..troy.johnson.md.79@warwick.ac.uk,
-5029350,Shannon Lowe,shannon.lowe.37@warwick.ac.uk,
-5444029,Tonya Green,tonya.green.85@warwick.ac.uk,
-5789908,Mark Schneider II,mark.schneider.ii.80@warwick.ac.uk,
-5583736,Sean Thomas,sean.thomas.1@warwick.ac.uk,
-5172943,Shaun Petty,shaun.petty.80@warwick.ac.uk,
-5026451,Lisa Hernandez,lisa.hernandez.76@warwick.ac.uk,
-5729237,Amanda Campbell,amanda.campbell.18@warwick.ac.uk,
-5840304,Dawn Davis,dawn.davis.41@warwick.ac.uk,
-5135654,Mary Thomas,mary.thomas.78@warwick.ac.uk,
-5200111,Lawrence Gray,lawrence.gray.79@warwick.ac.uk,
-5025590,Barbara Johnson,barbara.johnson.77@warwick.ac.uk,
-5776574,Jennifer Cox,jennifer.cox.97@warwick.ac.uk,
-5920838,Desiree Webster,desiree.webster.92@warwick.ac.uk,
-5596507,Jessica Watts,jessica.watts.48@warwick.ac.uk,
-5270884,Joshua Townsend,joshua.townsend.26@warwick.ac.uk,
+5310058,Alyssa Snyder,alyssa.snyder.63@warwick.ac.uk,"EC1K8, DS2O7, CS3K1"
+5604662,Seth Glenn,seth.glenn.60@warwick.ac.uk,"SE1J1, DS2O7, DS2F6, MA2I6"
+5561275,Jay Reyes,jay.reyes.82@warwick.ac.uk,"DS2F6, EC1K8, MA2I6, SE1J1"
+5177089,John King,john.king.75@warwick.ac.uk,"DS2O7, EC1K8"
+5431960,Sheena Green,sheena.green.70@warwick.ac.uk,"MA2I6, CS3K1, DS2F6"
+5107914,Dr. Connie Wilson,dr..connie.wilson.26@warwick.ac.uk,"DS2O7, DS2F6, CS3K1"
+5521430,Erin Hodges,erin.hodges.14@warwick.ac.uk,"MA2I6, SE1J1, CS3K1, DS2O7"
+5748815,Sarah Simpson,sarah.simpson.74@warwick.ac.uk,"CS3K1, SE1J1"
+5496743,William Kennedy,william.kennedy.83@warwick.ac.uk,"MA2I6, DS2O7, SE1J1"
+5191647,Levi Lopez,levi.lopez.92@warwick.ac.uk,"EC1K8, MA2I6, CS3K1, SE1J1"
+5880898,Kelly Swanson,kelly.swanson.33@warwick.ac.uk,"DS2O7, MA2I6"
+5532277,Mrs. Tonya Jordan,mrs..tonya.jordan.97@warwick.ac.uk,"DS2O7, DS2F6"
+5728955,Stephen Bailey,stephen.bailey.43@warwick.ac.uk,"SE1J1, MA2I6, DS2O7, DS2F6"
+5403886,Scott Becker,scott.becker.92@warwick.ac.uk,"DS2O7, EC1K8, DS2F6, MA2I6"
+5272473,Christopher Villanueva,christopher.villanueva.7@warwick.ac.uk,"EC1K8, CS3K1"
+5821664,Felicia Carter,felicia.carter.96@warwick.ac.uk,"SE1J1, DS2O7"
+5385236,Kim Hudson,kim.hudson.28@warwick.ac.uk,"DS2F6, DS2O7, CS3K1, EC1K8"
+5264631,Eddie Scott,eddie.scott.13@warwick.ac.uk,"DS2F6, CS3K1"
+5154882,Amy Sullivan,amy.sullivan.21@warwick.ac.uk,"MA2I6, DS2F6"
+5744273,Joanne Townsend,joanne.townsend.62@warwick.ac.uk,"MA2I6, DS2F6, EC1K8"
+5218710,Danielle Johnson,danielle.johnson.65@warwick.ac.uk,"DS2F6, DS2O7, SE1J1, EC1K8"
+5444663,Logan Peters,logan.peters.18@warwick.ac.uk,"DS2F6, SE1J1, DS2O7, MA2I6"
+5343038,Alisha Lucas,alisha.lucas.16@warwick.ac.uk,"DS2F6, EC1K8, CS3K1"
+5140404,Dr. Debra Walker,dr..debra.walker.60@warwick.ac.uk,"SE1J1, DS2F6"
+5333294,Tonya Walter,tonya.walter.4@warwick.ac.uk,"EC1K8, CS3K1"
+5644812,Nathan Lewis,nathan.lewis.58@warwick.ac.uk,"DS2F6, DS2O7"
+5500568,Russell Coleman,russell.coleman.12@warwick.ac.uk,"EC1K8, MA2I6, SE1J1, DS2O7"
+5886334,Matthew Young,matthew.young.99@warwick.ac.uk,"MA2I6, CS3K1"
+5809669,Kayla Petersen,kayla.petersen.16@warwick.ac.uk,"CS3K1, MA2I6"
+5163798,Bryan Acevedo,bryan.acevedo.48@warwick.ac.uk,"DS2O7, EC1K8, CS3K1"
+5895198,Heather Whitaker,heather.whitaker.51@warwick.ac.uk,"CS3K1, DS2O7, MA2I6, EC1K8"
+5400785,Andrew Silva,andrew.silva.51@warwick.ac.uk,"SE1J1, DS2F6, DS2O7"
+5106839,Amy Arnold,amy.arnold.37@warwick.ac.uk,"MA2I6, EC1K8"
+5932286,Jenna Johnson,jenna.johnson.63@warwick.ac.uk,"CS3K1, DS2O7, MA2I6"
+5019999,Jamie Deleon,jamie.deleon.84@warwick.ac.uk,"SE1J1, DS2F6, DS2O7"
+5043110,Mary Sullivan,mary.sullivan.94@warwick.ac.uk,"EC1K8, MA2I6, DS2O7, CS3K1"
+5775911,Bradley Burns,bradley.burns.94@warwick.ac.uk,"DS2F6, SE1J1"
+5761327,Patricia Davis,patricia.davis.72@warwick.ac.uk,"EC1K8, CS3K1, DS2F6"
+5180822,Robin Reyes,robin.reyes.50@warwick.ac.uk,"CS3K1, EC1K8, SE1J1"
+5088180,Chad Cole,chad.cole.47@warwick.ac.uk,"EC1K8, DS2F6"
+5393119,Sarah Barnes,sarah.barnes.61@warwick.ac.uk,"SE1J1, MA2I6, CS3K1, DS2F6"
+5993164,Tiffany James,tiffany.james.46@warwick.ac.uk,"DS2F6, CS3K1"
+5790385,Brian Diaz,brian.diaz.55@warwick.ac.uk,"SE1J1, CS3K1, DS2F6"
+5656121,Michael Walker,michael.walker.49@warwick.ac.uk,"EC1K8, MA2I6"
+5883753,Charles Jensen,charles.jensen.62@warwick.ac.uk,"DS2F6, DS2O7"
+5468190,Rachel Woodard,rachel.woodard.40@warwick.ac.uk,"DS2O7, SE1J1, DS2F6"
+5269347,Rebecca Brown,rebecca.brown.91@warwick.ac.uk,"CS3K1, DS2F6"
+5620018,Gloria Castillo,gloria.castillo.19@warwick.ac.uk,"MA2I6, CS3K1, DS2F6"
+5302795,Julie Crane,julie.crane.18@warwick.ac.uk,"DS2O7, CS3K1"
+5816496,Rachel Boyd,rachel.boyd.85@warwick.ac.uk,"SE1J1, DS2F6"
