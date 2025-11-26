@@ -5,11 +5,13 @@ description = ""
 authors = [
     {name = "lw384",email = "15651756926@163.com"}
 ]
+
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "matplotlib (>=3.10.7,<4.0.0)",
-    "flask (>=3.1.2,<4.0.0)"
+    "flask (>=3.1.2,<4.0.0)",
+    "faker (>=38.2.0,<39.0.0)"
 ]
 
 
@@ -18,9 +20,4 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [project.scripts]
-wellbeing-cli = "wellbeing_system.ui.cli_main:main"
 wellbeing-web = "student_wellbeing_monitor.ui.app:run_app"
-
-
-[tool.pytest.ini_options]
-pythonpath = ["src"]
