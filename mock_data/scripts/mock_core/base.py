@@ -5,7 +5,7 @@ import csv
 fake = Faker()
 
 # 默认输出目录
-DEFAULT_OUTPUT_DIR = Path("data/mock")
+DEFAULT_OUTPUT_DIR = Path("mock_data/mock")
 
 # 各表字段
 STUDENT_FIELDS = ["student_id", "name", "email", "modules"]

@@ -136,7 +136,7 @@ All mock data (students, modules, attendance, submissions, wellbeing) can be pro
 Mock data is generated into:
 
 ```
-data/mock/
+mock_data/mock/
 ```
 
 and follows the final database schema and data model used in the application
@@ -146,7 +146,7 @@ and follows the final database schema and data model used in the application
 Run the following command:
 
 ```
-poetry run python data/scripts/generate_all.py
+poetry run python mock_data/scripts/generate_all.py
 ```
 
 This will generate:
@@ -172,7 +172,7 @@ All files will be placed in data/mock/.
 If you want to clear old generated files:
 
 ```
-poetry run python data/scripts/generate_all.py --clean
+poetry run python mock_data/scripts/generate_all.py --clean
 ```
 
 What --clean does:
@@ -190,37 +190,37 @@ The script supports configurable parameters.
 **Change number of students**
 
 ```
-poetry run python data/scripts/generate_all.py --students 50
+poetry run python mock_data/scripts/generate_all.py --students 50
 ```
 
 **Change number of modules**
 
 ```
-poetry run python data/scripts/generate_all.py --modules 8
+poetry run python mock_data/scripts/generate_all.py --modules 8
 ```
 
 **Change number of weeks (for attendance & wellbeing)**
 
 ```
-poetry run python data/scripts/generate_all.py --weeks 12
+poetry run python mock_data/scripts/generate_all.py --weeks 12
 ```
 
 **Change output directory**
 
 ```
-poetry run python data/scripts/generate_all.py --out my_output_dir/
+poetry run python mock_data/scripts/generate_all.py --out my_output_dir/
 ```
 
 **Generate full dataset with custom size:**
 
 ```
-poetry run python data/scripts/generate_all.py --students 40 --modules 6 --weeks 10
+poetry run python mock_data/scripts/generate_all.py --students 40 --modules 6 --weeks 10
 ```
 
 **Clean then regenerate:**
 
 ```
-poetry run python data/scripts/generate_all.py --clean --students 20 --weeks 6
+poetry run python mock_data/scripts/generate_all.py --clean --students 20 --weeks 6
 ```
 
 5. Generated Data Overview
@@ -341,4 +341,3 @@ Author: Luowei
 关于其它错误返回值与错误代码，参见 [Code码说明](#Link)
 
 ```
-
