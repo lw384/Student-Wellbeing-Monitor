@@ -1,14 +1,19 @@
 # src/wellbeing_system/ui/app.py
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
+from student_wellbeing_monitor.services.upload_service import import_csv_by_type
+import os
 
 app = Flask(
     __name__,
-    template_folder="templates",  # 就是你现在 ui/templates
-    static_folder="static",  # 就是 ui/static
+    template_folder="templates",  #  ui/templates
+    static_folder="static",  #  ui/static
+)
+app.config["SECRET_KEY"] = os.environ.get(
+    "FLASK_SECRET_KEY", "dev-secret-key-change-me"
 )
 
 
-# -------- 1. 入口：首页：选择角色 --------
+# -------- 1. entrance: select role --------
 @app.route("/")
 def index():
     """
@@ -17,7 +22,7 @@ def index():
     return render_template("index.html")
 
 
-# -------- 2. Dashboard：根据角色显示菜单 --------
+# -------- 2. Dashboard：based on roles --------
 @app.route("/dashboard/<role>")
 def dashboard(role):
     """
@@ -25,7 +30,7 @@ def dashboard(role):
     /dashboard/course_leader
     """
     if role not in ("wellbeing", "course_leader"):
-        # 非法 role，回首页
+        # illegal role，return back
         return redirect(url_for("index"))
 
     return render_template(
@@ -44,7 +49,18 @@ def upload_data(role):
         )  # wellbeing / attendance / submissions
         # TODO: 根据 data_type 解析 CSV，写入数据库
         # 处理完之后跳回对应列表页：
-        return redirect(url_for("view_data", role=role))
+        if not file or file.filename == "":
+            flash("Please select a CSV file to upload.", "warning")
+            return redirect(url_for("upload_data", role=role))
+
+        try:
+            import_csv_by_type(data_type, file)
+            flash(f"Successfully imported {data_type} data.", "success")
+            return redirect(url_for("view_data", role=role))
+        except Exception as e:
+            # 真项目里可以 log，这里简单一点
+            print("Upload error:", e)
+            flash(f"Failed to import {data_type} data: {e}", "danger")
 
     return render_template(
         "upload.html",
