@@ -1,12 +1,20 @@
 # 2_generate_data.py
 # 作用：自动生成 40 个真实名字 + 真实学号 + 12周考勤/问卷/成绩
-
+import os
 import sqlite3
 import random
 from faker import Faker
 fake = Faker('en_GB')
 
-DB_PATH = "data/student.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  
+DB_PATH = os.path.join(
+    BASE_DIR,
+    "..", "..", "..",   
+    "database", "data", "student.db"
+)
+DB_PATH = os.path.normpath(DB_PATH)  
+
+
 conn = sqlite3.connect(DB_PATH)
 cur = conn.cursor()
 

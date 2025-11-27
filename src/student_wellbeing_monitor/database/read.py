@@ -1,32 +1,13 @@
-# db.py  
-
-import sqlite3
+# read.py
+from db_core import get_conn, _hash_pwd
+import sqlite3 as _sqlite3
 import pandas as pd
-import hashlib
 
-DB_PATH = "data/student.db"
 
-def get_conn():
-    return sqlite3.connect(DB_PATH)
-
-# ================== Student-related ==================
-
-def insert_student(name, email=None):
-    """Add a student to the 'students'"""
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO students (name, email) VALUES (?, ?)",
-        (name, email)
-    )
-    conn.commit()
-    sid = cur.lastrowid
-    conn.close()
-    return sid
-
+# ================== Student-related (Read) ==================
 
 def get_all_students():
-    """Check all students who is late"""
+    """Return (student_id, name, email) for all students."""
     conn = get_conn()
     cur = conn.cursor()
     cur.execute("SELECT student_id, name, email FROM students")
@@ -36,7 +17,7 @@ def get_all_students():
 
 
 def get_student_information(sid):
-    """Just the id and name."""
+    """Return (student_id, name) for a single student."""
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
@@ -48,21 +29,7 @@ def get_student_information(sid):
     return row
 
 
-# ================== wellbeing ==================
-
-def add_wellbeing(sid, week, stress, sleep_hours):
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO wellbeing (student_id, week, stress_level, hours_slept) "
-        "VALUES (?, ?, ?, ?)",
-        (sid, week, stress, sleep_hours)
-    )
-    conn.commit()
-    wid = cur.lastrowid
-    conn.close()
-    return wid
-
+# ================== Wellbeing (Read) ==================
 
 def get_wellbeing_by_student(sid):
     conn = get_conn()
@@ -77,21 +44,7 @@ def get_wellbeing_by_student(sid):
     return rows
 
 
-# ================== Attendance ==================
-
-def add_attendance(sid, week, status):
-    """status: present / absent / late"""
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO attendance (student_id, week, status) VALUES (?, ?, ?)",
-        (sid, week, status)
-    )
-    conn.commit()
-    aid = cur.lastrowid
-    conn.close()
-    return aid
-
+# ================== Attendance (Read) ==================
 
 def get_attendance_by_student(sid):
     conn = get_conn()
@@ -106,7 +59,7 @@ def get_attendance_by_student(sid):
 
 
 def get_attendance_rate(sid):
-    """Attendance rate = number of times present / total number of times; return None if not recorded"""
+    """Attendance rate = present / total, or None if no records."""
     conn = get_conn()
     cur = conn.cursor()
 
@@ -127,26 +80,10 @@ def get_attendance_rate(sid):
     )
     present = cur.fetchone()[0]
     conn.close()
-
     return present * 1.0 / total
 
 
-# ================== Assignment ==================
-
-def add_submission(sid, ass_id, due_date, submit_date, grade):
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO submissions "
-        "(student_id, assignment_id, due_date, submit_date, grade) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (sid, ass_id, due_date, submit_date, grade)
-    )
-    conn.commit()
-    new_id = cur.lastrowid
-    conn.close()
-    return new_id
-
+# ================== Submissions (Read) ==================
 
 def get_submissions_by_student(sid):
     conn = get_conn()
@@ -161,29 +98,7 @@ def get_submissions_by_student(sid):
     return rows
 
 
-# ================== User & Roles ==================
-
-def _hash_pwd(pwd):
-    """Simply make a hash"""
-    return hashlib.sha256(pwd.encode("utf-8")).hexdigest()
-
-
-def create_user(username, password, role):
-    """
-    role: 'swo' = wellbeing officer
-        'cd'  = course director
-    """
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)",
-        (username, _hash_pwd(password), role)
-    )
-    conn.commit()
-    uid = cur.lastrowid
-    conn.close()
-    return uid
-
+# ================== User & Roles  ==================
 
 def check_login(username, password):
     conn = get_conn()
@@ -213,12 +128,10 @@ def get_user_role(username):
     return row[0]
 
 
-# ================== 角色视图（CD / SWO） ==================
-
 def get_student_info(username, sid):
     """
-    CD can only see: student ID, name, attendance rate
-    SWO can see : student ID, name, attendance record, wellbeing, and assignments
+    CD: id, name, attendance rate
+    SWO: id, name, attendance record, wellbeing, submissions
     """
     role = get_user_role(username)
     if role is None:
@@ -230,7 +143,6 @@ def get_student_info(username, sid):
         print("The student does not exist:", sid)
         return None
 
-    # basic = (student_id, name)
     if role == "cd":
         rate = get_attendance_rate(sid)
         return (basic[0], basic[1], rate)
@@ -243,45 +155,17 @@ def get_student_info(username, sid):
 
     print("The role does not have permission:", role)
     return None
-# ================== - Update ==================
 
-def update_wellbeing_stress(student_id: str, week: int, new_stress: int):
-    """Modify a certain student's stress value for a specific week on site"""
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("""
-        UPDATE wellbeing 
-        SET stress_level = ? 
-        WHERE student_id = ? AND week = ?
-    """, (new_stress, student_id, week))
-    conn.commit()
-    conn.close()
-    print(f"Updated stress level for {student_id} week {week} to {new_stress}")
 
-def update_final_grade(student_id: str, new_grade: float):
-    """Modify Final Grade"""
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("UPDATE grades SET final_grade = ? WHERE student_id = ?", (new_grade, student_id))
-    conn.commit()
-    conn.close()
-
-# ==================  Delete ==================
-
-def delete_student(student_id: str):
-    """Permanently delete a student"""
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM students WHERE student_id = ?", (student_id,))
-    conn.commit()
-    conn.close()
-    print(f"Student {student_id} and all related records have been deleted")
-
+# ================== Course-level stats ==================
 
 def get_course_stats(course_id: str):
-    """nput a course ID: return the number of students in the course + the average stress level + the attendance rate."""
+    """
+    Input a course ID: return number of students, avg stress, attendance rate.
+    """
     conn = get_conn()
-    df = pd.read_sql_query("""
+    df = pd.read_sql_query(
+        """
         SELECT 
             c.course_name,
             COUNT(s.student_id) AS student_count,
@@ -293,15 +177,16 @@ def get_course_stats(course_id: str):
         LEFT JOIN attendance a ON s.student_id = a.student_id
         WHERE c.course_id = ?
         GROUP BY c.course_id
-    """, conn, params=(course_id,))
+        """,
+        conn,
+        params=(course_id,),
+    )
     conn.close()
     return df
 
-if __name__ == "__main__":
-    print(get_course_stats("WM9AA0")) 
 
 # =========================================================
-# ================ Analytical Functions and Statistics ================
+# ================ Analytical Functions ===================
 # =========================================================
 
 # ---------- weekly wellbeing summary ----------
@@ -334,7 +219,7 @@ def weekly_wellbeing_summary(start_week, end_week):
 # ----------  high stress weeks ----------
 
 def find_high_stress_weeks(threshold=4):
-    """Weeks where the average stress level is ≥ the threshold"""
+    """Weeks where the average stress level is ≥ the threshold."""
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
@@ -359,8 +244,8 @@ def find_high_stress_weeks(threshold=4):
 def get_at_risk_students():
     """
     Simple rule:
-    - if a student has ≥2 weeks where (stress >= 4 and sleep < 6),
-    then mark the student as at-risk.Returns a dict: {student_id: [week1, week2, ...]}
+    if a student has ≥2 weeks where (stress >= 4 and sleep < 6),
+    mark as at-risk. Returns {student_id: [week1, week2, ...]}.
     """
     conn = get_conn()
     cur = conn.cursor()
@@ -377,15 +262,9 @@ def get_at_risk_students():
 
     tmp = {}
     for sid, wk in rows:
-        if sid not in tmp:
-            tmp[sid] = []
-        tmp[sid].append(wk)
+        tmp.setdefault(sid, []).append(wk)
 
-    result = {}
-    for sid, weeks in tmp.items():
-        if len(weeks) >= 2:  
-            result[sid] = weeks
-
+    result = {sid: weeks for sid, weeks in tmp.items() if len(weeks) >= 2}
     return result
 
 
@@ -420,7 +299,7 @@ def stress_vs_attendance():
 
 def attendance_trend():
     """
-    Overall attendance trend by week
+    Overall attendance trend by week.
     return [(week, attendance_rate), ...]
     """
     conn = get_conn()
@@ -454,8 +333,12 @@ def submission_behaviour():
         SELECT
             assignment_id,
             SUM(CASE WHEN submit_date IS NULL THEN 1 ELSE 0 END) AS no_submit,
-            SUM(CASE WHEN submit_date IS NOT NULL AND submit_date <= due_date
-                    THEN 1 ELSE 0 END) AS on_time,
+            SUM(
+                CASE 
+                    WHEN submit_date IS NOT NULL AND submit_date <= due_date
+                    THEN 1 ELSE 0 
+                END
+            ) AS on_time,
             COUNT(*) AS total
         FROM submissions
         GROUP BY assignment_id
@@ -470,7 +353,7 @@ def submission_behaviour():
 
 def low_attendance(threshold=0.7):
     """
-    Students whose attendance rate is below the threshold
+    Students whose attendance rate is below the threshold.
     return [(student_id, att_rate), ...]
     """
     conn = get_conn()
@@ -491,7 +374,7 @@ def low_attendance(threshold=0.7):
     return rows
 
 
-# ---------- FR-10: repeated late or missing submissions ----------
+# ---------- repeated late or missing submissions ----------
 
 def repeated_late_submissions(min_bad=2):
     """
@@ -521,7 +404,7 @@ def repeated_late_submissions(min_bad=2):
 
 def attendance_vs_grade():
     """
-    Returns a tuple: (student_id, attendance_rate, avg_grade)
+    Returns (student_id, attendance_rate, avg_grade).
     """
     conn = get_conn()
     cur = conn.cursor()
@@ -540,14 +423,18 @@ def attendance_vs_grade():
     conn.close()
     return rows
 
+
 def get_continuous_high_stress_students():
+    """Students with high stress levels for three or more consecutive weeks."""
     conn = get_conn()
-    conn.row_factory = sqlite3.Row
+    conn.row_factory = _sqlite3.Row
     cur = conn.cursor()
-    cur.execute("""
+    cur.execute(
+        """
         WITH high AS (
             SELECT s.student_id, s.name, w.week, w.stress_level
-            FROM wellbeing w JOIN students s ON w.student_id = s.student_id
+            FROM wellbeing w 
+            JOIN students s ON w.student_id = s.student_id
             WHERE w.stress_level >= 4
         ),
         grouped AS (
@@ -562,12 +449,8 @@ def get_continuous_high_stress_students():
         GROUP BY student_id, name, grp
         HAVING weeks >= 3
         ORDER BY weeks DESC
-    """)
+        """
+    )
     result = [dict(row) for row in cur.fetchall()]
     conn.close()
     return result
-
-# test
-if __name__ == "__main__":
-    print("Students with high stress levels for three or more consecutive weeks:")
-    print(get_continuous_high_stress_students())

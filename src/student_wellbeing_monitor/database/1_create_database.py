@@ -4,11 +4,22 @@
 import sqlite3
 import os
 
-DB_PATH = "data/student.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(
+    BASE_DIR,
+    "..", "..", "..",
+    "database", "data", "student.db"
+)
+DB_PATH = os.path.normpath(DB_PATH)
+
+DATA_DIR = os.path.dirname(DB_PATH)
+
+
 if os.path.exists(DB_PATH):
     os.remove(DB_PATH)
-os.makedirs("data", exist_ok=True)
 
+
+os.makedirs(DATA_DIR, exist_ok=True)
 conn = sqlite3.connect(DB_PATH)
 cur = conn.cursor()
 
