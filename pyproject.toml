@@ -11,7 +11,8 @@ requires-python = ">=3.14"
 dependencies = [
     "matplotlib (>=3.10.7,<4.0.0)",
     "flask (>=3.1.2,<4.0.0)",
-    "faker (>=38.2.0,<39.0.0)"
+    "faker (>=38.2.0,<39.0.0)",
+    "pandas (>=2.3.3,<3.0.0)"
 ]
 
 
