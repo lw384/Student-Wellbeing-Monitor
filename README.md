@@ -68,6 +68,65 @@ http://127.0.0.1:5000
  poetry run pytest
  ```
 
+## git commit
+
+
+
+1. Commit 由两部分组成
+
+```
+<type>: <short summary>
+(optional detailed description...)
+```
+
+2. 使用以下 6 个固定 type
+
+type	用途说明
+feat	新功能（新增模块、新接口、新脚本）
+fix	修复 bug、修复逻辑错误
+data	mock 数据相关（generate scripts、CSV、数据结构等）
+refactor	代码重构，不改变功能（重命名、拆分文件）
+docs	文档更新（README、架构文档、注释）
+test	添加或修改测试（pytest/unittest）
+
+3. commit message 要简短、具体
+
+好例子：
+
+feat: add attendance generator by week
+fix: correct module_code mapping in submissions
+refactor: split mock_core into 4 modules
+docs: add guide for using generate_all script
+data: regenerate wellbeing mock data for week 1-8
+test: add tests for write_csv helper
+
+坏例子（不要这样）：
+
+update code
+fix something
+changes
+final version
+
+4. 每次 commit 做“一件事”
+
+不要把：
+	•	mock 数据
+	•	UI 修改
+	•	database schema
+	•	test
+
+一次 commit 全混在一起。
+
+5. commit 频率建议
+   	•	一天至少 2–4 次（功能点 / 阶段点）
+   	•	每次小改动都要 commit，不要积压到一个大 commit
+
+6. 分支建议（极简）
+
+main        —— 稳定版
+feature/... —— 功能开发
+fix/...     —— 修 bug
+
 ## Mock
 
 To support development and testing, this project includes a flexible mock data generator.
@@ -282,6 +341,4 @@ Author: Luowei
 关于其它错误返回值与错误代码，参见 [Code码说明](#Link)
 
 ```
-
-#### 
 
