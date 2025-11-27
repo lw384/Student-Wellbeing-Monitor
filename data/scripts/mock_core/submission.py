@@ -14,14 +14,13 @@ def generate_submissions_by_module(
         {
           "WG1F6": [ { student_id, module_id, module_code, submitted, grade }, ... ],
           "CS2A4": [ ... ],
-          ...
         }
 
     约束：
     - 学生只要在 student_modules 里选了该课程，就一定在该课程的 submissions 中出现一行
     - 一小部分选了多门课的学生，被设定为“所有课都不交作业”
-    - 其他学生：submitted 二元（1=提交, 0=未提交），未提交比例接近 not_submitted_rate
-    - 成绩范围 40–80，>=70 为少数，50 为及格线
+    - 其他学生 submitted 二元 1=提交, 0=未提交），未提交比例接近 not_submitted_rate
+    - 成绩范围 40～80>=70 为少数 50 为及格线
     """
     # module_id -> module_code 映射
     module_id_to_code: dict[int, str] = {
@@ -80,7 +79,7 @@ def generate_submissions_by_module(
                     # 20% 高分 70–80
                     grade = random.randint(70, 80)
                 elif r < 0.8:
-                    # 60% 中间段 50–69（主力区间）
+                    # 60% 中间段 50–69
                     grade = random.randint(50, 69)
                 else:
                     # 20% 低分段 40–49
