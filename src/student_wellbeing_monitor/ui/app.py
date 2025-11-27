@@ -1,16 +1,16 @@
 # src/wellbeing_system/ui/app.py
 from flask import Flask, render_template, request, redirect, url_for, flash
 from student_wellbeing_monitor.services.upload_service import import_csv_by_type
+from student_wellbeing_monitor.database import read
 import os
+import math
 
 app = Flask(
     __name__,
     template_folder="templates",  #  ui/templates
     static_folder="static",  #  ui/static
 )
-app.config["SECRET_KEY"] = os.environ.get(
-    "FLASK_SECRET_KEY", "dev-secret-key-change-me"
-)
+app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "dev-secret-key")
 
 
 # -------- 1. entrance: select role --------
@@ -70,24 +70,53 @@ def upload_data(role):
 
 
 # -------- 3. 查看数据表 --------
-@app.route("/data/<role>")
-def view_data(role):
-    """
-    显示一张数据表（先用假数据，后面再接数据库）
-    URL: /data/wellbeing 或 /data/course_leader
-    """
-    # 示例假数据（row[0], row[1] 格式方便你之前的 data_table.html 使用）
-    rows = [
-        (5000001, "Alice Smith", "alice.01@warwick.ac.uk", "A"),
-        (5000002, "Bob Lee", "bob.02@warwick.ac.uk", "B"),
-    ]
+@app.route("/data/<role>", defaults={"data_type": "students"})
+@app.route("/data/<role>/<data_type>")
+def view_data(role, data_type):
+    page = request.args.get("page", default=1, type=int)
+    if page < 1:
+        page = 1
+
+    per_page = 20
+    offset = (page - 1) * per_page
+    total = 0
+
+    if data_type == "students":
+        headers = ["Student ID", "Name", "Email"]
+        rows = read.get_all_students()
+
+    elif data_type == "wellbeing":
+        headers = ["Student ID", "Week", "Stress Level", "Hours Slept"]
+        total = read.count_wellbeing()
+        rows = read.get_wellbeing_page(limit=per_page, offset=offset)
+
+    # TODO
+    elif data_type == "attendance":
+        headers = ["Student ID", "Module Code", "Week", "Status"]
+        rows = read.get_all_attendance()
+
+    elif data_type == "submissions":
+        headers = ["Student ID", "Module Code", "Submitted", "Grade"]
+        rows = read.get_all_submissions()
+
+    else:
+        flash("Unknown data type", "danger")
+        return redirect(url_for("dashboard", role=role))
+
+    total_pages = max(1, math.ceil(total / per_page))
+
+    # 防止 page 超出范围
+    if page > total_pages:
+        page = total_pages
 
     return render_template(
         "data_table.html",
         role=role,
+        data_type=data_type,
+        headers=headers,
         rows=rows,
-        page=1,
-        total_pages=1,
+        page=page,
+        total_pages=total_pages,
         active_page="data",
     )
 

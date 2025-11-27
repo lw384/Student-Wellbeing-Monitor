@@ -1,11 +1,10 @@
 # read.py
-from db_core import get_conn, _hash_pwd
+from student_wellbeing_monitor.database.db_core import get_conn, _hash_pwd
 import sqlite3 as _sqlite3
 import pandas as pd
 
 
 # ================== Student-related (Read) ==================
-
 def get_all_students():
     """Return (student_id, name, email) for all students."""
     conn = get_conn()
@@ -20,24 +19,46 @@ def get_student_information(sid):
     """Return (student_id, name) for a single student."""
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(
-        "SELECT student_id, name FROM students WHERE student_id = ?",
-        (sid,)
-    )
+    cur.execute("SELECT student_id, name FROM students WHERE student_id = ?", (sid,))
     row = cur.fetchone()
     conn.close()
     return row
 
 
 # ================== Wellbeing (Read) ==================
-
 def get_wellbeing_by_student(sid):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
         "SELECT week, stress_level, hours_slept "
         "FROM wellbeing WHERE student_id = ? ORDER BY week",
-        (sid,)
+        (sid,),
+    )
+    rows = cur.fetchall()
+    conn.close()
+    return rows
+
+
+def count_wellbeing():
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM wellbeing")
+    total = cur.fetchone()[0]
+    conn.close()
+    return total
+
+
+def get_wellbeing_page(limit=20, offset=0):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT student_id, week, stress_level, hours_slept
+        FROM wellbeing
+        ORDER BY student_id, week
+        LIMIT ? OFFSET ?
+        """,
+        (limit, offset),
     )
     rows = cur.fetchall()
     conn.close()
@@ -46,12 +67,12 @@ def get_wellbeing_by_student(sid):
 
 # ================== Attendance (Read) ==================
 
+
 def get_attendance_by_student(sid):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        "SELECT week, status FROM attendance WHERE student_id = ? ORDER BY week",
-        (sid,)
+        "SELECT week, status FROM attendance WHERE student_id = ? ORDER BY week", (sid,)
     )
     rows = cur.fetchall()
     conn.close()
@@ -63,10 +84,7 @@ def get_attendance_rate(sid):
     conn = get_conn()
     cur = conn.cursor()
 
-    cur.execute(
-        "SELECT COUNT(*) FROM attendance WHERE student_id = ?",
-        (sid,)
-    )
+    cur.execute("SELECT COUNT(*) FROM attendance WHERE student_id = ?", (sid,))
     total = cur.fetchone()[0]
 
     if total == 0:
@@ -76,7 +94,7 @@ def get_attendance_rate(sid):
     cur.execute(
         "SELECT COUNT(*) FROM attendance "
         "WHERE student_id = ? AND status = 'present'",
-        (sid,)
+        (sid,),
     )
     present = cur.fetchone()[0]
     conn.close()
@@ -85,13 +103,14 @@ def get_attendance_rate(sid):
 
 # ================== Submissions (Read) ==================
 
+
 def get_submissions_by_student(sid):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
         "SELECT assignment_id, due_date, submit_date, grade "
         "FROM submissions WHERE student_id = ? ORDER BY submission_id",
-        (sid,)
+        (sid,),
     )
     rows = cur.fetchall()
     conn.close()
@@ -100,13 +119,11 @@ def get_submissions_by_student(sid):
 
 # ================== User & Roles  ==================
 
+
 def check_login(username, password):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(
-        "SELECT password_hash FROM users WHERE username = ?",
-        (username,)
-    )
+    cur.execute("SELECT password_hash FROM users WHERE username = ?", (username,))
     row = cur.fetchone()
     conn.close()
     if row is None:
@@ -117,10 +134,7 @@ def check_login(username, password):
 def get_user_role(username):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(
-        "SELECT role FROM users WHERE username = ?",
-        (username,)
-    )
+    cur.execute("SELECT role FROM users WHERE username = ?", (username,))
     row = cur.fetchone()
     conn.close()
     if row is None:
@@ -159,6 +173,7 @@ def get_student_info(username, sid):
 
 # ================== Course-level stats ==================
 
+
 def get_course_stats(course_id: str):
     """
     Input a course ID: return number of students, avg stress, attendance rate.
@@ -191,6 +206,7 @@ def get_course_stats(course_id: str):
 
 # ---------- weekly wellbeing summary ----------
 
+
 def weekly_wellbeing_summary(start_week, end_week):
     """
     return [(week, avg_stress, avg_sleep, count), ...]
@@ -209,7 +225,7 @@ def weekly_wellbeing_summary(start_week, end_week):
         GROUP BY week
         ORDER BY week
         """,
-        (start_week, end_week)
+        (start_week, end_week),
     )
     rows = cur.fetchall()
     conn.close()
@@ -217,6 +233,7 @@ def weekly_wellbeing_summary(start_week, end_week):
 
 
 # ----------  high stress weeks ----------
+
 
 def find_high_stress_weeks(threshold=4):
     """Weeks where the average stress level is ≥ the threshold."""
@@ -232,7 +249,7 @@ def find_high_stress_weeks(threshold=4):
         HAVING avg_stress >= ?
         ORDER BY week
         """,
-        (threshold,)
+        (threshold,),
     )
     rows = cur.fetchall()
     conn.close()
@@ -240,6 +257,7 @@ def find_high_stress_weeks(threshold=4):
 
 
 # ----------  at-risk students ----------
+
 
 def get_at_risk_students():
     """
@@ -270,6 +288,7 @@ def get_at_risk_students():
 
 # ---------- stress vs attendance ----------
 
+
 def stress_vs_attendance():
     """
     Weekly view: stress level vs attendance rate.
@@ -297,6 +316,7 @@ def stress_vs_attendance():
 
 # ---------- attendance trend ----------
 
+
 def attendance_trend():
     """
     Overall attendance trend by week.
@@ -320,6 +340,7 @@ def attendance_trend():
 
 
 # ---------- submission behaviour ----------
+
 
 def submission_behaviour():
     """
@@ -351,6 +372,7 @@ def submission_behaviour():
 
 # ---------- low attendance ----------
 
+
 def low_attendance(threshold=0.7):
     """
     Students whose attendance rate is below the threshold.
@@ -367,7 +389,7 @@ def low_attendance(threshold=0.7):
         GROUP BY student_id
         HAVING att_rate < ?
         """,
-        (threshold,)
+        (threshold,),
     )
     rows = cur.fetchall()
     conn.close()
@@ -375,6 +397,7 @@ def low_attendance(threshold=0.7):
 
 
 # ---------- repeated late or missing submissions ----------
+
 
 def repeated_late_submissions(min_bad=2):
     """
@@ -393,7 +416,7 @@ def repeated_late_submissions(min_bad=2):
         GROUP BY student_id
         HAVING bad_count >= ?
         """,
-        (min_bad,)
+        (min_bad,),
     )
     rows = cur.fetchall()
     conn.close()
@@ -401,6 +424,7 @@ def repeated_late_submissions(min_bad=2):
 
 
 # ----------  attendance vs grade ----------
+
 
 def attendance_vs_grade():
     """

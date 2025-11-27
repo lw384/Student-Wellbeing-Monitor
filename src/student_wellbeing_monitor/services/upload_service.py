@@ -8,7 +8,6 @@ from student_wellbeing_monitor.database import create  # 你自己的插入函�
 
 # from student_wellbeing_monitor.database import db_core  # connect
 def read_csv(file_storage) -> list[dict]:
-    """把 Flask 上传的文件对象转换成 Dict 列表"""
     # file_storage 是 werkzeug.datastructures.FileStorage
     text_stream: TextIO = io.TextIOWrapper(file_storage.stream, encoding="utf-8")
     reader = csv.DictReader(text_stream)

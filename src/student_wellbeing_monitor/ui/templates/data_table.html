@@ -1,79 +1,104 @@
 {% extends "layout.html" %}
 {% set active_page = "data" %}
-
 {% block content %}
-<div class="main-content">
-    <div class="page-title">Data Table</div>
-    <div class="page-subtitle">Showing student records</div>
+<div class="card-elevated">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h5 class="mb-1">
+        {% if data_type == "students" %}
+          Students
+        {% elif data_type == "wellbeing" %}
+          Wellbeing Records
+        {% elif data_type == "attendance" %}
+          Attendance Records
+        {% elif data_type == "submissions" %}
+          Submissions
+        {% else %}
+          Data Table
+        {% endif %}
+      </h5>
+      <div class="mb-3">
 
-    <div class="card-elevated">
+  <!-- 所有角色都能看 Students -->
+  <a href="{{ url_for('view_data', role=role, data_type='students') }}"
+     class="btn btn-outline-primary btn-sm {% if data_type=='students' %}active{% endif %}">
+     Students
+  </a>
 
-        <!-- Table -->
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Student ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Modules</th>
-                    <th style="width: 180px;">Actions</th>
-                </tr>
-            </thead>
+  {% if role == 'wellbeing' %}
+      <!-- wellbeing officer 专属 -->
+      <a href="{{ url_for('view_data', role=role, data_type='wellbeing') }}"
+         class="btn btn-outline-primary btn-sm {% if data_type=='wellbeing' %}active{% endif %}">
+         Wellbeing
+      </a>
+  {% endif %}
 
-            <tbody>
-                {% for row in rows %}
-                <tr>
-                    <td>{{ row[0] }}</td>
-                    <td>{{ row[1] }}</td>
-                    <td>{{ row[2] }}</td>
-                    <td>{{ row[3] }}</td>
+  {% if role == 'course_leader' %}
+      <!-- course leader 专属 -->
+      <a href="{{ url_for('view_data', role=role, data_type='attendance') }}"
+         class="btn btn-outline-primary btn-sm {% if data_type=='attendance' %}active{% endif %}">
+         Attendance
+      </a>
 
-                    <td>
-                        <!-- Edit Button -->
-                        <a href="{{ url_for('edit_student', student_id=row[0]) }}"
-                           class="btn btn-sm btn-outline-primary">
-                            Edit
-                        </a>
+      <a href="{{ url_for('view_data', role=role, data_type='submissions') }}"
+         class="btn btn-outline-primary btn-sm {% if data_type=='submissions' %}active{% endif %}">
+         Submissions
+      </a>
+  {% endif %}
 
-                        <!-- Delete Button -->
-                        <a href="{{ url_for('delete_student', student_id=row[0]) }}"
-                           class="btn btn-sm btn-outline-danger"
-                           onclick="return confirm('Delete this student?');">
-                            Delete
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+</div>
 
-        <!-- Pagination -->
-        <nav>
-            <ul class="pagination justify-content-center mt-3">
-                <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-                    <a class="page-link"
-                       href="?page={{ page - 1 }}">
-                        Previous
-                    </a>
-                </li>
-
-                {% for p in range(1, total_pages + 1) %}
-                <li class="page-item {% if p == page %}active{% endif %}">
-                    <a class="page-link" href="?page={{ p }}">
-                        {{ p }}
-                    </a>
-                </li>
-                {% endfor %}
-
-                <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
-                    <a class="page-link"
-                       href="?page={{ page + 1 }}">
-                        Next
-                    </a>
-                </li>
-            </ul>
-        </nav>
-
+      <p class="text-muted mb-0" style="font-size: 0.85rem;">
+        Showing page {{ page }} of {{ total_pages }}
+      </p>
     </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+            <th scope="col">#</th>
+          {% for col in headers %}
+            <th scope="col">{{ col }}</th>
+          {% endfor %}
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+             <td>{{ loop.index }}</td>  
+            {% for cell in row %}
+              <td>{{ cell }}</td>
+            {% endfor %}
+            <td>
+              <button class="btn btn-sm btn-outline-secondary">Edit</button>
+              <button class="btn btn-sm btn-outline-danger">Delete</button>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <nav aria-label="Page navigation" class="d-flex justify-content-center mt-3">
+    <ul class="pagination pagination-sm mb-0">
+      <li class="page-item {% if page == 1 %}disabled{% endif %}">
+        <a class="page-link"
+           href="{{ url_for('view_data', role=role, data_type=data_type, page=page-1) }}">
+          Previous
+        </a>
+      </li>
+      <li class="page-item active">
+        <span class="page-link">{{ page }}</span>
+      </li>
+      <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+        <a class="page-link"
+           href="{{ url_for('view_data', role=role, data_type=data_type, page=page+1) }}">
+          Next
+        </a>
+      </li>
+    </ul>
+  </nav>
 </div>
 {% endblock %}

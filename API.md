@@ -2,9 +2,9 @@
 
 ### upload csv
 
-| URL         | request | version | status |
-| :---------- | :------ | :------ | :----- |
-| /getstudent | POST    | 1.0     | true   |
+| URL                         | request | version | status |
+| :-------------------------- | :------ | :------ | :----- |
+| /services/upload_service.py | POST    | 1.0     |        |
 
 #### 请求参数说明
 
