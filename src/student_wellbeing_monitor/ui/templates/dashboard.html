@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% set active_page = 'dashboard' %}
+
+{% block content %}
+  <div class="main-content">
+    <div class="card-elevated">
+      <div class="page-title">
+        {% if role == "wellbeing" %}
+          Wellbeing Officer Dashboard
+        {% else %}
+          Course Director Dashboard
+        {% endif %}
+      </div>
+      <div class="page-subtitle">
+        Select an action from the left menu.
+      </div>
+
+      <ul class="list-unstyled mb-0">
+        <li class="mb-2">
+          <a href="{{ url_for('view_data', role=role) }}" class="link-muted">
+            • View data tables
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('view_charts', role=role) }}" class="link-muted">
+            • View analytics charts
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+{% endblock %}

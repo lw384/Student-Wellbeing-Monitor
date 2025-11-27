@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <h2 class="mb-4 text-center">Select Your Role</h2>
+
+      <div class="d-grid gap-3">
+        <a href="{{ url_for('dashboard', role='wellbeing') }}"
+           class="btn btn-primary btn-lg">
+          Student Wellbeing Officer
+        </a>
+
+        <a href="{{ url_for('dashboard', role='course_leader') }}"
+           class="btn btn-secondary btn-lg">
+          Course Director
+        </a>
+      </div>
+    </div>
+  </div>
+{% endblock %}
