@@ -217,14 +217,14 @@
         <div class="col-2 sidebar pt-3">
           {% if role %}
           <nav class="nav flex-column">
-            <a class="nav-link {% if active_page == 'upload' %}active{% endif %}"
-               href="{{ url_for('upload_data', role=role) }}">
-              Upload Data
-            </a>
-
              <a class="nav-link {% if active_page == 'dashboard' %}active{% endif %}"
                href="{{ url_for('dashboard', role=role) }}">
               Dashboard
+            </a>
+
+            <a class="nav-link {% if active_page == 'upload' %}active{% endif %}"
+               href="{{ url_for('upload_data', role=role) }}">
+              Upload Data
             </a>
 
            <a class="nav-link {% if active_page == 'data' %}active{% endif %}"

@@ -3,31 +3,159 @@
 {% set simple_layout = False %}
 
 {% block content %}
-  <div class="main-content">
-    <div class="card-elevated">
-      <div class="page-title">
+<div class="main-content">
+
+  {# ==== 头部标题区 ==== #}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h1 class="page-title mb-1">
         {% if role == "wellbeing" %}
           Wellbeing Officer Dashboard
         {% else %}
           Course Director Dashboard
         {% endif %}
-      </div>
-      <div class="page-subtitle">
-        Select an action from the left menu.
-      </div>
+      </h1>
+      <p class="page-subtitle mb-0">
+        Monitor trends in stress, sleep and engagement over recent weeks.
+      </p>
+    </div>
 
-      <ul class="list-unstyled mb-0">
-        <li class="mb-2">
-          <a href="{{ url_for('view_data', role=role) }}" class="link-muted">
-            • View data tables
-          </a>
-        </li>
-        <li>
-          <a href="{{ url_for('view_charts', role=role) }}" class="link-muted">
-            • View analytics charts
-          </a>
-        </li>
-      </ul>
+    <div class="text-end d-none d-md-block">
+      <a href="{{ url_for('view_data', role=role) }}" class="link-muted d-block">
+        View data tables →
+      </a>
+      <a href="{{ url_for('view_charts', role=role) }}" class="link-muted d-block">
+        View analytics charts →
+      </a>
     </div>
   </div>
+
+  {# ==== 筛选区：Week + Module ==== #}
+  <div class="card-elevated mb-3">
+    <form class="row g-3 align-items-end" method="get"
+          action="{{ url_for('dashboard', role=role) }}">
+      <div class="col-12 col-md-4">
+        <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
+          Week
+        </label>
+        <select name="week" class="form-select form-select-sm">
+          {# weeks 是后端传入的列表，例如 [1,2,...,12]；current_week 当前选中值 #}
+          {% for w in weeks|default([1,2,3,4,5,6,7,8]) %}
+            <option value="{{ w }}"
+                    {% if w == current_week|default(1) %}selected{% endif %}>
+              Week {{ w }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-12 col-md-5">
+        <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
+          Module
+        </label>
+        <select name="module_code" class="form-select form-select-sm">
+          <option value="">All modules</option>
+          {# modules 是后端传入的 [{code, name}] 列表 #}
+          {% for m in modules|default([]) %}
+            <option value="{{ m.code }}"
+                    {% if m.code == current_module|default('') %}selected{% endif %}>
+              {{ m.code }} – {{ m.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-12 col-md-3 text-md-end">
+        <button type="submit" class="btn btn-primary btn-sm px-4">
+          Apply filters
+        </button>
+      </div>
+    </form>
+  </div>
+
+  {# ==== 指标卡片区：总体睡眠 / 压力 / 样本数 等 ==== #}
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-md-4">
+      <div class="card-elevated h-100">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="small text-uppercase text-muted fw-semibold">
+            Avg Hours Slept
+          </span>
+        </div>
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="fs-3 fw-semibold">
+            {{ summary.avg_sleep|default(7.2) }}
+          </span>
+          <span class="text-muted small">hrs / night</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">
+          Based on selected week & module.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card-elevated h-100">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="small text-uppercase text-muted fw-semibold">
+            Avg Stress Level
+          </span>
+        </div>
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="fs-3 fw-semibold">
+            {{ summary.avg_stress|default(3.4) }}
+          </span>
+          <span class="text-muted small">/ 5</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">
+          Higher values may indicate wellbeing risk.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card-elevated h-100">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="small text-uppercase text-muted fw-semibold">
+            Survey Responses
+          </span>
+        </div>
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="fs-3 fw-semibold">
+            {{ summary.response_count|default(42) }}
+          </span>
+          <span class="text-muted small">students</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">
+          Response rate {{ summary.response_rate|default(78) }}%.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {# ==== 折线图区域：多周趋势（压力 / 睡眠） ==== #}
+  <div class="card-elevated">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <div>
+        <h6 class="mb-1">Trend over recent weeks</h6>
+        <p class="text-muted small mb-0">
+          Average stress and sleep across weeks
+          {% if current_module %}
+            for <strong>{{ current_module }}</strong>
+          {% endif %}
+        </p>
+      </div>
+    </div>
+
+    {# 这里暂时用 <img>，你可以后面用 matplotlib 生成 PNG 放在 static/charts #}
+    <div>
+      <img
+        src="{{ url_for('static', filename=trend_chart_path|default('images/placeholder_trend.png')) }}"
+        alt="Stress vs Sleep trend"
+        class="chart-image"
+      >
+    </div>
+  </div>
+
+</div>
 {% endblock %}
