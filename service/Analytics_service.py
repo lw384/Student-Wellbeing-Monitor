@@ -1,11 +1,11 @@
 import pandas as pd
 import numpy as np
-from scipy import stats # 用于线性回归
+from scipy import stats # For linear regression
 from typing import Dict, Any
 import sys
 import os
 
-# 添加项目路径以支持导入
+# Add project path to support imports
 current_dir = os.path.dirname(os.path.abspath(__file__))
 database_dir = os.path.join(current_dir, '..', 'database')
 sys.path.insert(0, database_dir)
@@ -19,13 +19,13 @@ from db import (
 
 class AnalyticsService:
     def __init__(self):
-        """初始化分析服务，直接使用 db.py 的方法"""
+        """Initialize analytics service, directly using methods from db.py"""
         pass
     
     def _get_students_by_course(self, course_id: str = None):
-        """获取指定课程的学生ID列表"""
+        """Get list of student IDs for specified course"""
         if course_id is None:
-            # 获取所有学生
+            # Get all students
             conn = get_conn()
             cur = conn.cursor()
             cur.execute("SELECT student_id FROM students")
@@ -33,7 +33,7 @@ class AnalyticsService:
             conn.close()
             return student_ids
         else:
-            # 获取指定课程的学生
+            # Get students for specified course
             conn = get_conn()
             cur = conn.cursor()
             cur.execute("SELECT student_id FROM students WHERE course_id = ?", (course_id,))
@@ -42,7 +42,7 @@ class AnalyticsService:
             return student_ids
     
     def _filter_by_course(self, data_list, course_id: str = None):
-        """按课程ID过滤数据"""
+        """Filter data by course ID"""
         if course_id is None:
             return data_list
         
@@ -51,13 +51,13 @@ class AnalyticsService:
 
     def get_weekly_overview(self, course_id: str = None) -> Dict[str, Any]:
         """
-        FR-3: 获取周报总览数据
-        返回用于绘制折线图的数据 (x, y) 和用于显示的表格数据
+        FR-3: Get weekly overview data
+        Returns data for drawing line charts (x, y) and table data for display
         """
-        # 1. 从 DB 获取原始数据
+        # 1. Get raw data from DB
         raw_data = get_all_wellbeing_data()
         
-        # 按课程过滤
+        # Filter by course
         if course_id is not None:
             raw_data = self._filter_by_course(raw_data, course_id)
         
@@ -66,27 +66,27 @@ class AnalyticsService:
         if df.empty:
             return {"error": "No data available"}
 
-        # 2. 计算每周平均值
-        # 聚合：按周分组，计算压力和睡眠的平均值，以及回复数量
+        # 2. Calculate weekly averages
+        # Aggregate: group by week, calculate averages of stress and sleep, and response count
         weekly_stats = df.groupby('week_num').agg({
             'stress_level': 'mean',
             'sleep_hours': 'mean',
-            'student_id': 'count'  # 用来计算回复率
+            'student_id': 'count'  # Used to calculate response rate
         }).reset_index()
 
-        # 获取总学生数来计算完成率
+        # Get total number of students to calculate completion rate
         total_students = len(self._get_students_by_course(course_id))
         if total_students > 0:
             weekly_stats['response_rate'] = (weekly_stats['student_id'] / total_students * 100).round(2)
         else:
             weekly_stats['response_rate'] = 0
         
-        # 3. 准备输出数据
+        # 3. Prepare output data
         
-        # 阈值设定
-        STRESS_THRESHOLD = 3.5  # 假设超过 3.5 算高压力
+        # Set threshold
+        STRESS_THRESHOLD = 3.5  # Assume above 3.5 is considered high stress
         
-        # 准备 High Stress Points (用于图表高亮)
+        # Prepare High Stress Points (for chart highlighting)
         high_stress_weeks = weekly_stats[weekly_stats['stress_level'] > STRESS_THRESHOLD]['week_num'].tolist()
 
         result = {
@@ -95,23 +95,23 @@ class AnalyticsService:
                 "y_stress": weekly_stats['stress_level'].round(2).tolist(),
                 "y_sleep": weekly_stats['sleep_hours'].round(2).tolist(),
                 "y_response_rate": weekly_stats['response_rate'].tolist(),
-                "highlight_weeks": high_stress_weeks  # 前端绘图时，这些周的点标红
+                "highlight_weeks": high_stress_weeks  # Frontend will mark these weeks' points in red when drawing
             },
-            "table_data": weekly_stats.to_dict('records') # 返回字典列表供表格展示
+            "table_data": weekly_stats.to_dict('records') # Return list of dictionaries for table display
         }
         return result
 
     def get_stress_vs_attendance(self, course_id: str = None) -> Dict[str, Any]:
         """
-        FR-6: 压力水平 vs 出勤率 对比趋势
+        FR-6: Stress level vs Attendance rate comparison trend
         """
-        # 获取wellbeing数据
+        # Get wellbeing data
         wellbeing_data = get_all_wellbeing_data()
         if course_id is not None:
             wellbeing_data = self._filter_by_course(wellbeing_data, course_id)
         surveys = pd.DataFrame(wellbeing_data)
 
-        # 直接查询数据库获取出勤数据
+        # Query database directly to get attendance data
         conn = get_conn()
         if course_id is None:
             cur = conn.cursor()
@@ -143,13 +143,13 @@ class AnalyticsService:
         if surveys.empty or attendance.empty:
             return {}
 
-        # 按周聚合
+        # Aggregate by week
         stress_weekly = surveys.groupby('week_num')['stress_level'].mean()
         
-        # attended 字段已经是 0 或 1，直接使用
+        # attended field is already 0 or 1, use directly
         attendance_weekly = attendance.groupby('week_num')['attended'].mean() * 100
 
-        # 合并索引 (确保周数对齐)
+        # Merge indices (ensure week numbers are aligned)
         combined = pd.DataFrame({'stress': stress_weekly, 'attendance': attendance_weekly}).dropna()
 
         return {
@@ -160,11 +160,11 @@ class AnalyticsService:
 
     def get_submission_stats(self, course_id: str = None) -> Dict[str, Any]:
         """
-        FR-8: 作业提交情况饼图数据
-        注意：当前数据库中没有 submissions 表，此方法返回空结果
+        FR-8: Assignment submission statistics pie chart data
+        Note: Currently there is no submissions table in the database, this method returns empty result
         """
-        # 由于数据库中没有 submissions 表，返回空结果
-        # 如果需要实现此功能，需要先创建 submissions 表
+        # Since there is no submissions table in the database, return empty result
+        # If this functionality is needed, create the submissions table first
         return {
             "labels": [],
             "values": []
@@ -172,10 +172,10 @@ class AnalyticsService:
 
     def get_performance_correlation(self, course_id: str = None) -> Dict[str, Any]:
         """
-        FR-11: 出勤率 vs 成绩 线性回归
-        Output: 散点图数据 (Points) + 拟合线数据 (Line)
+        FR-11: Attendance rate vs Grade linear regression
+        Output: Scatter plot data (Points) + Fitted line data (Line)
         """
-        # 直接查询数据库获取出勤率和成绩数据
+        # Query database directly to get attendance rate and grade data
         conn = get_conn()
         if course_id is None:
             cur = conn.cursor()
@@ -205,25 +205,25 @@ class AnalyticsService:
         data = cur.fetchall()
         conn.close()
         
-        # 转换为 DataFrame
+        # Convert to DataFrame
         df = pd.DataFrame(data, columns=['student_id', 'attendance', 'grade'])
-        df['attendance'] = df['attendance'] * 100  # 转换为百分比
+        df['attendance'] = df['attendance'] * 100  # Convert to percentage
         df = df[['attendance', 'grade']].dropna()
 
         if len(df) < 2:
             return {"error": "Not enough data for correlation"}
 
-        # 线性回归分析
+        # Linear regression analysis
         slope, intercept, r_value, p_value, std_err = stats.linregress(df['attendance'], df['grade'])
 
-        # 生成拟合线数据 (两个点即可确定直线: x_min 和 x_max)
+        # Generate fitted line data (two points are sufficient to determine a line: x_min and x_max)
         x_line = [df['attendance'].min(), df['attendance'].max()]
         y_line = [slope * x + intercept for x in x_line]
 
         return {
             "scatter_points": {
-                "x": df['attendance'].tolist(), # 出勤率
-                "y": df['grade'].tolist()       # 成绩
+                "x": df['attendance'].tolist(), # Attendance rate
+                "y": df['grade'].tolist()       # Grade
             },
             "regression_line": {
                 "x": x_line,
