@@ -24,13 +24,10 @@
       <a href="{{ url_for('view_data', role=role) }}" class="link-muted d-block">
         View data tables →
       </a>
-      <a href="{{ url_for('view_charts', role=role) }}" class="link-muted d-block">
-        View analytics charts →
-      </a>
     </div>
   </div>
 
-  {# ==== 筛选区：Week + Module ==== #}
+  {# ==== 筛选区: Week + Module ==== #}
   <div class="card-elevated mb-3">
     <form class="row g-3 align-items-end" method="get"
           action="{{ url_for('dashboard', role=role) }}">
@@ -134,28 +131,113 @@
   </div>
 
   {# ==== 折线图区域：多周趋势（压力 / 睡眠） ==== #}
-  <div class="card-elevated">
+   <div class="card-elevated mb-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
-      <div>
-        <h6 class="mb-1">Trend over recent weeks</h6>
-        <p class="text-muted small mb-0">
-          Average stress and sleep across weeks
-          {% if current_module %}
-            for <strong>{{ current_module }}</strong>
-          {% endif %}
-        </p>
-      </div>
+      <h6 class="mb-0">Stress & Sleep over weeks</h6>
+      <span class="text-muted small">Average values per week</span>
     </div>
-
-    {# 这里暂时用 <img>，你可以后面用 matplotlib 生成 PNG 放在 static/charts #}
-    <div>
-      <img
-        src="{{ url_for('static', filename=trend_chart_path|default('images/placeholder_trend.png')) }}"
-        alt="Stress vs Sleep trend"
-        class="chart-image"
-      >
+    <div style="height: 320px;">
+      <canvas id="lineChart"></canvas>
     </div>
   </div>
 
+  {# ==== 柱状图：按课程的出勤率 / 成绩 ==== #}
+  <div class="card-elevated mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">Attendance Rate by Module</h6>
+      <span class="text-muted small">0–100% attendance</span>
+    </div>
+    <div style="height: 320px;">
+      <canvas id="barChart"></canvas>
+    </div>
+  </div>
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // 从后端传来的数据（Python list -> JS array）
+  const weeks       = {{ weeks_for_chart|tojson }};
+  const avgStress   = {{ avg_stress|tojson }};
+  const avgSleep    = {{ avg_sleep|tojson }};
+  const modules     = {{ modules_for_chart|tojson }};
+  const attRate     = {{ attendance_rate|tojson }};
+
+  console.log("weeks =", weeks);
+  console.log("avgStress =", avgStress);
+  console.log("avgSleep =", avgSleep);
+  console.log("modules =", modules);
+  console.log("attRate =", attRate);
+  // ========= 折线图 =========
+  const lineCtx = document.getElementById('lineChart').getContext('2d');
+  new Chart(lineCtx, {
+    type: 'line',
+    data: {
+      labels: weeks,
+      datasets: [
+        {
+          label: 'Avg Stress (1–5)',
+          data: avgStress,
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 3,
+        },
+        {
+          label: 'Avg Sleep (hours)',
+          data: avgSleep,
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 3,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { title: { display: true, text: 'Week' } },
+        y: { title: { display: true, text: 'Value' } }
+      },
+      plugins: {
+        legend: { display: true },
+        tooltip: { enabled: true }
+      }
+    }
+  });
+
+  // ========= 柱状图 =========
+  const barCtx = document.getElementById('barChart').getContext('2d');
+  new Chart(barCtx, {
+    type: 'bar',
+    data: {
+      labels: modules,
+      datasets: [
+        {
+          label: 'Attendance rate (%)',
+          data: attRate.map(x => x * 100),  // 0.85 -> 85
+          borderWidth: 1,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          title: { display: true, text: 'Attendance %' }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.parsed.y.toFixed(1) + '%'
+          }
+        }
+      }
+    }
+  });
+</script>
 {% endblock %}

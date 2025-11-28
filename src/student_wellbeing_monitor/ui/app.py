@@ -51,7 +51,15 @@ def dashboard(role):
         "response_rate": 76,
     }
 
-    # 3. 渲染模板时，把这些变量都传进去
+    # 3) 折线图用的数据
+    weeks_for_chart = list(range(1, 9))
+    avg_stress = [3.1, 3.4, 3.6, 3.2, 3.8, 4.0, 3.7, 3.5]
+    avg_sleep = [7.2, 7.0, 6.8, 7.1, 6.5, 6.3, 6.7, 6.9]
+
+    # 4) 柱状图用的数据
+    modules_for_chart = ["WG1F6", "CS2A4", "ML3B1", "DS2C3"]
+    attendance_rate = [0.92, 0.85, 0.78, 0.88]
+
     return render_template(
         "dashboard.html",
         role=role,
@@ -60,8 +68,11 @@ def dashboard(role):
         modules=modules,
         current_module=module_code,
         summary=summary,
-        # 先用占位图，后面换成真正的折线图 PNG 路径
-        trend_chart_path="images/placeholder_trend.png",
+        weeks_for_chart=weeks_for_chart,  # 如果你想区分，可以改前端变量名
+        avg_stress=avg_stress,
+        avg_sleep=avg_sleep,
+        modules_for_chart=modules_for_chart,
+        attendance_rate=attendance_rate,
     )
 
 
