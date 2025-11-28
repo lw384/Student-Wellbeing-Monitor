@@ -60,6 +60,22 @@ def dashboard(role):
     modules_for_chart = ["WG1F6", "CS2A4", "ML3B1", "DS2C3"]
     attendance_rate = [0.92, 0.85, 0.78, 0.88]
 
+    if role == "wellbeing":
+        students_to_contact = [
+            {
+                "student_id": 5000001,
+                "name": "Alice Smith",
+                "reason": "High stress 4+ weeks",
+                "detail": "Week 4–7 stress ≥ 4, sleep < 6h",
+            },
+            {
+                "student_id": 5000005,
+                "name": "Bob Lee",
+                "reason": "Low sleep, inconsistent surveys",
+                "detail": "Average sleep 4.5h, skipped 3 surveys",
+            },
+        ]
+
     return render_template(
         "dashboard.html",
         role=role,
@@ -73,6 +89,7 @@ def dashboard(role):
         avg_sleep=avg_sleep,
         modules_for_chart=modules_for_chart,
         attendance_rate=attendance_rate,
+        students_to_contact=students_to_contact,
     )
 
 
