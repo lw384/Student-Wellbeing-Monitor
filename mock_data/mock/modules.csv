@@ -1,26 +1,31 @@
-module_id,module_name,module_code
-6151982,Supply Chain Management,IU3P2
-4712445,Sustainable Supply Chain Management and the Circular Economy,GV3Q6
-5441304,Interdisciplinary Research Methods,BF3R5
-4629452,Research Methods,LG2Q1
-4595802,Strategy and Operations Management,LA3R1
-2013593,Computer Graphics,UA1Q8
-3174691,Foundations,AO2D6
-8142381,Machine Learning,CU2W4
-9493804,Cloud Computing,VW3I4
-3681810,Data Analytics,SC3J8
-1381712,Strategy and Operations Management,DB2S1
-1074561,Research Methods,IL2A7
-6813250,Computer Graphics,SN3B4
-1024666,Database Systems,VY1E2
-6782075,Foundations,TO1D1
-9362323,Database Systems,RU1Q6
-2654173,Cloud Computing,HN2A4
-1076302,Data Analytics,KO1O5
-4947147,Research Methods,EO1T3
-2749722,Supply Chain Management,CJ2V6
-9110563,Cloud Computing,LC3P6
-7286887,Cloud Computing,KK1Q9
-8015137,Energy Storage Systems,CP3T7
-9672029,Foundations,XW3M5
-1842209,Machine Learning,TY1C3
+module_id,module_name,module_code,programme_id
+8935813,Machine Learning,KQ2Y5,60641
+4563582,Interdisciplinary Research Methods,ZD3T3,60641
+1194429,Data Analytics,AX2F7,60641
+1701494,Interdisciplinary Research Methods,YC1K2,60641
+4675438,Strategy and Operations Management,LO1K5,96712
+8434159,Supply Chain Management,BG1G2,96712
+4012247,Computer Graphics,RC2C4,96712
+8277817,Energy Storage Systems,FQ1C8,96712
+4811678,Database Systems,YS3X9,66065
+9215108,Deep Learning,ZC2M5,66065
+7080977,Supply Chain Management,TJ1X3,66065
+8069392,"Fundamentals of Games Research, Development and Management",YD3X6,66065
+5645762,Foundations,PS3C9,55676
+9180845,Research Methods,YK1N5,55676
+1572366,Introduction to Python,UL3O1,55676
+3694609,Supply Chain Management,NR2X4,55676
+4380532,Machine Learning,PT3C5,55676
+4415631,Deep Learning,WY3E9,86521
+7217231,Energy Storage Systems,BD3H4,86521
+1874735,Data Analytics,KJ1Y1,86521
+9843782,Energy Storage Systems,GB3G8,86521
+4768158,Strategy and Operations Management,EA1Q4,86521
+8177146,Cloud Computing,MJ2X5,62733
+6709737,Interdisciplinary Research Methods,NJ1E7,62733
+9435487,Strategy and Operations Management,YO3J5,62733
+3725519,"Fundamentals of Games Research, Development and Management",OK3U5,62733
+9746157,"Fundamentals of Games Research, Development and Management",ZE3K8,74963
+8205564,Energy Storage Systems,SJ3N7,74963
+1373224,Data Analytics,YF2Q9,74963
+1067710,Strategy and Operations Management,IS3C7,74963

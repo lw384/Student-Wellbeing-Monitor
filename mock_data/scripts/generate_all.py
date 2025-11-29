@@ -115,7 +115,7 @@ def main() -> None:
     print(f"CSV generated in: {output_dir.resolve()}")
     print(f"   - students.csv ({len(students)} rows)")
     print(f"   - modules.csv ({len(modules)} rows)")
-    print(f"   - student_modules.csv ({len(student_modules)} rows)")
+    print(f"   - student_module.csv ({len(student_modules)} rows)")
     print(f"   - wellbeing weeks: {len(wellbeing_by_week)}")
     print(f"   - attendance weeks: {len(attendance_by_week)}")
     print(f"   - submissions files: {len(submissions_by_module)}")

@@ -2,21 +2,87 @@
 from student_wellbeing_monitor.database.db_core import get_conn, _hash_pwd
 
 
-# ================== Student-related (Create) ==================
+# ================= Programme (Create) ==================
 
 
-def insert_student(student_id, name, email=None):
-    """Create a new student."""
+def insert_programme(
+    programme_id,
+    programme_name,
+    programme_code,
+):
+    """Create a new programme."""
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO students (student_id, name, email) VALUES (?, ?, ?)",
-        (student_id, name, email),
+        "INSERT INTO programme (programme_id, programme_name, programme_code) VALUES (?, ?, ?)",
+        (programme_id, programme_name, programme_code),
     )
     conn.commit()
     sid = cur.lastrowid
     conn.close()
     return sid
+
+
+# ================== Student  (Create) ==================
+def insert_student(
+    student_id,
+    name,
+    programme_id,
+    email=None,
+):
+    """Create a new student."""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO student (student_id, name, email,programme_id) VALUES (?, ?, ?,?)",
+        (student_id, name, email, programme_id),
+    )
+    conn.commit()
+    sid = cur.lastrowid
+    conn.close()
+    return sid
+
+
+# ================== Module  (Create) ==================
+def insert_module(module_id, module_name, module_code, programme_id):
+    """Create a new module."""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO module (module_id, module_name, module_code, programme_id) VALUES (?, ?, ?, ?)",
+        (module_id, module_name, module_code, programme_id),
+    )
+    conn.commit()
+    sid = cur.lastrowid
+    conn.close()
+    return sid
+
+
+# ================== Student - Module  (Create) ==================
+
+
+def insert_student_module(student_id: str, module_id: str):
+    """
+    Insert a record into student_module table.
+    Only student_id and module_id are required,
+    because id is AUTOINCREMENT.
+    """
+
+    conn = get_conn()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        INSERT INTO student_module (student_id, module_id)
+        VALUES (?, ?)
+        """,
+        (student_id, module_id),
+    )
+
+    conn.commit()
+    new_id = cur.lastrowid
+    conn.close()
+    return new_id
 
 
 # ================== Wellbeing (Create) ==================

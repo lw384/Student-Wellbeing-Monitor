@@ -160,7 +160,7 @@ def generate_modules(
                     "module_id": module_id,
                     "module_code": module_code,
                     "module_name": random.choice(module_names_pool),
-                    "programme_id": prog_id,  # ⭐ 绑定所属专业
+                    "programme_id": prog_id,
                 }
             )
 
