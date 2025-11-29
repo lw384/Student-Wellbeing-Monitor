@@ -18,6 +18,7 @@ BEHAVIOUR_SCRIPT = BASE_DIR / "mock_data" / "scripts" / "generate_behaviour.py"
 print("Path------------", BASE_DIR, "----", MOCK_DIR, MOCK_SCRIPT)
 
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Setup demo database")
     parser.add_argument(

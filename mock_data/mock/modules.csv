@@ -1,29 +1,28 @@
 module_id,module_name,module_code,programme_id
-3937757,Computer Graphics,MT3F1,18179
-4070982,Interdisciplinary Research Methods,QU2I1,18179
-8260175,Energy Storage Systems,YU3L1,18179
-3079765,Cloud Computing,JW1Z2,53839
-9922169,Computer Graphics,UW1U2,53839
-9556315,Machine Learning,FK1V6,53839
-9890146,Supply Chain Management,PG3Q1,53839
-4719822,Sustainable Supply Chain Management and the Circular Economy,BX1W1,64808
-5139192,"Fundamentals of Games Research, Development and Management",UH1M7,64808
-2164995,Strategy and Operations Management,HO3S2,64808
-2676265,Interdisciplinary Research Methods,FO3K4,64808
-7811593,Cloud Computing,VD1X7,64808
-1399324,Interdisciplinary Research Methods,XX1U3,16834
-4209019,Research Methods,VA3M2,16834
-2375782,Foundations,HI3G8,16834
-8759906,Data Analytics,OS2G7,69574
-4829898,Energy Storage Systems,FM3F7,69574
-3940636,Database Systems,NF1C4,69574
-7694172,Sustainable Supply Chain Management and the Circular Economy,XD1B3,69574
-5970914,Sustainable Supply Chain Management and the Circular Economy,KD1K8,69574
-5795474,Computer Graphics,LB3N4,15612
-2485526,Interdisciplinary Research Methods,OH3X2,15612
-7738131,Foundations,EK3H2,15612
-7479771,Machine Learning,UB1V5,37649
-3987273,Machine Learning,GG1V6,37649
-4362641,Database Systems,LV3X3,37649
-9552335,Introduction to Python,EU2N4,37649
-8000659,Introduction to Python,QA3W1,37649
+4092056,Computer Graphics,WV2A1,16610
+7668722,Data Analytics,AE1C3,16610
+4017698,Cloud Computing,BZ2U9,16610
+9509732,Database Systems,PK2J1,16610
+4264213,Sustainable Supply Chain Management and the Circular Economy,VJ2S9,16610
+2502502,Introduction to Python,VH3A2,33655
+9600890,Deep Learning,ES1T3,33655
+7837408,Strategy and Operations Management,VF2R8,33655
+3028289,Strategy and Operations Management,XR1O3,32493
+7602089,Deep Learning,TN1B5,32493
+4068184,Data Analytics,TE1Q6,32493
+1960263,Foundations,GP1M5,51680
+2855817,Energy Storage Systems,LS1R1,51680
+2882202,Machine Learning,ZO3P5,51680
+4092105,Computer Graphics,TG3X9,51680
+8165612,Machine Learning,OS3A3,31029
+9446184,Database Systems,PP2A2,31029
+6201784,Foundations,NG2O9,31029
+1970589,Machine Learning,JP3I4,31029
+2358803,Cloud Computing,NX3O3,11212
+5685350,Data Analytics,SO3D2,11212
+8675650,Supply Chain Management,UC2I8,11212
+6819449,Deep Learning,VO2M6,49696
+7712044,Sustainable Supply Chain Management and the Circular Economy,ZI2K7,49696
+5838485,"Fundamentals of Games Research, Development and Management",RF2H4,49696
+2272043,Strategy and Operations Management,ES3I4,49696
+8642145,Computer Graphics,OO2Z2,49696

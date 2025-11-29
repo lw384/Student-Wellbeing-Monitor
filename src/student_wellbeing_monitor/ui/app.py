@@ -1,9 +1,11 @@
 # src/wellbeing_system/ui/app.py
 from flask import Flask, render_template, request, redirect, url_for, flash
-from student_wellbeing_monitor.services.upload_service import import_csv_by_type
-from student_wellbeing_monitor.database import read
 import os
 import math
+from student_wellbeing_monitor.database import read
+from student_wellbeing_monitor.services.upload_service import import_csv_by_type
+from student_wellbeing_monitor.services.wellbeing_service import wellbeing_service
+
 
 app = Flask(
     __name__,
@@ -44,38 +46,40 @@ def dashboard(role):
     ]
 
     # 统计摘要（后面可以用你写的分析函数算出来）
+    summary_card = wellbeing_service.get_dashboard_summary(start_week=1, end_week=8)
     summary = {
-        "avg_sleep": 7.1,
-        "avg_stress": 3.2,
-        "response_count": 38,
-        "response_rate": 76,
+        "response_count": summary_card["surveyResponses"]["studentCount"],
+        "response_rate": summary_card["surveyResponses"]["responseRate"],
+        "avg_sleep": summary_card["avgHoursSlept"],
+        "avg_stress": summary_card["avgStressLevel"],
     }
 
     # 3) 折线图用的数据
-    weeks_for_chart = list(range(1, 9))
-    avg_stress = [3.1, 3.4, 3.6, 3.2, 3.8, 4.0, 3.7, 3.5]
-    avg_sleep = [7.2, 7.0, 6.8, 7.1, 6.5, 6.3, 6.7, 6.9]
+    line = wellbeing_service.get_stress_sleep_trend(start_week=1, end_week=8)
+    items = line.get("items", [])
+
+    weeks_for_chart = [d["week"] for d in items]
+    avg_stress = [d["avgStress"] for d in items]
+    avg_sleep = [d["avgSleep"] for d in items]
 
     # 4) 柱状图用的数据
     modules_for_chart = ["WG1F6", "CS2A4", "ML3B1", "DS2C3"]
     attendance_rate = [0.92, 0.85, 0.78, 0.88]
 
     if role == "wellbeing":
-        students_to_contact = [
-            {
-                "student_id": 5000001,
-                "name": "Alice Smith",
-                "reason": "High stress 4+ weeks",
-                "detail": "Week 4–7 stress ≥ 4, sleep < 6h",
-            },
-            {
-                "student_id": 5000005,
-                "name": "Bob Lee",
-                "reason": "Low sleep, inconsistent surveys",
-                "detail": "Average sleep 4.5h, skipped 3 surveys",
-            },
-        ]
+        table = wellbeing_service.get_risk_students(start_week=1, end_week=8)
 
+        items = table.get("items", [])
+        students_to_contact = []
+        for item in items:
+            students_to_contact.append(
+                {
+                    "student_id": int(item["studentId"]),  # 转 int（可选）
+                    "name": item["name"],
+                    "reason": item["reason"],
+                    "detail": item["details"],  # 注意 key 名不同
+                }
+            )
     return render_template(
         "dashboard.html",
         role=role,
