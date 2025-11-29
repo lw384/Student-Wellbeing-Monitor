@@ -1,9 +1,11 @@
 # src/wellbeing_system/ui/app.py
 from flask import Flask, render_template, request, redirect, url_for, flash
-from student_wellbeing_monitor.services.upload_service import import_csv_by_type
-from student_wellbeing_monitor.database import read
 import os
 import math
+from student_wellbeing_monitor.database import read
+from student_wellbeing_monitor.services.upload_service import import_csv_by_type
+from student_wellbeing_monitor.services.wellbeing_service import wellbeing_service
+
 
 app = Flask(
     __name__,
@@ -24,19 +26,74 @@ def index():
 
 # -------- 2. Dashboard：based on roles --------
 @app.route("/dashboard/<role>")
+@app.route("/dashboard/<role>")
 def dashboard(role):
-    """
-    /dashboard/wellbeing
-    /dashboard/course_leader
-    """
+    # 简单 role 校验
     if role not in ("wellbeing", "course_leader"):
-        # illegal role，return back
         return redirect(url_for("index"))
 
+    # 1. 读取筛选参数（week / module_code），支持 ?week=3&module_code=WG1F6
+    week = request.args.get("week", type=int) or 1
+    module_code = request.args.get("module_code", default="")
+
+    # 2. 先给一些假数据 / 占位数据，保证模板里的变量都有
+    weeks = list(range(1, 13))  # week 1–12
+
+    # 这里先写死两个 module，后面可以从数据库读
+    modules = [
+        {"code": "WG1F6", "name": "AI Fundamentals"},
+        {"code": "CS2A4", "name": "Python Programming"},
+    ]
+
+    # 统计摘要（后面可以用你写的分析函数算出来）
+    summary_card = wellbeing_service.get_dashboard_summary(start_week=1, end_week=8)
+    summary = {
+        "response_count": summary_card["surveyResponses"]["studentCount"],
+        "response_rate": summary_card["surveyResponses"]["responseRate"],
+        "avg_sleep": summary_card["avgHoursSlept"],
+        "avg_stress": summary_card["avgStressLevel"],
+    }
+
+    # 3) 折线图用的数据
+    line = wellbeing_service.get_stress_sleep_trend(start_week=1, end_week=8)
+    items = line.get("items", [])
+
+    weeks_for_chart = [d["week"] for d in items]
+    avg_stress = [d["avgStress"] for d in items]
+    avg_sleep = [d["avgSleep"] for d in items]
+
+    # 4) 柱状图用的数据
+    modules_for_chart = ["WG1F6", "CS2A4", "ML3B1", "DS2C3"]
+    attendance_rate = [0.92, 0.85, 0.78, 0.88]
+
+    if role == "wellbeing":
+        table = wellbeing_service.get_risk_students(start_week=1, end_week=8)
+
+        items = table.get("items", [])
+        students_to_contact = []
+        for item in items:
+            students_to_contact.append(
+                {
+                    "student_id": int(item["studentId"]),  # 转 int（可选）
+                    "name": item["name"],
+                    "reason": item["reason"],
+                    "detail": item["details"],  # 注意 key 名不同
+                }
+            )
     return render_template(
         "dashboard.html",
         role=role,
-        active_page="dashboard",
+        weeks=weeks,
+        current_week=week,
+        modules=modules,
+        current_module=module_code,
+        summary=summary,
+        weeks_for_chart=weeks_for_chart,  # 如果你想区分，可以改前端变量名
+        avg_stress=avg_stress,
+        avg_sleep=avg_sleep,
+        modules_for_chart=modules_for_chart,
+        attendance_rate=attendance_rate,
+        students_to_contact=students_to_contact,
     )
 
 

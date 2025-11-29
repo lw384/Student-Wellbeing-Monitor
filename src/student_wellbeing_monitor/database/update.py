@@ -1,5 +1,5 @@
 # update.py
-from db_core import get_conn
+from .db_core import get_conn
 
 
 def update_wellbeing_stress(student_id: str, week: int, new_stress: int):

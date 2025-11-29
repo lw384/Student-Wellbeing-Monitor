@@ -5,7 +5,7 @@
     <title>Student Wellbeing System</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Bootstrap 5 CDN -->
+  <!-- Bootstrap 5 CDN -->
   
   <!-- Google Font：Inter，偏数据仪表盘风格 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -191,7 +191,6 @@
 </head>
   </head>
 <body>
-
   {% if simple_layout %}
     {# simple_layout：例如 index 登录/选择角色页 #}
     <div class="d-flex align-items-center justify-content-center"
@@ -217,14 +216,14 @@
         <div class="col-2 sidebar pt-3">
           {% if role %}
           <nav class="nav flex-column">
-            <a class="nav-link {% if active_page == 'upload' %}active{% endif %}"
-               href="{{ url_for('upload_data', role=role) }}">
-              Upload Data
-            </a>
-
              <a class="nav-link {% if active_page == 'dashboard' %}active{% endif %}"
                href="{{ url_for('dashboard', role=role) }}">
               Dashboard
+            </a>
+
+            <a class="nav-link {% if active_page == 'upload' %}active{% endif %}"
+               href="{{ url_for('upload_data', role=role) }}">
+              Upload Data
             </a>
 
            <a class="nav-link {% if active_page == 'data' %}active{% endif %}"
@@ -249,7 +248,8 @@
       </div>    {# row #}
     </div>      {# container-fluid #}
   {% endif %}
-
+   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  {% block scripts %}{% endblock %}
 </body>
 </html>
 </html>
