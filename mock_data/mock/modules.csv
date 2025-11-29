@@ -1,28 +1,29 @@
 module_id,module_name,module_code,programme_id
-4092056,Computer Graphics,WV2A1,16610
-7668722,Data Analytics,AE1C3,16610
-4017698,Cloud Computing,BZ2U9,16610
-9509732,Database Systems,PK2J1,16610
-4264213,Sustainable Supply Chain Management and the Circular Economy,VJ2S9,16610
-2502502,Introduction to Python,VH3A2,33655
-9600890,Deep Learning,ES1T3,33655
-7837408,Strategy and Operations Management,VF2R8,33655
-3028289,Strategy and Operations Management,XR1O3,32493
-7602089,Deep Learning,TN1B5,32493
-4068184,Data Analytics,TE1Q6,32493
-1960263,Foundations,GP1M5,51680
-2855817,Energy Storage Systems,LS1R1,51680
-2882202,Machine Learning,ZO3P5,51680
-4092105,Computer Graphics,TG3X9,51680
-8165612,Machine Learning,OS3A3,31029
-9446184,Database Systems,PP2A2,31029
-6201784,Foundations,NG2O9,31029
-1970589,Machine Learning,JP3I4,31029
-2358803,Cloud Computing,NX3O3,11212
-5685350,Data Analytics,SO3D2,11212
-8675650,Supply Chain Management,UC2I8,11212
-6819449,Deep Learning,VO2M6,49696
-7712044,Sustainable Supply Chain Management and the Circular Economy,ZI2K7,49696
-5838485,"Fundamentals of Games Research, Development and Management",RF2H4,49696
-2272043,Strategy and Operations Management,ES3I4,49696
-8642145,Computer Graphics,OO2Z2,49696
+1506687,"Fundamentals of Games Research, Development and Management",QR3M1,66210
+4225992,Deep Learning,XF2H9,66210
+7803146,"Fundamentals of Games Research, Development and Management",PN3A8,66210
+8904772,Machine Learning,QZ3E5,66210
+9215619,Sustainable Supply Chain Management and the Circular Economy,SJ2J7,70164
+8220381,Sustainable Supply Chain Management and the Circular Economy,NU3Z3,70164
+4339099,Introduction to Python,QW1H5,70164
+7141831,Strategy and Operations Management,ME3P5,70164
+9695813,Computer Graphics,WC3Z6,70164
+7401675,Computer Graphics,FJ3S8,67656
+9636431,Research Methods,GP3S7,67656
+8160773,Database Systems,CD2D1,67656
+9137254,Deep Learning,QI3O8,15958
+7804269,Computer Graphics,NY1G5,15958
+5840408,Machine Learning,GE1H6,15958
+9107063,Sustainable Supply Chain Management and the Circular Economy,OU3D2,15958
+8654288,Database Systems,UV3G8,84524
+4356593,Machine Learning,FX1J9,84524
+8780216,Supply Chain Management,AF2O7,84524
+3126316,Machine Learning,JH3V1,84524
+7737497,Computer Graphics,JA3C8,30876
+8310634,Energy Storage Systems,AZ3L9,30876
+9182494,Machine Learning,RX1W7,30876
+6715929,Computer Graphics,DC1E3,30876
+3382403,Machine Learning,YY3H9,13046
+3048956,Introduction to Python,SI1L1,13046
+6901492,Supply Chain Management,CW1M7,13046
+9085971,Supply Chain Management,HB3E4,13046
