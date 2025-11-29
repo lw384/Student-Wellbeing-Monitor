@@ -5,7 +5,7 @@ import string
 
 
 # ------------------------------
-# 1. Programme（专业）生成
+# 1. Programme
 # ------------------------------
 def generate_programmes() -> list[dict]:
     """
@@ -52,7 +52,7 @@ def generate_programmes() -> list[dict]:
 
 
 # ------------------------------
-# 2. Student 生成（每个绑定一个 programme）
+# 2. Student (with one programme)
 # ------------------------------
 
 
@@ -76,7 +76,7 @@ def generate_students(programmes: list[dict], n: int = 20) -> list[dict]:
         email_local = name.lower().replace(" ", ".").replace("-", "").replace("'", "")
         email = f"{email_local}.{random.randint(1, 99)}@warwick.ac.uk"
 
-        # 随机分配一个 programme
+        # random programme
         prog = random.choice(programmes)
 
         students.append(
@@ -84,8 +84,8 @@ def generate_students(programmes: list[dict], n: int = 20) -> list[dict]:
                 "student_id": student_id,
                 "name": name,
                 "email": email,
-                "programme_id": prog["programme_id"],  # 绑定专业
-                "modules": "",  # 后面 generate_student_modules 再填
+                "programme_id": prog["programme_id"],
+                "modules": "",  #
             }
         )
 
@@ -93,7 +93,7 @@ def generate_students(programmes: list[dict], n: int = 20) -> list[dict]:
 
 
 # ------------------------------
-# 3. Module 生成（按 programme 分配课程）
+# 3. Module (with programme)
 # ------------------------------
 
 

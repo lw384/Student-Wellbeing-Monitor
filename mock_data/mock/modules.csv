@@ -1,31 +1,29 @@
 module_id,module_name,module_code,programme_id
-4408052,Database Systems,NW1E9,36556
-1685180,Introduction to Python,QD3E3,36556
-1530783,Energy Storage Systems,PM3E4,36556
-3917379,Sustainable Supply Chain Management and the Circular Economy,SL1R8,36556
-5216503,Sustainable Supply Chain Management and the Circular Economy,RO3Z5,36556
-2271275,Energy Storage Systems,RN2S1,56883
-9724486,Research Methods,IM2A7,56883
-6446156,Introduction to Python,RW2C1,56883
-3997414,Foundations,LP3G4,56883
-3067652,Data Analytics,QL1V6,71833
-9535353,Interdisciplinary Research Methods,BH1A1,71833
-6638719,Machine Learning,XQ2A1,71833
-8752076,Energy Storage Systems,YW1L6,71833
-5330197,Database Systems,YL1H1,71833
-9435085,Supply Chain Management,TX3L4,72126
-2353726,Sustainable Supply Chain Management and the Circular Economy,EV1W7,72126
-6574804,Research Methods,OR2I7,72126
-1837609,Research Methods,JK1J3,99305
-1508735,Research Methods,YW1K4,99305
-4212416,Cloud Computing,NK3J7,99305
-4796125,Introduction to Python,LC3Y4,99305
-8382657,Research Methods,XH2T3,83492
-5441649,Introduction to Python,LJ1X6,83492
-8581514,"Fundamentals of Games Research, Development and Management",BK1X3,83492
-6833308,"Fundamentals of Games Research, Development and Management",LO1Q8,83492
-7181611,Interdisciplinary Research Methods,XS1E7,65075
-4026843,Interdisciplinary Research Methods,JQ3L6,65075
-5462594,"Fundamentals of Games Research, Development and Management",VX1K1,65075
-7073669,Deep Learning,OO3I5,65075
-3255996,Database Systems,TG2H1,65075
+6881969,Database Systems,HU3D5,94924
+6290004,Computer Graphics,OB1E1,94924
+3008067,Supply Chain Management,NF1H1,94924
+5665563,"Fundamentals of Games Research, Development and Management",WS2V4,98445
+7754571,Strategy and Operations Management,CF3N3,98445
+6683623,Foundations,HA3E1,98445
+7789128,Computer Graphics,VX3F3,77267
+5121167,Energy Storage Systems,FH1D1,77267
+3298757,Foundations,QC3Z3,77267
+3933399,Computer Graphics,YT2K6,77267
+4517942,Sustainable Supply Chain Management and the Circular Economy,ZL2N3,77267
+6046826,Research Methods,YZ1C4,96819
+4163258,"Fundamentals of Games Research, Development and Management",JV3T6,96819
+2556419,Computer Graphics,SV2M9,96819
+3462205,Foundations,KS2W9,94069
+3463940,Foundations,QV3N9,94069
+6966816,Interdisciplinary Research Methods,YY2W5,94069
+6761792,Energy Storage Systems,JN3I1,94069
+1068976,Database Systems,MX2V5,94069
+4347613,Database Systems,CF3C7,70159
+9290719,Energy Storage Systems,OT1J4,70159
+8255304,Energy Storage Systems,LL3P4,70159
+9305211,Database Systems,LT2W5,70159
+8823013,Introduction to Python,VJ1J1,70159
+9699589,"Fundamentals of Games Research, Development and Management",NW2C9,56239
+5137802,Supply Chain Management,UG3L8,56239
+1969828,Foundations,OP1R7,56239
+2334726,Deep Learning,TF3Q8,56239

@@ -1,5 +1,6 @@
 """Generate behaviour data: wellbeing submission attendance"""
 
+# poetry run python mock_data/scripts/generate_behaviour.py
 from pathlib import Path
 import argparse
 from mock_core import (
@@ -7,11 +8,12 @@ from mock_core import (
     WELLBEING_FIELDS,
     ATTENDANCE_FIELDS,
     SUBMISSION_FIELDS,
+    generate_wellbeing_by_week,
     generate_attendance_by_week,
     generate_submissions_by_module,
-    generate_wellbeing_by_week,
     load_csv,
     write_csv,
+    clean_old_behaviour_files,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]  # Student-Wellbeing-Monitor
@@ -24,7 +26,7 @@ STU_MODULE_CSV = MOCK_DIR / "student_module.csv"
 # Prefix - output filename
 WELLBEING_PREFIX = "wellbeing_week"  # wellbeing_week1.csv ...
 ATTENDANCE_PREFIX = "attendance_week"  # attendance_week1.csv ...
-SUBMISSIONS_CSV = "submissions.csv"
+SUBMISSIONS_PREFIX = "submissions_"
 
 
 def parse_args():
@@ -49,48 +51,44 @@ def parse_args():
 def main() -> None:
     args = parse_args()
     out_dir = Path(args.out)
+    clean_old_behaviour_files(MOCK_DIR)
 
     # 1. read entities
     students = load_csv(STUDENTS_CSV)
     modules = load_csv(MODULES_CSV)
     student_modules = load_csv(STU_MODULE_CSV)
 
-    # 3. 生成 wellbeing / attendance / submissions
+    # 2. wellbeing / attendance / submissions
     wellbeing_by_week = generate_wellbeing_by_week(students, weeks=args.weeks)
-    # attendance_by_week = generate_attendance_by_week(student_modules, weeks=args.weeks)
-    # submissions = generate_submissions(student_modules)
+    attendance_by_week = generate_attendance_by_week(
+        student_modules, modules, weeks=args.weeks
+    )
+    submissions = generate_submissions_by_module(student_modules, modules)
 
-    # 4. 写 CSV：wellbeing_weekX / attendance_weekX / submissions.csv
+    # 3. write CSV：wellbeing_weekX / attendance_weekX / submission_.csv
     # wellbeing
-
     for week, rows in wellbeing_by_week.items():
         if not rows:
             continue
         path = out_dir / f"{WELLBEING_PREFIX}{week}.csv"
         write_csv(path, WELLBEING_FIELDS, rows)
 
-    # # attendance
-    # for week, rows in attendance_by_week.items():
-    #     if not rows:
-    #         continue
-    #     path = out_dir / f"{ATTENDANCE_PREFIX}{week}.csv"
-    #     write_csv(
-    #         path,
-    #         ["student_id", "module_id", "week", "session_number", "status"],
-    #         rows,
-    #     )
+    # attendance
+    for week, rows in attendance_by_week.items():
+        if not rows:
+            continue
+        path = out_dir / f"{ATTENDANCE_PREFIX}{week}.csv"
+        write_csv(path, ATTENDANCE_FIELDS, rows)
 
-    # # submissions
-    # write_csv(
-    #     SUBMISSIONS_CSV,
-    #     ["student_id", "module_id", "assignment_no", "submitted", "grade"],
-    #     submissions,
-    # )
+    # submissions
+    for module_code, rows in submissions.items():
+        path = out_dir / f"submissions_{module_code}.csv"
+        write_csv(path, SUBMISSION_FIELDS, rows)
 
     print(f"✅ Behaviour CSV generated in: {out_dir.resolve()}")
     print(f"   - wellbeing_week*.csv")
     print(f"   - attendance_week*.csv")
-    print(f"   - submissions.csv")
+    print(f"   - submissions_*.csv")
 
 
 if __name__ == "__main__":

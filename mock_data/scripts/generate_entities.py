@@ -1,5 +1,6 @@
 """Generate basic data: programme module student"""
 
+# poetry run python mock_data/scripts/generate_entities.py
 from pathlib import Path
 import argparse
 from mock_core import (
@@ -13,6 +14,7 @@ from mock_core import (
     generate_modules,
     generate_student_modules,
     write_csv,
+    clean_mock_csv,
 )
 
 
@@ -44,6 +46,7 @@ def parse_args():
 def main():
     args = parse_args()
     out_dir = Path(args.out)
+    clean_mock_csv(out_dir)
 
     programmes = generate_programmes()
     students = generate_students(programmes, args.students)

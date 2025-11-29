@@ -12,6 +12,7 @@ from .base import (
     write_csv,
     load_csv,
     clean_mock_csv,
+    clean_old_behaviour_files,
 )
 from .entities import (
     generate_students,

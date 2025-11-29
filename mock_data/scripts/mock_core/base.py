@@ -53,6 +53,23 @@ def clean_mock_csv(output_dir: Path):
         f.unlink()  # 删除文件
 
 
+def clean_old_behaviour_files(out_dir: Path):
+    """
+    only delete previous wellbeing_xxx.csv、attendance_xxx.csv、submissions_xxx.csv
+    save entities' data
+    """
+    prefixes = ["wellbeing_", "attendance_", "submissions_"]
+
+    removed = 0
+    for csv_file in out_dir.glob("*.csv"):
+        name = csv_file.name
+        if any(name.startswith(p) for p in prefixes):
+            csv_file.unlink()  # 删除文件
+            removed += 1
+
+    print(f"🧹 Cleaned {removed} old behaviour CSV files.")
+
+
 def load_csv(path: Path) -> list[dict]:
     with path.open("r", encoding="utf-8") as f:
         return list(csv.DictReader(f))
