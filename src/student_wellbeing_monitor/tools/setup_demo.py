@@ -1,6 +1,7 @@
 import csv
 import subprocess
 import sys
+import argparse
 from pathlib import Path
 from student_wellbeing_monitor.database import create
 from student_wellbeing_monitor.database.schema import init_db_schema
@@ -8,15 +9,39 @@ from student_wellbeing_monitor.tools.reset_db import reset_database
 
 BASE_DIR = Path(__file__).resolve().parents[3]
 MOCK_DIR = BASE_DIR / "mock_data" / "mock"
+
 MOCK_SCRIPT = BASE_DIR / "mock_data" / "scripts" / "generate_entities.py"
+BEHAVIOUR_SCRIPT = BASE_DIR / "mock_data" / "scripts" / "generate_behaviour.py"
 
 print("Path------------", BASE_DIR, "----", MOCK_DIR, MOCK_SCRIPT)
 
 
-def run_generate_mock():
-    print("🛠 Generating mock CSV...")
+def parse_args():
+    parser = argparse.ArgumentParser(description="Setup demo database")
+    parser.add_argument(
+        "--with-mock",
+        action="store_true",
+        help="Import mock wellbeing/attendance/submission data into database",
+    )
+    return parser.parse_args()
+
+
+def run_generate_entities():
+    print("🛠 Generating mock entities CSV...")
     result = subprocess.run(
         [sys.executable, str(MOCK_SCRIPT)], capture_output=True, text=True
+    )
+    print(result.stdout)
+    if result.returncode != 0:
+        print(result.stderr)
+        raise RuntimeError("❌ CSV generation failed!")
+    print("✅ CSV generated.")
+
+
+def run_generate_mock():
+    print("🛠 Generating mock wellbeing/submission/attendance CSV...")
+    result = subprocess.run(
+        [sys.executable, str(BEHAVIOUR_SCRIPT)], capture_output=True, text=True
     )
     print(result.stdout)
     if result.returncode != 0:
@@ -82,15 +107,96 @@ def seed_student_module():
     print("✅ student_module inserted.")
 
 
+def seed_wellbeing():
+    csv_path = MOCK_DIR / "student_module.csv"
+    print(f"🌱 Seeding student_module from: {csv_path}")
+
+    with csv_path.open("r", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            create.insert_wellbeing(
+                student_id=row["student_id"],
+                module_id=row["module_id"],
+            )
+    print("✅ student_module inserted.")
+
+
+def seed_wellbeing():
+    files = sorted(MOCK_DIR.glob("wellbeing_week*.csv"))
+    if not files:
+        print("⚠️ No wellbeing_week*.csv found, skip seeding wellbeing.")
+        return
+
+    print("🌱 Seeding wellbeing records from weekly CSVs...")
+
+    total_rows = 0
+    for csv_path in files:
+        print(f"  - {csv_path.name}")
+        with csv_path.open("r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                create.insert_wellbeing(
+                    student_id=row["student_id"],
+                    week=int(row["week"]),
+                    stress_level=int(row["stress_level"]),
+                    hours_slept=float(row["hours_slept"]),
+                    comment=row["comment"],
+                )
+                total_rows += 1
+
+    print(f"✅ Wellbeing records inserted: {total_rows}")
+
+
+def seed_attendance():
+    csv_path = MOCK_DIR / "student_module.csv"
+    print(f"🌱 Seeding student_module from: {csv_path}")
+
+    with csv_path.open("r", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            create.insert_student_module(
+                student_id=row["student_id"],
+                module_id=row["module_id"],
+            )
+    print("✅ student_module inserted.")
+
+
+def seed_submission():
+    csv_path = MOCK_DIR / "student_module.csv"
+    print(f"🌱 Seeding student_module from: {csv_path}")
+
+    with csv_path.open("r", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            create.insert_student_module(
+                student_id=row["student_id"],
+                module_id=row["module_id"],
+            )
+    print("✅ student_module inserted.")
+
+
 def setup_demo():
-    run_generate_mock()
+    args = parse_args()
+
+    # 1. generate mock data
+    run_generate_entities()
+    # 2. clear database
     reset_database()
+    # 3. create data schema
     init_db_schema()
 
+    # 4. insert basic data
     seed_programme()
     seed_student()
     seed_module()
     seed_student_module()
+    print("🎉 Mock basic data inserted.")
+
+    # 5. insert addtional data: poetry run setup-demo --with-mock
+    if args.with_mock:
+        run_generate_mock()
+        print(" Importing mock wellbeing / attendance / submission.")
+        seed_wellbeing()
+        # seed_attendance()
+        # seed_submission()
+        print("🎉 Mock dynamic data inserted.")
 
     print("🎉 Demo database ready!")
 

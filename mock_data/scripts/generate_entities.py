@@ -1,4 +1,5 @@
-# data/scripts/generate_students_modules.py
+"""Generate basic data: programme module student"""
+
 from pathlib import Path
 import argparse
 from mock_core import (

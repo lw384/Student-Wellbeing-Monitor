@@ -44,7 +44,7 @@ def insert_student(
 
 
 # ================== Module  (Create) ==================
-def insert_module(module_id, module_name, module_code, programme_id):
+def insert_module(module_id: str, module_name, module_code, programme_id):
     """Create a new module."""
     conn = get_conn()
     cur = conn.cursor()
@@ -88,14 +88,14 @@ def insert_student_module(student_id: str, module_id: str):
 # ================== Wellbeing (Create) ==================
 
 
-def add_wellbeing(sid, week, stress, sleep_hours):
+def insert_wellbeing(student_id, week, stress_level, hours_slept, comment=None):
     """Create a wellbeing record."""
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO wellbeing (student_id, week, stress_level, hours_slept) "
-        "VALUES (?, ?, ?, ?)",
-        (sid, week, stress, sleep_hours),
+        "INSERT INTO wellbeing (student_id, week, stress_level, hours_slept, comment) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (student_id, week, stress_level, hours_slept, comment),
     )
     conn.commit()
     wid = cur.lastrowid

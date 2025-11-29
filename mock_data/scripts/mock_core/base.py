@@ -4,14 +4,15 @@ import csv
 
 fake = Faker()
 
-# 默认输出目录
+# Default mock data output path
 DEFAULT_OUTPUT_DIR = Path("mock_data/mock")
 
-# 各表字段
+# schema
 STUDENT_FIELDS = ["student_id", "name", "email", "programme_id", "modules"]
 PROGRAMME_FIELDS = ["programme_id", "programme_name", "programme_code"]
 MODULE_FIELDS = ["module_id", "module_name", "module_code", "programme_id"]
 STUDENT_MODULE_FIELDS = ["student_id", "module_id"]
+WELLBEING_FIELDS = ["student_id", "week", "stress_level", "hours_slept", "comment"]
 ATTENDANCE_FIELDS = [
     "student_id",
     "module_id",
@@ -20,7 +21,6 @@ ATTENDANCE_FIELDS = [
     "attendance_status",
 ]
 SUBMISSION_FIELDS = ["student_id", "module_id", "module_code", "submitted", "grade"]
-WELLBEING_FIELDS = ["student_id", "week", "stress_level", "hours_slept", "comment"]
 
 
 def write_csv(filename: Path, fieldnames: list[str], rows: list[dict]) -> None:
@@ -51,3 +51,8 @@ def clean_mock_csv(output_dir: Path):
     for f in output_dir.glob("*.csv"):
         print(f"Removing {f}")
         f.unlink()  # 删除文件
+
+
+def load_csv(path: Path) -> list[dict]:
+    with path.open("r", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
