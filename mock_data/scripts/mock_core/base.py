@@ -20,7 +20,15 @@ ATTENDANCE_FIELDS = [
     "week",
     "attendance_status",
 ]
-SUBMISSION_FIELDS = ["student_id", "module_id", "module_code", "submitted", "grade"]
+SUBMISSION_FIELDS = [
+    "student_id",
+    "module_id",
+    "module_code",
+    "submitted",
+    "due_date",
+    "submit_date",
+    "grade",
+]
 
 
 def write_csv(filename: Path, fieldnames: list[str], rows: list[dict]) -> None:

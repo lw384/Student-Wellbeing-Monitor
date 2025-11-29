@@ -106,13 +106,13 @@ def insert_wellbeing(student_id, week, stress_level, hours_slept, comment=None):
 # ================== Attendance (Create) ==================
 
 
-def add_attendance(sid, week, status):
-    """status: present / absent / late"""
+def insert_attendance(student_id, module_id, week, status, session_number=1):
+    """status: 1 present / 0 absent"""
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO attendance (student_id, week, status) VALUES (?, ?, ?)",
-        (sid, week, status),
+        "INSERT INTO attendance (student_id, module_id, week, status, session_number) VALUES (?, ?, ?, ? ,?)",
+        (student_id, module_id, week, status, session_number),
     )
     conn.commit()
     aid = cur.lastrowid
@@ -123,15 +123,26 @@ def add_attendance(sid, week, status):
 # ================== Assignment / Submission (Create) ==================
 
 
-def add_submission(sid, ass_id, due_date, submit_date, grade):
+def insert_submission(
+    student_id,
+    module_id,
+    due_date,
+    submit_date,
+    grade=None,
+    submitted=None,
+    assignment_no=1,
+):
     """Create a submission record."""
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO submissions "
-        "(student_id, assignment_id, due_date, submit_date, grade) "
-        "VALUES (?, ?, ?, ?, ?)",
-        (sid, ass_id, due_date, submit_date, grade),
+        """
+        INSERT INTO submission (
+            student_id, module_id, assignment_no,
+            submitted, grade, due_date, submit_date
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (student_id, module_id, assignment_no, submitted, grade, due_date, submit_date),
     )
     conn.commit()
     new_id = cur.lastrowid

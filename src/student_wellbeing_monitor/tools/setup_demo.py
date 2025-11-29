@@ -1,3 +1,5 @@
+# poetry run setup-demo
+# poetry run setup-demo --with-mock
 import csv
 import subprocess
 import sys
@@ -147,29 +149,59 @@ def seed_wellbeing():
 
 
 def seed_attendance():
-    csv_path = MOCK_DIR / "student_module.csv"
-    print(f"🌱 Seeding student_module from: {csv_path}")
+    files = sorted(MOCK_DIR.glob("attendance_week*.csv"))
+    if not files:
+        print("⚠️ No attendance_week*.csv found, skip seeding wellbeing.")
+        return
 
-    with csv_path.open("r", encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            create.insert_student_module(
-                student_id=row["student_id"],
-                module_id=row["module_id"],
-            )
-    print("✅ student_module inserted.")
+    print("🌱 Seeding attendance records from weekly CSVs...")
+
+    total_rows = 0
+    for csv_path in files:
+        print(f"  - {csv_path.name}")
+        with csv_path.open("r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                create.insert_attendance(
+                    student_id=row["student_id"],
+                    module_id=int(row["module_id"]),
+                    week=int(row["week"]),
+                    status=int(row["attendance_status"]),
+                )
+                total_rows += 1
+
+    print(f"✅ Attendance records inserted: {total_rows}")
 
 
 def seed_submission():
-    csv_path = MOCK_DIR / "student_module.csv"
-    print(f"🌱 Seeding student_module from: {csv_path}")
+    files = sorted(MOCK_DIR.glob("submissions_*.csv"))
+    if not files:
+        print("⚠️ No submissions_*.csv found, skip seeding wellbeing.")
+        return
 
-    with csv_path.open("r", encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            create.insert_student_module(
-                student_id=row["student_id"],
-                module_id=row["module_id"],
-            )
-    print("✅ student_module inserted.")
+    print("🌱 Seeding submission records from weekly CSVs...")
+
+    total_rows = 0
+    for csv_path in files:
+        print(f"  - {csv_path.name}")
+        with csv_path.open("r", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                # grade may = ""
+                grade_str = row.get("grade", "").strip()
+                grade = float(grade_str) if grade_str != "" else None
+
+                create.insert_submission(
+                    student_id=row["student_id"],
+                    module_id=int(row["module_id"]),
+                    submitted=int(row["submitted"]),
+                    due_date=row["due_date"],
+                    submit_date=row["submit_date"],
+                    grade=grade,
+                )
+                total_rows += 1
+
+    print(f"✅ Submission records inserted: {total_rows}")
 
 
 def setup_demo():
@@ -194,8 +226,8 @@ def setup_demo():
         run_generate_mock()
         print(" Importing mock wellbeing / attendance / submission.")
         seed_wellbeing()
-        # seed_attendance()
-        # seed_submission()
+        seed_attendance()
+        seed_submission()
         print("🎉 Mock dynamic data inserted.")
 
     print("🎉 Demo database ready!")
