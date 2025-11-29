@@ -47,30 +47,30 @@ def generate_wellbeing_by_week(
             if random.random() > response_rate:
                 continue
 
-            # 生成 stress 和 sleep
+            #
             # basic random fluctuation
             stress = base_stress + random.choice([-1, 0, 0, 1])
-            hours_slept = random.randint(6, 8)
+            hours_slept = random.randint(6, 9)
 
             if profile == "chronic_stress":
                 stress = base_stress + int(w / (weeks / 3)) + random.choice([0, 0, 1])
-                hours_slept = random.randint(5, 7)
+                hours_slept = random.randint(0, 7)
 
             elif profile == "low_sleep_hidden_stress":
-                hours_slept = random.randint(1, 6)
+                hours_slept = random.randint(0, 6)
                 stress = random.randint(1, 3)
 
             else:
-                # normal 学生：stress 1–4 之间小波动
+                # normal：stress 1–4
                 stress = base_stress + random.choice([-1, 0, 0, 1])
 
             # exam_week
             if w in exam_weeks:
-                stress += 1  # 全体压力更大
-                hours_slept -= 1  # 睡得更少
+                stress += 1
+                hours_slept -= 1
 
             stress = max(1, min(5, stress))
-            hours_slept = max(1, min(9, hours_slept))
+            hours_slept = max(1, min(12, hours_slept))
 
             row = {
                 "student_id": s["student_id"],

@@ -2,38 +2,96 @@
 from student_wellbeing_monitor.database.db_core import get_conn, _hash_pwd
 import sqlite3 as _sqlite3
 import pandas as pd
+from typing import List, Optional, Tuple
 
 
 # ================== Student-related (Read) ==================
-def get_all_students():
-    """Return (student_id, name, email) for all students."""
+def _query_students(
+    programme_id: Optional[str] = None,
+    student_id: Optional[str] = None,
+):
+    """内部通用 student 查询函数，不对外暴露"""
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT student_id, name, email FROM students")
+
+    base_sql = """
+        SELECT student_id, name, email, programme_id
+        FROM student
+    """
+    params = []
+    conditions = []
+
+    if programme_id and programme_id.strip():
+        conditions.append("programme_id = ?")
+        params.append(programme_id)
+
+    if student_id and student_id.strip():
+        conditions.append("student_id = ?")
+        params.append(student_id)
+
+    if conditions:
+        base_sql += " WHERE " + " AND ".join(conditions)
+
+    cur.execute(base_sql, params)
     rows = cur.fetchall()
     conn.close()
+
     return rows
 
 
-def get_student_information(sid):
-    """Return (student_id, name) for a single student."""
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("SELECT student_id, name FROM students WHERE student_id = ?", (sid,))
-    row = cur.fetchone()
-    conn.close()
-    return row
+def get_all_students():
+    return _query_students()
+
+
+def get_students_by_programme(pid):
+    """Return student information in one programme."""
+    return _query_students(programme_id=pid)
+
+
+def get_student_by_id(sid):
+    """Return student information for a single student."""
+    rows = _query_students(student_id=sid)
+    return rows[0] if rows else None
 
 
 # ================== Wellbeing (Read) ==================
-def get_wellbeing_by_student(sid):
+def get_wellbeing_records(
+    start_week: int,
+    end_week: int,
+    programme_id: Optional[str] = None,
+    student_id: Optional[str] = None,
+):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(
-        "SELECT week, stress_level, hours_slept "
-        "FROM wellbeing WHERE student_id = ? ORDER BY week",
-        (sid,),
-    )
+
+    # ------ 1. 基础 SQL ------
+    sql = """
+        SELECT 
+            w.student_id,
+            w.week,
+            w.stress_level,
+            w.hours_slept,
+            s.programme_id
+        FROM wellbeing AS w
+        JOIN student AS s ON w.student_id = s.student_id
+        WHERE w.week BETWEEN ? AND ?
+    """
+
+    params = [start_week, end_week]
+
+    # ------ 2. programme_id ------
+    if programme_id is not None:
+        sql += " AND s.programme_id = ?"
+        params.append(programme_id)
+
+    if student_id is not None:
+        sql += " AND w.student_id = ?"
+        params.append(student_id)
+
+    # ------ 3. sort ------
+    sql += " ORDER BY w.student_id, w.week"
+
+    cur.execute(sql, params)
     rows = cur.fetchall()
     conn.close()
     return rows

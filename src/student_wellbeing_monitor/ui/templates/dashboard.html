@@ -27,7 +27,7 @@
     </div>
   </div>
 
-  {# ==== 筛选区: Week + Module ==== #}
+  {# ==== filter: Week + Programme ==== #}
   <div class="card-elevated mb-3">
     <form class="row g-3 align-items-end" method="get"
           action="{{ url_for('dashboard', role=role) }}">
@@ -66,7 +66,7 @@
           Module
         </label>
         <select name="module_code" class="form-select form-select-sm">
-          <option value="">All modules</option>
+          <option value="">All programmes</option>
           {# modules 是后端传入的 [{code, name}] 列表 #}
           {% for m in modules|default([]) %}
             <option value="{{ m.code }}"
@@ -96,7 +96,7 @@
         </div>
         <div class="d-flex align-items-baseline gap-2">
           <span class="fs-3 fw-semibold">
-            {{ summary.avg_sleep|default(7.2) }}
+            {{ summary.avg_sleep|default('--') }}
           </span>
           <span class="text-muted small">hrs / night</span>
         </div>
@@ -115,7 +115,7 @@
         </div>
         <div class="d-flex align-items-baseline gap-2">
           <span class="fs-3 fw-semibold">
-            {{ summary.avg_stress|default(3.4) }}
+            {{ summary.avg_stress|default('--') }}
           </span>
           <span class="text-muted small">/ 5</span>
         </div>
@@ -134,12 +134,12 @@
         </div>
         <div class="d-flex align-items-baseline gap-2">
           <span class="fs-3 fw-semibold">
-            {{ summary.response_count|default(42) }}
+            {{ summary.response_count|default('--') }}
           </span>
           <span class="text-muted small">students</span>
         </div>
         <p class="text-muted small mb-0 mt-1">
-          Response rate {{ summary.response_rate|default(78) }}%.
+          Response rate {{ summary.response_rate|default('--') }}%.
         </p>
       </div>
     </div>
@@ -157,7 +157,7 @@
   </div>
 
   {# ==== 柱状图：按课程的出勤率 / 成绩 ==== #}
-  <div class="card-elevated mb-3">
+  <!-- <div class="card-elevated mb-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="mb-0">Attendance Rate by Module</h6>
       <span class="text-muted small">0–100% attendance</span>
@@ -165,7 +165,7 @@
     <div style="height: 320px;">
       <canvas id="barChart"></canvas>
     </div>
-  </div>
+  </div> -->
 
     {# ==== 需要联系的学生列表 ==== #}
   <div class="card-elevated mb-3">
@@ -204,10 +204,10 @@
                 <td>{{ s.reason }}</td>
                 <td>{{ s.detail }}</td>
                 <td>
-                  <a class="btn btn-sm btn-outline-primary"
+                  <!-- <a class="btn btn-sm btn-outline-primary"
                      href="{{ url_for('view_data', role=role, data_type='wellbeing') }}">
                     View record
-                  </a>
+                  </a> -->
                 </td>
               </tr>
             {% endfor %}
