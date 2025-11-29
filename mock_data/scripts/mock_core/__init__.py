@@ -3,6 +3,7 @@ from .base import (
     fake,
     DEFAULT_OUTPUT_DIR,
     STUDENT_FIELDS,
+    PROGRAMME_FIELDS,
     MODULE_FIELDS,
     STUDENT_MODULE_FIELDS,
     ATTENDANCE_FIELDS,
@@ -15,6 +16,7 @@ from .entities import (
     generate_students,
     generate_modules,
     generate_student_modules,
+    generate_programmes,
 )
 from .wellbeing import generate_wellbeing_by_week
 from .attendance import generate_attendance_by_week

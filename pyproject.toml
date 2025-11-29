@@ -22,3 +22,4 @@ build-backend = "poetry.core.masonry.api"
 
 [project.scripts]
 wellbeing-web = "student_wellbeing_monitor.ui.app:run_app"
+setup-demo = "student_wellbeing_monitor.tools.setup_demo:setup_demo"

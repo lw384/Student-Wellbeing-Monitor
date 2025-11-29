@@ -5,11 +5,14 @@ from student_wellbeing_monitor.database.db_core import get_conn, _hash_pwd
 # ================== Student-related (Create) ==================
 
 
-def insert_student(name, email=None):
+def insert_student(student_id, name, email=None):
     """Create a new student."""
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("INSERT INTO students (name, email) VALUES (?, ?)", (name, email))
+    cur.execute(
+        "INSERT INTO students (student_id, name, email) VALUES (?, ?, ?)",
+        (student_id, name, email),
+    )
     conn.commit()
     sid = cur.lastrowid
     conn.close()

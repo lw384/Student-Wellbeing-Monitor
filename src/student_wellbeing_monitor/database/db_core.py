@@ -1,21 +1,24 @@
 # db_core.py
 import os
+from pathlib import Path
 import sqlite3
 import hashlib
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-DB_PATH = os.path.join(
-    BASE_DIR,
-    "..", "..", "..",
-    "database", "data", "student.db"
-)
-DB_PATH = os.path.normpath(DB_PATH)
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+
+DB_PATH = PROJECT_ROOT / "database" / "data" / "student.db"
 
 
-def get_conn():
-    """Return a new SQLite connection."""
-    return sqlite3.connect(DB_PATH)
+def get_conn(row_factory=None):
+    """Get SQLite connection with optional row_factory."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA foreign_keys = ON;")
+
+    if row_factory is not None:
+        conn.row_factory = row_factory
+
+    return conn
 
 
 def _hash_pwd(pwd: str) -> str:

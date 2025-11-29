@@ -8,7 +8,8 @@ fake = Faker()
 DEFAULT_OUTPUT_DIR = Path("mock_data/mock")
 
 # 各表字段
-STUDENT_FIELDS = ["student_id", "name", "email", "modules"]
+STUDENT_FIELDS = ["student_id", "name", "email", "programme_id", "modules"]
+PROGRAMME_FIELDS = ["programme_id", "programme_name", "programme_code"]
 MODULE_FIELDS = ["module_id", "module_name", "module_code"]
 STUDENT_MODULE_FIELDS = ["student_id", "module_id"]
 ATTENDANCE_FIELDS = [
