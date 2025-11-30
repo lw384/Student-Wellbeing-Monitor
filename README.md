@@ -5,7 +5,7 @@ A prototype system designed to support the Student Wellbeing Office and Course D
 ## Project Setup – Poetry Environment
 
 This project uses Poetry to manage dependencies, virtual environments and scripts.
-Before starting, ensure Poetry is installed:
+Before starting, ensure **Poetry** is installed:
 
 ```
 pip install poetry
@@ -16,6 +16,26 @@ From the project root:
 ```
 poetry install
 ```
+setup with mock data
+
+```
+poetry run start
+```
+
+Insert mock data to database
+
+``````
+poetry run setup-demo
+``````
+
+Setup project without mock 
+
+``````
+poetry run wellbeing-web
+``````
+
+
+
 ## Project Structure
 
 ```

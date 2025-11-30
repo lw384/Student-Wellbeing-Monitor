@@ -1,4 +1,7 @@
+# 生成假数据、插入数据库中
+# 只插入student\programme\module相关数据
 # poetry run setup-demo
+# 所有数据全部都插入，运行下边这条命令
 # poetry run setup-demo --with-mock
 import csv
 import subprocess
