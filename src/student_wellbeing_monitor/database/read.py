@@ -97,6 +97,19 @@ def get_wellbeing_records(
     return rows
 
 
+def get_all_weeks() -> list[int]:
+    """
+    week in wellbeing Ex: [1,2,3,...,8]
+    """
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT DISTINCT week FROM wellbeing ORDER BY week")
+    rows = cur.fetchall()
+    conn.close()
+    # rows ： [(1,), (2,), (3,)] →  [1,2,3]
+    return [r[0] for r in rows]
+
+
 def count_wellbeing():
     conn = get_conn()
     cur = conn.cursor()
@@ -118,6 +131,26 @@ def get_wellbeing_page(limit=20, offset=0):
         """,
         (limit, offset),
     )
+    rows = cur.fetchall()
+    conn.close()
+    return rows
+
+
+# ================== Programme (Read) ==================
+
+
+def get_programmes():
+    conn = get_conn(row_factory=_sqlite3.Row)  # 让返回值变成 dict-like
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT programme_id, programme_code, programme_name
+        FROM programme
+        ORDER BY programme_code
+    """
+    )
+
     rows = cur.fetchall()
     conn.close()
     return rows

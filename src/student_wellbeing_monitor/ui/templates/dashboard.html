@@ -35,11 +35,11 @@
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
           Start Week
         </label>
-        <select name="week" class="form-select form-select-sm">
+        <select name="start_week" class="form-select form-select-sm">
           {# weeks 是后端传入的列表，例如 [1,2,...,12]；current_week 当前选中值 #}
           {% for w in weeks|default([1,2,3,4,5,6,7,8]) %}
             <option value="{{ w }}"
-                    {% if w == current_week|default(1) %}selected{% endif %}>
+                    {% if w == current_start_week %}selected{% endif %}>
               Week {{ w }}
              </option>
           {% endfor %}
@@ -50,11 +50,11 @@
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
           End Week
         </label>
-        <select name="week" class="form-select form-select-sm">
+        <select name="end_week" class="form-select form-select-sm">
           {# weeks 是后端传入的列表，例如 [1,2,...,12]；current_week 当前选中值 #}
           {% for w in weeks|default([1,2,3,4,5,6,7,8]) %}
             <option value="{{ w }}"
-                    {% if w == current_week|default(1) %}selected{% endif %}>
+                    {% if w == current_end_week %}selected{% endif %}>
               Week {{ w }}
              </option>
           {% endfor %}
@@ -63,15 +63,15 @@
 
       <div class="col-12 col-md-3">
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
-          Module
+          Programme
         </label>
-        <select name="module_code" class="form-select form-select-sm">
+        <select name="programme_id" class="form-select form-select-sm">
           <option value="">All programmes</option>
-          {# modules 是后端传入的 [{code, name}] 列表 #}
-          {% for m in modules|default([]) %}
-            <option value="{{ m.code }}"
-                    {% if m.code == current_module|default('') %}selected{% endif %}>
-              {{ m.code }} – {{ m.name }}
+          {# programme from database #}
+          {% for p in programmes|default([]) %}
+            <option value="{{ p.id }}"
+                    {% if p.id == current_programme|default('') %}selected{% endif %}>
+              {{ p.code }} – {{ p.name }}
             </option>
           {% endfor %}
         </select>
@@ -101,7 +101,7 @@
           <span class="text-muted small">hrs / night</span>
         </div>
         <p class="text-muted small mb-0 mt-1">
-          Based on selected week & module.
+          Based on selected week & programme.
         </p>
       </div>
     </div>
@@ -230,13 +230,13 @@
   const weeks       = {{ weeks_for_chart|tojson }};
   const avgStress   = {{ avg_stress|tojson }};
   const avgSleep    = {{ avg_sleep|tojson }};
-  const modules     = {{ modules_for_chart|tojson }};
+  // const programme     = {{ modules_for_chart|tojson }};
   const attRate     = {{ attendance_rate|tojson }};
 
   console.log("weeks =", weeks);
   console.log("avgStress =", avgStress);
   console.log("avgSleep =", avgSleep);
-  console.log("modules =", modules);
+  // console.log("modules =", modules);
   console.log("attRate =", attRate);
   // ========= 折线图 =========
   const lineCtx = document.getElementById('lineChart').getContext('2d');

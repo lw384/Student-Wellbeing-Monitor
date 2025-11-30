@@ -39,6 +39,7 @@ poetry run start
 ```
 poetry run wellbeing-web
 ```
+前端入口文件在 ui/app.py
 
 **启动测试**
 

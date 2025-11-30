@@ -2,7 +2,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 import os
 import math
-from student_wellbeing_monitor.database import read
+from student_wellbeing_monitor.database.read import get_programmes, get_all_weeks
 from student_wellbeing_monitor.services.upload_service import import_csv_by_type
 from student_wellbeing_monitor.services.wellbeing_service import wellbeing_service
 
@@ -32,21 +32,33 @@ def dashboard(role):
     if role not in ("wellbeing", "course_leader"):
         return redirect(url_for("index"))
 
-    # 1. 读取筛选参数（week / module_code），支持 ?week=3&module_code=WG1F6
-    week = request.args.get("week", type=int) or 1
-    module_code = request.args.get("module_code", default="")
+    # weeks list
+    weeks = get_all_weeks()  # [1,2,3,4,5,6,7,8]
+    start_week = request.args.get(
+        "start_week", type=int, default=min(weeks) if weeks else 1
+    )
+    end_week = request.args.get(
+        "end_week", type=int, default=max(weeks) if weeks else 8
+    )
 
-    # 2. 先给一些假数据 / 占位数据，保证模板里的变量都有
-    weeks = list(range(1, 13))  # week 1–12
-
-    # 这里先写死两个 module，后面可以从数据库读
-    modules = [
-        {"code": "WG1F6", "name": "AI Fundamentals"},
-        {"code": "CS2A4", "name": "Python Programming"},
+    # 3. programme list
+    programme_rows = get_programmes()
+    programmes = [
+        {
+            "id": row["programme_id"],
+            "code": row["programme_code"],
+            "name": row["programme_name"],
+        }
+        for row in programme_rows
     ]
+    current_programme = request.args.get("programme_id", default="", type=str)
 
-    # 统计摘要（后面可以用你写的分析函数算出来）
-    summary_card = wellbeing_service.get_dashboard_summary(start_week=1, end_week=8)
+    # summary
+    summary_card = wellbeing_service.get_dashboard_summary(
+        start_week,
+        end_week,
+        programme_id=current_programme if current_programme else None,
+    )
     summary = {
         "response_count": summary_card["surveyResponses"]["studentCount"],
         "response_rate": summary_card["surveyResponses"]["responseRate"],
@@ -54,20 +66,28 @@ def dashboard(role):
         "avg_stress": summary_card["avgStressLevel"],
     }
 
-    # 3) 折线图用的数据
-    line = wellbeing_service.get_stress_sleep_trend(start_week=1, end_week=8)
+    # 3) line
+    line = wellbeing_service.get_stress_sleep_trend(
+        start_week,
+        end_week,
+        programme_id=current_programme if current_programme else None,
+    )
     items = line.get("items", [])
 
     weeks_for_chart = [d["week"] for d in items]
     avg_stress = [d["avgStress"] for d in items]
     avg_sleep = [d["avgSleep"] for d in items]
 
-    # 4) 柱状图用的数据
+    # # 4) bar
     modules_for_chart = ["WG1F6", "CS2A4", "ML3B1", "DS2C3"]
     attendance_rate = [0.92, 0.85, 0.78, 0.88]
 
     if role == "wellbeing":
-        table = wellbeing_service.get_risk_students(start_week=1, end_week=8)
+        table = wellbeing_service.get_risk_students(
+            start_week,
+            end_week,
+            programme_id=current_programme if current_programme else None,
+        )
 
         items = table.get("items", [])
         students_to_contact = []
@@ -80,13 +100,15 @@ def dashboard(role):
                     "detail": item["details"],  # 注意 key 名不同
                 }
             )
+
     return render_template(
         "dashboard.html",
         role=role,
         weeks=weeks,
-        current_week=week,
-        modules=modules,
-        current_module=module_code,
+        current_start_week=start_week,
+        current_end_week=end_week,
+        programmes=programmes,
+        current_programme=current_programme,
         summary=summary,
         weeks_for_chart=weeks_for_chart,  # 如果你想区分，可以改前端变量名
         avg_stress=avg_stress,
