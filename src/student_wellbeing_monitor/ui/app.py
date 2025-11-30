@@ -2,7 +2,11 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 import os
 import math
-from student_wellbeing_monitor.database.read import get_programmes, get_all_weeks
+from student_wellbeing_monitor.database.read import (
+    get_programmes,
+    get_all_weeks,
+    get_all_students,
+)
 from student_wellbeing_monitor.services.upload_service import import_csv_by_type
 from student_wellbeing_monitor.services.wellbeing_service import wellbeing_service
 
@@ -162,21 +166,21 @@ def view_data(role, data_type):
 
     if data_type == "students":
         headers = ["Student ID", "Name", "Email"]
-        rows = read.get_all_students()
+        rows = get_all_students()
 
     elif data_type == "wellbeing":
         headers = ["Student ID", "Week", "Stress Level", "Hours Slept"]
-        total = read.count_wellbeing()
-        rows = read.get_wellbeing_page(limit=per_page, offset=offset)
+        total = count_wellbeing()
+        rows = get_wellbeing_page(limit=per_page, offset=offset)
 
     # TODO
     elif data_type == "attendance":
         headers = ["Student ID", "Module Code", "Week", "Status"]
-        rows = read.get_all_attendance()
+        rows = get_all_attendance()
 
     elif data_type == "submissions":
         headers = ["Student ID", "Module Code", "Submitted", "Grade"]
-        rows = read.get_all_submissions()
+        rows = get_all_submissions()
 
     else:
         flash("Unknown data type", "danger")

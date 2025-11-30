@@ -1,5 +1,5 @@
 # update.py
-from .db_core import get_conn
+from student_wellbeing_monitor.database.db_core import get_conn
 
 
 def update_wellbeing_stress(student_id: str, week: int, new_stress: int):
@@ -12,7 +12,7 @@ def update_wellbeing_stress(student_id: str, week: int, new_stress: int):
         SET stress_level = ? 
         WHERE student_id = ? AND week = ?
         """,
-        (new_stress, student_id, week)
+        (new_stress, student_id, week),
     )
     conn.commit()
     conn.close()
@@ -25,7 +25,7 @@ def update_final_grade(student_id: str, new_grade: float):
     cur = conn.cursor()
     cur.execute(
         "UPDATE grades SET final_grade = ? WHERE student_id = ?",
-        (new_grade, student_id)
+        (new_grade, student_id),
     )
     conn.commit()
     conn.close()
