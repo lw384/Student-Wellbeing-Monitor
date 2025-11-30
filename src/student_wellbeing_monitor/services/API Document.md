@@ -1,36 +1,36 @@
-# WellbeingService API 文档
+# WellbeingService API Documentation
 
-## 使用说明
+## Usage Instructions
 
-所有接口都通过 `WellbeingService` 类提供。使用前需要先创建服务实例：
+All interfaces are provided through the `WellbeingService` class. You need to create a service instance before use:
 
 ```python
 from wellbeing_service import WellbeingService
 
-# 创建服务实例
+# Create service instance
 service = WellbeingService()
 
-# 调用方法
+# Call methods
 result = service.get_dashboard_summary(1, 5, None)
 ```
 
 ---
 
-# 1️⃣ 接口：获取仪表盘概览
+# 1️⃣ Interface: Get Dashboard Summary
 
-**方法名称：** `get_dashboard_summary`
+**Method Name:** `get_dashboard_summary`
 
-**类：** `WellbeingService`
+**Class:** `WellbeingService`
 
-## 请求参数（Query）
+## Request Parameters (Query)
 
-| 参数名        | 类型     | 必填 | 说明      |
-| ---------- | ------ | -- | ------- |
-| startWeek  | int    | 是  | 起始周     |
-| endWeek    | int    | 是  | 结束周     |
-| moduleCode | string | 否  | 模块，空=全部 |
+| Parameter Name | Type   | Required | Description              |
+| -------------- | ------ | -------- | ------------------------ |
+| startWeek      | int    | Yes      | Start week               |
+| endWeek        | int    | Yes      | End week                 |
+| moduleCode     | string | No       | Module, empty = all      |
 
-## 返回示例
+## Response Example
 
 ```json
 {
@@ -43,86 +43,78 @@ result = service.get_dashboard_summary(1, 5, None)
 }
 ```
 
-## 简单逻辑说明
+## Logic Overview
 
-1. 查询符合筛选条件的学生数量（若指定 module 则过滤）。
-2. 从 wellbeing 表中取出对应周的数据。
-3. 计算：
+1. Query the number of students matching the filter conditions (filter by module if specified).
+2. Retrieve data for the corresponding weeks from the wellbeing table.
+3. Calculate:
 
-   * 平均睡眠
-   * 平均压力
-   * 查询过问卷的学生数（distinct student_id）
-   * 响应率 = “问卷学生数 / 总学生数”
-4. 返回给前端三个 summary 卡片。4
+   * Average sleep
+   * Average stress
+   * Number of students who completed the survey (distinct student_id)
+   * Response rate = "Number of survey students / Total students"
+4. Return three summary cards to the frontend.
 
-### 需要接口
-需要两个接口，一个查询某课程，一个查询全部课程。
-接口需要输出：course_id，week，stress，sleep hours
-（这里1️⃣和2️⃣可以用同样的接口，service层后面计算，也可以让database写新方法给1️⃣直接把均值给我们）
+### Required Interfaces
+Two interfaces are needed: one to query a specific course, and one to query all courses.
+The interface should output: course_id, week, stress, sleep hours
+(Interfaces 1️⃣ and 2️⃣ can use the same interface, with calculations done at the service layer, or the database can provide a new method for 1️⃣ that directly returns the averages)
 ---
 
-# 2️⃣ 接口：获取压力与睡眠趋势
+# 2️⃣ Interface: Get Stress and Sleep Trend
 
-**方法名称：** `get_stress_sleep_trend`
+**Method Name:** `get_stress_sleep_trend`
 
-**类：** `WellbeingService`
+**Class:** `WellbeingService`
 
-## 请求参数（Query）
+## Request Parameters (Query)
 
-| 参数名        | 类型     | 必填 | 说明   |
-| ---------- | ------ | -- | ---- |
-| startWeek  | int    | 是  | 起始周  |
-| endWeek    | int    | 是  | 结束周  |
-| moduleCode | string | 否  | 模块筛选 |
+| Parameter Name | Type   | Required | Description                              |
+| -------------- | ------ | -------- | ---------------------------------------- |
+| start_week     | int    | Yes      | Start week                               |
+| end_week       | int    | Yes      | End week                                 |
+| programme_id   | string | No       | Programme ID filter (None = all courses) |
 
-## 返回示例
+## Response Example
 
 ```json
 {
-  "items": [
-    {
-      "week": 1,
-      "avgStress": 3.1,
-      "avgSleep": 7.2
-    },
-    {
-      "week": 2,
-      "avgStress": 3.3,
-      "avgSleep": 7.0
-    }
-  ]
+  "weeks": [1, 2, 3, 4, 5],
+  "stress": [3.1, 3.3, 3.2, 3.4, 3.5],
+  "sleep": [7.2, 7.0, 7.1, 6.9, 6.8]
 }
 ```
 
-## 简单逻辑说明
+## Logic Overview
 
-1. wellbeing × students 联查，按周过滤。
-2. 若 module 指定则再过滤课程。
-3. 按 week 分组：
+1. Join wellbeing × students, filter by week.
+2. If programme_id is specified, filter by programme.
+3. Group by week:
 
-   * 平均压力
-   * 平均睡眠
-4. 返回折线图数据。
+   * Average stress
+   * Average sleep
+4. Return line chart data (three arrays: weeks, stress, sleep).
 
-### 需要接口
-需要两个接口，一个查询某课程，一个查询全部课程。
-接口需要输出：course_id，week，stress，sleep hours
+### Response Structure Description
+- `weeks`: Array of week numbers, used as X-axis data
+- `stress`: Array of average stress values, used as Y-axis data
+- `sleep`: Array of average sleep hours, used as Y-axis data
 ---
 
-# 3️⃣ 接口：获取模块出勤率
+# 3️⃣ Interface: Get Module Attendance Rate
 
-**方法名称：** `get_attendance_by_module`
+**Method Name:** `get_attendance_by_module`
 
-**类：** `WellbeingService`
+**Class:** `WellbeingService`
 
-## 请求参数（Query）
+## Request Parameters (Query)
 
-| 参数名       | 类型  | 必填 | 说明  |
-| --------- | --- | -- | --- |
-| startWeek | int | 是  | 起始周 |
-| endWeek   | int | 是  | 结束周 |
+| Parameter Name | Type | Required | Description |
+| -------------- | ---- | -------- | ----------- |
+| startWeek      | int  | Yes      | Start week  |
+| endWeek        | int  | Yes      | End week    |
 
-## 返回示例
+## Response Example
 
 ```json
 {
@@ -141,61 +133,61 @@ result = service.get_dashboard_summary(1, 5, None)
 }
 ```
 
-## 简单逻辑说明
+## Logic Overview
 
-1. attendance × students × courses 联查。
-2. 基于筛选周范围过滤记录。
-3. 按 module 分组统计出勤率：
+1. Join attendance × students × courses.
+2. Filter records based on the selected week range.
+3. Group by module and calculate attendance rate:
 
-   * `attendanceRate = AVG(attended)`（因为 attended 是 0/1）。
-4. 返回给前端柱状图。
+   * `attendanceRate = AVG(attended)` (since attended is 0/1).
+4. Return bar chart data to the frontend.
 
-### 需要接口
-需要一个接口，接口需要输出course_id,week,attended
+### Required Interface
+One interface is needed that outputs: course_id, week, attended
 ---
 
-# 4️⃣ 接口：获取风险学生或者查询学生
+# 4️⃣ Interface: Get Risk Students or Query Student
 
-**方法名称：** `get_risk_students`
+**Method Name:** `get_risk_students`
 
-**类：** `WellbeingService`
+**Class:** `WellbeingService`
 
-## 请求参数（Query）
+## Request Parameters (Query)
 
-| 参数名           | 类型     | 必填 | 说明                    |
-| ------------- | ------ | -- | --------------------- |
-| startWeek     | int    | 是  | 起始周                   |
-| endWeek       | int    | 是  | 结束周                   |
-| moduleCode    | string | 否  | 某模块；空=全部              |
-| student_id    | string | 否  | 学生ID；空=所有学生；指定则只返回该学生 |
-
----
-
-# 🔥 风险判定逻辑
-
-风险判定需要**同时满足**两个条件：
-- **压力条件**：`stress >= threshold`（默认 threshold = 4.5）
-- **睡眠条件**：`sleep < sleep_threshold`（默认 sleep_threshold = 6.0 小时）
+| Parameter Name | Type   | Required | Description                                      |
+| -------------- | ------ | -------- | ------------------------------------------------ |
+| startWeek      | int    | Yes      | Start week                                       |
+| endWeek        | int    | Yes      | End week                                         |
+| moduleCode     | string | No       | Specific module; empty = all                     |
+| student_id     | string | No       | Student ID; empty = all students; if specified, only return that student |
 
 ---
 
-## **Potential Risk（潜在风险）**
+# 🔥 Risk Assessment Logic
 
-**只要有任意一周，同时满足 `stress >= threshold` 且 `sleep < sleep_threshold`，即视为 potential risk。**
-
-> 条件：突然出现一次高压力且睡眠不足的周。
-
----
-
-## **High Risk（高风险）**
-
-**连续三周，每周都同时满足 `stress >= threshold` 且 `sleep < sleep_threshold`。**
-
-> 即连续三周都同时出现高压力和睡眠不足的情况。
+Risk assessment requires **both** conditions to be met simultaneously:
+- **Stress condition**: `stress >= threshold` (default threshold = 4.5)
+- **Sleep condition**: `sleep < sleep_threshold` (default sleep_threshold = 6.0 hours)
 
 ---
 
-## 返回示例
+## **Potential Risk**
+
+**If any single week simultaneously satisfies `stress >= threshold` AND `sleep < sleep_threshold`, it is considered a potential risk.**
+
+> Condition: A sudden occurrence of a week with high stress and insufficient sleep.
+
+---
+
+## **High Risk**
+
+**Three consecutive weeks, each simultaneously satisfying `stress >= threshold` AND `sleep < sleep_threshold`.**
+
+> That is, three consecutive weeks all showing high stress and insufficient sleep simultaneously.
+
+---
+
+## Response Example
 
 ```json
 {
@@ -220,7 +212,7 @@ result = service.get_dashboard_summary(1, 5, None)
 }
 ```
 
-**特殊情况：** 当指定 `student_id` 但该学生不满足任何风险条件时，会返回 `riskType: "normal"`：
+**Special Case:** When `student_id` is specified but the student does not meet any risk conditions, it will return `riskType: "normal"`:
 
 ```json
 {
@@ -237,7 +229,7 @@ result = service.get_dashboard_summary(1, 5, None)
 }
 ```
 
-**当指定 `student_id` 但找不到学生时：**
+**When `student_id` is specified but the student is not found:**
 
 ```json
 {
@@ -247,7 +239,7 @@ result = service.get_dashboard_summary(1, 5, None)
 }
 ```
 
-**当指定 `student_id` 但学生没有 wellbeing 数据时：**
+**When `student_id` is specified but the student has no wellbeing data:**
 
 ```json
 {
@@ -259,97 +251,97 @@ result = service.get_dashboard_summary(1, 5, None)
 
 ---
 
-## 简单逻辑说明（后端实现逻辑）
+## Logic Overview (Backend Implementation)
 
-1. 从 `wellbeing × students` 查出选定学生在选定周的 `stress` 和 `sleep` 数据。
-2. 将数据按学生分组，并按周排序。
-3. 对每个学生：
+1. Query `stress` and `sleep` data for selected students in selected weeks from `wellbeing × students`.
+2. Group data by student and sort by week.
+3. For each student:
 
-### （1）判断 High Risk
+### (1) Determine High Risk
 
-* 查找是否存在连续三周，每周都同时满足：
+* Check if there are three consecutive weeks, each simultaneously satisfying:
   ```
   stress[i] >= threshold AND sleep[i] < sleep_threshold
   stress[i+1] >= threshold AND sleep[i+1] < sleep_threshold
   stress[i+2] >= threshold AND sleep[i+2] < sleep_threshold
   ```
-* 一旦符合：
+* Once met:
 
   * `riskType = "high_risk"`
   * `reason = "Stress ≥ {threshold} and sleep < {sleep_threshold}h for 3 consecutive weeks"`
   * `details = "Weeks {start}–{end}: stress ≥ {threshold} and sleep < {sleep_threshold}h"`
 
-### （2）否则判断 Potential Risk
+### (2) Otherwise Determine Potential Risk
 
-* 查找是否存在任意一周，同时满足：
+* Check if any single week simultaneously satisfies:
   ```
   stress[i] >= threshold AND sleep[i] < sleep_threshold
   ```
-* 一旦符合：
+* Once met:
 
   * `riskType = "potential_risk"`
   * `reason = "Stress ≥ {threshold} and sleep < {sleep_threshold}h"`
   * `details = "Week {week}: stress = {value}, sleep = {value}h"`
 
-### （3）Normal（仅当指定 student_id 时）
+### (3) Normal (Only when student_id is specified)
 
-* 如果指定了 `student_id` 但该学生不满足任何风险条件：
+* If `student_id` is specified but the student does not meet any risk conditions:
   * `riskType = "normal"`
   * `reason = "No risk detected"`
   * `details = "Average stress: {avg}, average sleep: {avg}h"`
 
-4. 为符合条件的学生生成：
+4. Generate for eligible students:
 
    * `studentId`
    * `name`
    * `riskType`
-   * `reason`（自动生成）
-   * `details`（说明高压力和睡眠不足所在周）
+   * `reason` (auto-generated)
+   * `details` (describes the weeks with high stress and insufficient sleep)
    * `modules`
 
-5. 返回 `items` 列表。
+5. Return `items` list.
 
-### 需要接口
-需要一个接口查询所有学生在各周的压力值和睡眠数据。
-接口需要输出：`student_id, week, stress, sleep_hours`
+### Required Interface
+One interface is needed to query stress values and sleep data for all students across all weeks.
+The interface should output: `student_id, week, stress, sleep_hours`
 
 ---
 
-## Python 使用示例
+## Python Usage Example
 
 ```python
 from wellbeing_service import WellbeingService
 
-# 创建服务实例
+# Create service instance
 service = WellbeingService()
 
-# 1. 获取仪表盘概览
+# 1. Get dashboard summary
 dashboard = service.get_dashboard_summary(
     start_week=1,
     end_week=5,
-    module_code=None  # None 表示所有课程
+    module_code=None  # None means all courses
 )
 
-# 2. 获取压力与睡眠趋势
+# 2. Get stress and sleep trend
 trend = service.get_stress_sleep_trend(
     start_week=1,
     end_week=5,
-    module_code="WM9AA0"  # 指定课程
+    module_code="WM9AA0"  # Specify course
 )
 
-# 3. 获取模块出勤率
+# 3. Get module attendance rate
 attendance = service.get_attendance_by_module(
     start_week=1,
     end_week=5
 )
 
-# 4. 获取风险学生
+# 4. Get risk students
 risk_students = service.get_risk_students(
     start_week=1,
     end_week=5,
-    module_code=None,  # None 表示所有课程
-    threshold=4.5,     # 压力阈值，默认 4.5
-    sleep_threshold=6.0,  # 睡眠阈值，默认 6.0
-    student_id=None    # None 表示所有学生，或指定学生ID
+    module_code=None,  # None means all courses
+    threshold=4.5,     # Stress threshold, default 4.5
+    sleep_threshold=6.0,  # Sleep threshold, default 6.0
+    student_id=None    # None means all students, or specify student ID
 )
 ```

@@ -83,7 +83,7 @@ class WellbeingService:
         n_sleep = 0
         responded_students = set()
 
-        for student_id, week, stress_level, hours_slept, programme_id in rows:
+        for student_id, week, stress_level, hours_slept, programme_id_record in rows:
             if stress_level is not None:
                 try:
                     total_stress += float(stress_level)
@@ -114,7 +114,7 @@ class WellbeingService:
             "avgStressLevel": avg_stress,
             "surveyResponses": {
                 "studentCount": responded_count,
-                "responseRate": round(response_rate, 2),
+                "responseRate": round(response_rate, 2) * 100,
             },
         }
 
@@ -132,13 +132,11 @@ class WellbeingService:
         """
         对应前端接口 GET /getStressSleepTrend
 
-        输出结构：
+        输出结构（适合画图）：
             {
-              "items": [
-                {"week": 1, "avgStress": 3.1, "avgSleep": 7.2},
-                {"week": 2, "avgStress": 3.3, "avgSleep": 7.0},
-                ...
-              ]
+              "weeks": [1, 2, 3, ...],      # X轴：周数
+              "stress": [3.1, 3.3, ...],     # Y轴：平均压力值
+              "sleep": [7.2, 7.0, ...]      # Y轴：平均睡眠小时数
             }
         """
         if end_week < start_week:
@@ -171,8 +169,11 @@ class WellbeingService:
                 except (TypeError, ValueError):
                     pass
 
-        items: List[Dict[str, Any]] = []
         all_weeks = sorted(set(list(stress_sum.keys()) + list(sleep_sum.keys())))
+        
+        weeks: List[int] = []
+        stress: List[float] = []
+        sleep: List[float] = []
 
         for w in all_weeks:
             avg_stress = (
@@ -181,15 +182,15 @@ class WellbeingService:
             avg_sleep = (
                 round(sleep_sum[w] / sleep_cnt[w], 2) if sleep_cnt[w] > 0 else 0.0
             )
-            items.append(
-                {
-                    "week": w,
-                    "avgStress": avg_stress,
-                    "avgSleep": avg_sleep,
-                }
-            )
+            weeks.append(w)
+            stress.append(avg_stress)
+            sleep.append(avg_sleep)
 
-        return {"items": items}
+        return {
+            "weeks": weeks,      # X轴：周数
+            "stress": stress,     # Y轴：平均压力值
+            "sleep": sleep        # Y轴：平均睡眠小时数
+        }
 
     # =========================================================
     # getRiskStudents: 报告的高风险学生列表

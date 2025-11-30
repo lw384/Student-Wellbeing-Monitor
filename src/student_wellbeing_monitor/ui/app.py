@@ -76,11 +76,10 @@ def dashboard(role):
         end_week,
         programme_id=current_programme if current_programme else None,
     )
-    items = line.get("items", [])
 
-    weeks_for_chart = [d["week"] for d in items]
-    avg_stress = [d["avgStress"] for d in items]
-    avg_sleep = [d["avgSleep"] for d in items]
+    weeks_for_chart = line.get("weeks", [])
+    avg_stress = line.get("stress", [])
+    avg_sleep = line.get("sleep", [])
 
     # # 4) bar
     modules_for_chart = ["WG1F6", "CS2A4", "ML3B1", "DS2C3"]
