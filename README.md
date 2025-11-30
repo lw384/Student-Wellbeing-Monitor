@@ -2,10 +2,57 @@
 
 A prototype system designed to support the Student Wellbeing Office and Course Directors by collecting, analysing and visualising student wellbeing and engagement data.
 
+## 项目命令说明
+
+请使用poetry
+
+ 以下所有命令都在项目根目录下运行
+
+**生成假数据**
+
+```
+# 只在 mock-data/mock下生成 表 student programme module 的数据
+poetry run python mock_data/scripts/generate_entities.py
+# 只在 mock-data/mock下根据已有的 student programme module 的数据 生成wellbeing attendance submission 数据
+poetry run python mock_data/scripts/generate_behaviour.py
+# 在 mock-data/mock 下生成全部假数据
+poetry run python mock_data/scripts/generate_all.py
+```
+
+**生成假数据 + 写入本地库中**
+
+```
+# 只生成 student programme module 的数据 并写入
+poetry run setup-demo
+# 生成全部假数据并全部写入
+poetry run setup-demo --with-mock
+```
+
+**生成假数据 + 写入本地库 + 启动前端**
+
+```
+poetry run start
+```
+
+**只启动前端**
+
+```
+poetry run wellbeing-web
+```
+
+**启动测试**
+
+```
+# 全量测试
+poetry run pytest
+```
+
+
+
 ## Project Setup – Poetry Environment
 
 This project uses Poetry to manage dependencies, virtual environments and scripts.
-Before starting, ensure Poetry is installed:
+Before starting, ensure **Poetry** is installed:
 
 ```
 pip install poetry
@@ -16,6 +63,26 @@ From the project root:
 ```
 poetry install
 ```
+setup with mock data
+
+```
+poetry run start
+```
+
+Insert mock data to database
+
+``````
+poetry run setup-demo
+``````
+
+Setup project without mock 
+
+``````
+poetry run wellbeing-web
+``````
+
+
+
 ## Project Structure
 
 ```
