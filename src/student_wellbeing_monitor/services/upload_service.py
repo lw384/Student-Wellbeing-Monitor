@@ -3,12 +3,11 @@ import csv
 import io
 from typing import TextIO
 
-from student_wellbeing_monitor.database import create  # 你自己的插入函数模块
-
-
+from student_wellbeing_monitor.database import create
 # from student_wellbeing_monitor.database import db_core  # connect
+
 def read_csv(file_storage) -> list[dict]:
-    # file_storage 是 werkzeug.datastructures.FileStorage
+    # file_storage: werkzeug.datastructures.FileStorage
     text_stream: TextIO = io.TextIOWrapper(file_storage.stream, encoding="utf-8")
     reader = csv.DictReader(text_stream)
     return list(reader)
@@ -17,6 +16,7 @@ def read_csv(file_storage) -> list[dict]:
 def import_wellbeing_csv(file_storage):
     rows = read_csv(file_storage)
     for row in rows:
+        # Hypothetical field：student_id, week, stress_level, hours_slept
         create.add_wellbeing(
             int(row["student_id"]),
             int(row["week"]),
@@ -28,7 +28,7 @@ def import_wellbeing_csv(file_storage):
 def import_attendance_csv(file_storage):
     rows = read_csv(file_storage)
     for row in rows:
-        # 假设字段：student_id, module_code, week, attendance_status
+        # Hypothetical field：student_id, module_code, week, attendance_status
         create.insert_attendance(
             student_id=int(row["student_id"]),
             module_code=row["module_code"],
@@ -40,7 +40,7 @@ def import_attendance_csv(file_storage):
 def import_submissions_csv(file_storage):
     rows = read_csv(file_storage)
     for row in rows:
-        # 假设字段：student_id, module_code, submitted, grade, due_date, submit_date
+        # Hypothetical field：student_id, module_code, submitted, grade, due_date, submit_date
         create.insert_submission(
             student_id=int(row["student_id"]),
             module_code=row["module_code"],
@@ -52,7 +52,7 @@ def import_submissions_csv(file_storage):
 
 
 def import_csv_by_type(data_type: str, file_storage):
-    """UI 层只调用这一层的统一入口"""
+    # check data types and call corresponding import function
     if data_type == "wellbeing":
         import_wellbeing_csv(file_storage)
     elif data_type == "attendance":
