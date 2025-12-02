@@ -9,6 +9,8 @@ from typing import List, Optional, Tuple
 def _query_students(
     programme_id: Optional[str] = None,
     student_id: Optional[str] = None,
+    limit: Optional[int] = None,
+    offset: Optional[int] = None,
 ):
     """内部通用 student 查询函数，不对外暴露"""
     conn = get_conn()
@@ -32,6 +34,19 @@ def _query_students(
     if conditions:
         base_sql += " WHERE " + " AND ".join(conditions)
 
+    base_sql += " ORDER BY student_id"
+
+    if limit is not None:
+        base_sql += " LIMIT ?"
+        params.append(limit)
+
+        # offset 如果没传就默认 0
+        if offset is not None:
+            base_sql += " OFFSET ?"
+            params.append(offset)
+
+    print("SQL:", base_sql, "PARAMS:", params)
+
     cur.execute(base_sql, params)
     rows = cur.fetchall()
     conn.close()
@@ -39,13 +54,30 @@ def _query_students(
     return rows
 
 
-def get_all_students():
-    return _query_students()
+def count_students(programme_id: Optional[str] = None) -> int:
+    conn = get_conn()
+    cur = conn.cursor()
+
+    sql = "SELECT COUNT(*) FROM student"
+    params = []
+
+    if programme_id:
+        sql += " WHERE programme_id = ?"
+        params.append(programme_id)
+
+    cur.execute(sql, params)
+    total = cur.fetchone()[0]
+    conn.close()
+    return total
 
 
-def get_students_by_programme(pid):
+def get_all_students(limit=None, offset=None):
+    return _query_students(limit=limit, offset=offset)
+
+
+def get_students_by_programme(programme_id: str, limit=None, offset=None):
     """Return student information in one programme."""
-    return _query_students(programme_id=pid)
+    return _query_students(programme_id=programme_id, limit=limit, offset=offset)
 
 
 def get_student_by_id(sid):

@@ -6,6 +6,10 @@ from student_wellbeing_monitor.database.read import (
     get_programmes,
     get_all_weeks,
     get_all_students,
+    count_students,
+    count_wellbeing,
+    get_wellbeing_page,
+    # get_course_summary,
 )
 from student_wellbeing_monitor.services.upload_service import import_csv_by_type
 from student_wellbeing_monitor.services.wellbeing_service import wellbeing_service
@@ -57,18 +61,26 @@ def dashboard(role):
     ]
     current_programme = request.args.get("programme_id", default="", type=str)
 
-    # summary
-    summary_card = wellbeing_service.get_dashboard_summary(
-        start_week,
-        end_week,
-        programme_id=current_programme if current_programme else None,
-    )
-    summary = {
-        "response_count": summary_card["surveyResponses"]["studentCount"],
-        "response_rate": summary_card["surveyResponses"]["responseRate"],
-        "avg_sleep": summary_card["avgHoursSlept"],
-        "avg_stress": summary_card["avgStressLevel"],
-    }
+    if role == "wellbeing":
+        # summary
+        summary_card = wellbeing_service.get_dashboard_summary(
+            start_week,
+            end_week,
+            programme_id=current_programme if current_programme else None,
+        )
+        summary = {
+            "response_count": summary_card["surveyResponses"]["studentCount"],
+            "response_rate": summary_card["surveyResponses"]["responseRate"],
+            "avg_sleep": summary_card["avgHoursSlept"],
+            "avg_stress": summary_card["avgStressLevel"],
+        }
+    elif role == "course_leader":
+        # summary_course = get_course_summary(start_week, end_week)
+        summary = {
+            "avg_attendance_rate": 0.89,  # summary_course["avgAttendanceRate"],  # 0–1
+            "avg_submission_rate": 0.70,  # summary_course["avgSubmissionRate"],  # 0–1
+            "avg_grade": 56,  # summary_course["avgGrade"],  # 0–100
+        }
 
     # 3) line
     line = wellbeing_service.get_stress_sleep_trend(
@@ -103,6 +115,8 @@ def dashboard(role):
                     "detail": item["details"],  # 注意 key 名不同
                 }
             )
+    else:
+        students_to_contact = []
 
     return render_template(
         "dashboard.html",
@@ -151,6 +165,17 @@ def upload_data(role):
     )
 
 
+def enrich_student_programme(rows, programme_map):
+    """
+    将学生表中的 programme_id 替换成 'code – name'
+    """
+    result = []
+    for sid, name, email, pid in rows:
+        display = programme_map.get(pid, f"{pid}")
+        result.append([sid, name, email, display])
+    return result
+
+
 # -------- 3. 查看数据表 --------
 @app.route("/data/<role>", defaults={"data_type": "students"})
 @app.route("/data/<role>/<data_type>")
@@ -159,35 +184,53 @@ def view_data(role, data_type):
     if page < 1:
         page = 1
 
-    per_page = 20
+    per_page = 10
     offset = (page - 1) * per_page
-    total = 0
 
+    programme_rows = get_programmes()
+    programme_map = {
+        row["programme_id"]: f"{row['programme_code']} – {row['programme_name']}"
+        for row in programme_rows
+    }
+
+    # ========== students ==========
     if data_type == "students":
-        headers = ["Student ID", "Name", "Email"]
-        rows = get_all_students()
+        headers = ["Student ID", "Name", "Email", "Programme"]
 
+        total = count_students()  # ✅ 总数
+        print(total, "------")
+        rows = get_all_students(limit=per_page, offset=offset)  # ✅ 分页
+        # rows = enrich_student_programme(raw_rows, programme_map)
+        print(len(rows), "________")
+
+    # ========== wellbeing ==========
     elif data_type == "wellbeing":
         headers = ["Student ID", "Week", "Stress Level", "Hours Slept"]
-        total = count_wellbeing()
-        rows = get_wellbeing_page(limit=per_page, offset=offset)
 
-    # TODO
-    elif data_type == "attendance":
-        headers = ["Student ID", "Module Code", "Week", "Status"]
-        rows = get_all_attendance()
+        total = count_wellbeing()  # ✅ 总数
+        rows = get_wellbeing_page(limit=per_page, offset=offset)  # ✅ 分页
 
-    elif data_type == "submissions":
-        headers = ["Student ID", "Module Code", "Submitted", "Grade"]
-        rows = get_all_submissions()
+    # ========== attendance ==========
+    # elif data_type == "attendance":
+    #     headers = ["Student ID", "Module Code", "Week", "Status"]
+
+    #     total = count_attendance()  # ✅ 总数
+    #     rows = get_attendance_page(limit=per_page, offset=offset)  # ✅ 分页
+
+    # # ========== submissions ==========
+    # elif data_type == "submissions":
+    #     headers = ["Student ID", "Module Code", "Submitted", "Grade"]
+
+    #     total = count_submissions()  # ✅ 总数
+    #     rows = get_submissions_page(limit=per_page, offset=offset)  # ✅ 分页
 
     else:
         flash("Unknown data type", "danger")
         return redirect(url_for("dashboard", role=role))
 
+    # 统一计算总页数
     total_pages = max(1, math.ceil(total / per_page))
 
-    # 防止 page 超出范围
     if page > total_pages:
         page = total_pages
 

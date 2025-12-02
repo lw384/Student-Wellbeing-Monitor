@@ -10,13 +10,18 @@
     <div>
       <h1 class="page-title mb-1">
         {% if role == "wellbeing" %}
-          Wellbeing Officer Dashboard
+        Wellbeing Officer Dashboard
         {% else %}
-          Course Director Dashboard
+        Course Director Dashboard
         {% endif %}
       </h1>
       <p class="page-subtitle mb-0">
+        {% if role == "wellbeing" %}
         Monitor trends in stress, sleep and engagement over recent weeks.
+        {% else %}
+        Course Director Dashboard
+        {% endif %}
+
       </p>
     </div>
 
@@ -29,19 +34,17 @@
 
   {# ==== filter: Week + Programme ==== #}
   <div class="card-elevated mb-3">
-    <form class="row g-3 align-items-end" method="get"
-          action="{{ url_for('dashboard', role=role) }}">
-     <div class="col-12 col-md-3">
+    <form class="row g-3 align-items-end" method="get" action="{{ url_for('dashboard', role=role) }}">
+      <div class="col-12 col-md-3">
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
           Start Week
         </label>
         <select name="start_week" class="form-select form-select-sm">
           {# weeks 是后端传入的列表，例如 [1,2,...,12]；current_week 当前选中值 #}
           {% for w in weeks|default([1,2,3,4,5,6,7,8]) %}
-            <option value="{{ w }}"
-                    {% if w == current_start_week %}selected{% endif %}>
-              Week {{ w }}
-             </option>
+          <option value="{{ w }}" {% if w==current_start_week %}selected{% endif %}>
+            Week {{ w }}
+          </option>
           {% endfor %}
         </select>
       </div>
@@ -53,10 +56,9 @@
         <select name="end_week" class="form-select form-select-sm">
           {# weeks 是后端传入的列表，例如 [1,2,...,12]；current_week 当前选中值 #}
           {% for w in weeks|default([1,2,3,4,5,6,7,8]) %}
-            <option value="{{ w }}"
-                    {% if w == current_end_week %}selected{% endif %}>
-              Week {{ w }}
-             </option>
+          <option value="{{ w }}" {% if w==current_end_week %}selected{% endif %}>
+            Week {{ w }}
+          </option>
           {% endfor %}
         </select>
       </div>
@@ -69,13 +71,28 @@
           <option value="">All programmes</option>
           {# programme from database #}
           {% for p in programmes|default([]) %}
-            <option value="{{ p.id }}"
-                    {% if p.id == current_programme|default('') %}selected{% endif %}>
-              {{ p.code }} – {{ p.name }}
-            </option>
+          <option value="{{ p.id }}" {% if p.id==current_programme|default('') %}selected{% endif %}>
+            {{ p.code }} – {{ p.name }}
+          </option>
           {% endfor %}
         </select>
       </div>
+
+      {% if role == 'course_leader' %}
+      <div class="col-12 col-md-3">
+        <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
+          Module
+        </label>
+        <select name="module_code" class="form-select form-select-sm">
+          <option value="">All modules</option>
+          {% for m in modules|default([]) %}
+          <option value="{{ m.code }}" {% if m.code==current_module %}selected{% endif %}>
+            {{ m.code }} – {{ m.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
 
       <div class="col-12 col-md-3 text-md-end">
         <button type="submit" class="btn btn-primary btn-sm px-4">
@@ -85,7 +102,10 @@
     </form>
   </div>
 
-  {# ==== 指标卡片区：总体睡眠 / 压力 / 样本数 等 ==== #}
+  {# ==== 指标卡片区：根据 role 切换 ==== #}
+  {% if role == 'wellbeing' %}
+
+  {# ------- Student Wellbeing Officer 看到的卡片 ------- #}
   <div class="row g-3 mb-3">
     <div class="col-12 col-md-4">
       <div class="card-elevated h-100">
@@ -145,8 +165,73 @@
     </div>
   </div>
 
+  {% elif role == 'course_leader' %}
+
+  {# ------- Course Leader 看到的卡片 ------- #}
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-md-4">
+      <div class="card-elevated h-100">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="small text-uppercase text-muted fw-semibold">
+            Avg Attendance Rate
+          </span>
+        </div>
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="fs-3 fw-semibold">
+            {{ (summary.avg_attendance_rate * 100)|round(1)|default('--') }}
+          </span>
+          <span class="text-muted small">%</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">
+          Across selected weeks & modules.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card-elevated h-100">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="small text-uppercase text-muted fw-semibold">
+            Avg Submission Rate
+          </span>
+        </div>
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="fs-3 fw-semibold">
+            {{ (summary.avg_submission_rate * 100)|round(1)|default('--') }}
+          </span>
+          <span class="text-muted small">%</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">
+          Proportion of submitted assignments.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card-elevated h-100">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="small text-uppercase text-muted fw-semibold">
+            Avg Grade
+          </span>
+        </div>
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="fs-3 fw-semibold">
+            {{ summary.avg_grade|round(1)|default('--') }}
+          </span>
+          <span class="text-muted small">/ 100</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">
+          Based on submitted assignments only.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {% endif %}
+
   {# ==== 折线图区域：多周趋势（压力 / 睡眠） ==== #}
-   <div class="card-elevated mb-3">
+   {% if role == 'wellbeing' %}
+  <div class="card-elevated mb-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="mb-0">Stress & Sleep over weeks</h6>
       <span class="text-muted small">Average values per week</span>
@@ -155,9 +240,11 @@
       <canvas id="lineChart"></canvas>
     </div>
   </div>
+    {% endif %}
 
   {# ==== 柱状图：按课程的出勤率 / 成绩 ==== #}
-  <!-- <div class="card-elevated mb-3">
+   {% if role == 'course_leader' %}
+  <div class="card-elevated mb-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="mb-0">Attendance Rate by Module</h6>
       <span class="text-muted small">0–100% attendance</span>
@@ -165,16 +252,17 @@
     <div style="height: 320px;">
       <canvas id="barChart"></canvas>
     </div>
-  </div> -->
+  </div>
+   {% endif %}
 
-    {# ==== 需要联系的学生列表 ==== #}
+  {# ==== 需要联系的学生列表 ==== #}
   <div class="card-elevated mb-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="mb-0">
         {% if role == "wellbeing" %}
-          Students to contact (wellbeing risk)
+        Students to contact (wellbeing risk)
         {% else %}
-          Students to contact (engagement risk)
+        Students to contact (engagement risk)
         {% endif %}
       </h6>
       <span class="text-muted small">
@@ -183,41 +271,41 @@
     </div>
 
     {% if students_to_contact %}
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Student ID</th>
-              <th>Name</th>
-              <th>Reason</th>
-              <th>Details</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for s in students_to_contact %}
-              <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ s.student_id }}</td>
-                <td>{{ s.name }}</td>
-                <td>{{ s.reason }}</td>
-                <td>{{ s.detail }}</td>
-                <td>
-                  <!-- <a class="btn btn-sm btn-outline-primary"
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Reason</th>
+            <th>Details</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students_to_contact %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ s.student_id }}</td>
+            <td>{{ s.name }}</td>
+            <td>{{ s.reason }}</td>
+            <td>{{ s.detail }}</td>
+            <td>
+              <!-- <a class="btn btn-sm btn-outline-primary"
                      href="{{ url_for('view_data', role=role, data_type='wellbeing') }}">
                     View record
                   </a> -->
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
     {% else %}
-      <p class="text-muted small mb-0">
-        No students currently flagged for follow-up in the selected period.
-      </p>
+    <p class="text-muted small mb-0">
+      No students currently flagged for follow-up in the selected period.
+    </p>
     {% endif %}
   </div>
 </div>
@@ -227,11 +315,11 @@
 {% block scripts %}
 <script>
   // 从后端传来的数据（Python list -> JS array）
-  const weeks       = {{ weeks_for_chart|tojson }};
-  const avgStress   = {{ avg_stress|tojson }};
-  const avgSleep    = {{ avg_sleep|tojson }};
+  const weeks = {{ weeks_for_chart| tojson }};
+  const avgStress = {{ avg_stress| tojson }};
+  const avgSleep = {{ avg_sleep| tojson }};
   // const programme     = {{ modules_for_chart|tojson }};
-  const attRate     = {{ attendance_rate|tojson }};
+  const attRate = {{ attendance_rate| tojson }};
 
   console.log("weeks =", weeks);
   console.log("avgStress =", avgStress);
