@@ -72,7 +72,9 @@ def count_students(programme_id: Optional[str] = None) -> int:
 
 
 def get_all_students(limit=None, offset=None):
-    return _query_students(limit=limit, offset=offset)
+    return _query_students(
+        programme_id=None, student_id=None, limit=limit, offset=offset
+    )
 
 
 def get_students_by_programme(programme_id: str, limit=None, offset=None):
@@ -601,6 +603,8 @@ def get_continuous_high_stress_students():
     result = [dict(row) for row in cur.fetchall()]
     conn.close()
     return result
+
+
 # ----------  new  ----------
 def get_continuous_high_stress_students():
     """Students with high stress levels for three or more consecutive weeks."""
@@ -632,6 +636,7 @@ def get_continuous_high_stress_students():
     result = [dict(row) for row in cur.fetchall()]
     conn.close()
     return result
+
 
 def attendance_for_course(
     module_id: str,
@@ -686,6 +691,7 @@ def attendance_for_course(
     rows = cur.fetchall()
     conn.close()
     return [tuple(r) for r in rows]
+
 
 def attendance_detail_for_students(
     module_id: str,
@@ -742,6 +748,7 @@ def attendance_detail_for_students(
     conn.close()
     return [tuple(r) for r in rows]
 
+
 def submissions_for_course(
     module_id: str,
     assignment_no: Optional[int] = None,
@@ -797,6 +804,7 @@ def submissions_for_course(
     rows = cur.fetchall()
     conn.close()
     return [tuple(r) for r in rows]
+
 
 def unsubmissions_for_repeated_issues(
     module_id: Optional[str] = None,
@@ -858,6 +866,7 @@ def unsubmissions_for_repeated_issues(
     conn.close()
     return [tuple(r) for r in rows]
 
+
 def attendance_and_grades(
     module_id: str,
     programme_id: Optional[str] = None,
@@ -915,6 +924,7 @@ def attendance_and_grades(
     rows = cur.fetchall()
     conn.close()
     return [tuple(r) for r in rows]
+
 
 def programme_wellbeing_engagement(
     module_id: str,
