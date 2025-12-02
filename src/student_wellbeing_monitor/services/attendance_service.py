@@ -1,60 +1,194 @@
 # attendance_service.py
-from typing import Optional, Dict, Any, List, Tuple
+
+from typing import Optional, Dict, Any, List
 from collections import defaultdict
+
+from student_wellbeing_monitor.database.read import (
+    attendance_for_course,
+    attendance_detail_for_students,
+)
 
 
 class AttendanceService:
-    # =========================================================
-    # 3️ getAttendanceByModule #TODO: 这个函数应该分到 属于 attendance 的服务里
-    # =========================================================
+    """
+    Course Leader 视角的出勤相关服务。
 
-    def get_attendance_by_module(
+    对应 CourseLeader.md 中的：
+      1️⃣ get_attendance_trends
+      3️⃣ get_low_attendance_students
+    """
+
+    # -------------------------------------------------
+    # 1️⃣ 按周查看课程出勤趋势
+    # -------------------------------------------------
+    def get_attendance_trends(
         self,
-        start_week: int,
-        end_week: int,
+        course_id: str,
+        programme_id: Optional[str] = None,
+        week_start: Optional[int] = None,
+        week_end: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
-        对应前端接口：GET /getAttendanceByModule
+        get_attendance_trends(course_id, programme_id=None, week_start=None, week_end=None)
 
-        输出结构：
+        返回：
+        {
+          "courseId": "...",
+          "courseName": "...",
+          "points": [
             {
-              "items": [
-                {"moduleCode": "WM9QF", "moduleName": "WM9QF", "attendanceRate": 0.92},
-                ...
-              ]
-            }
+              "week": 1,
+              "attendanceRate": 0.8,
+              "presentCount": 120,
+              "totalCount": 150
+            },
+            ...
+          ]
+        }
         """
-        if end_week < start_week:
-            raise ValueError("end_week must be >= start_week")
+        rows = attendance_for_course(
+            module_id=course_id,
+            programme_id=programme_id,
+            week_start=week_start,
+            week_end=week_end,
+        )
+        # rows: (module_id, module_name, student_id, student_name, week, status)
 
-        rows = get_attendance_by_module_weeks(start_week, end_week)
-        # rows: (course_id, week, attended)
+        if not rows:
+            return {
+                "courseId": course_id,
+                "courseName": None,
+                "points": [],
+            }
 
-        att_sum = defaultdict(float)
-        att_cnt = defaultdict(int)
+        course_name = rows[0][1]
 
-        for course_id, week, attended in rows:
-            if course_id is None:
+        present_by_week: Dict[int, int] = defaultdict(int)
+        total_by_week: Dict[int, int] = defaultdict(int)
+
+        for _mid, _mname, _sid, _sname, week, status in rows:
+            if week is None:
                 continue
-            cid = str(course_id)
-            try:
-                val = float(attended)  # 假定 0/1
-            except (TypeError, ValueError):
-                # 如果是 'present' / 'absent'，可以在这里做映射
-                continue
+            w = int(week)
+            total_by_week[w] += 1
+            # status 为 0 / 1（0 缺勤，1 出勤）
+            if status is not None and int(status) == 1:
+                present_by_week[w] += 1
 
-            att_sum[cid] += val
-            att_cnt[cid] += 1
-
-        items: List[Dict[str, Any]] = []
-        for cid in sorted(att_sum.keys()):
-            rate = att_sum[cid] / att_cnt[cid] if att_cnt[cid] > 0 else 0.0
-            items.append(
+        points: List[Dict[str, Any]] = []
+        for week in sorted(total_by_week.keys()):
+            total = total_by_week[week]
+            present = present_by_week.get(week, 0)
+            rate = present / total if total > 0 else 0.0
+            points.append(
                 {
-                    "moduleCode": cid,
-                    "moduleName": cid,  # 如需真实名字，可再查 courses 表
+                    "week": week,
                     "attendanceRate": round(rate, 2),
+                    "presentCount": int(present),
+                    "totalCount": int(total),
                 }
             )
 
-        return {"items": items}
+        return {
+            "courseId": course_id,
+            "courseName": course_name,
+            "points": points,
+        }
+
+    # -------------------------------------------------
+    # 3️⃣ 低出勤学生列表
+    # -------------------------------------------------
+    def get_low_attendance_students(
+        self,
+        course_id: str,
+        programme_id: Optional[str] = None,
+        week_start: Optional[int] = None,
+        week_end: Optional[int] = None,
+        threshold_rate: float = 0.8,
+        min_absences: int = 2,
+    ) -> Dict[str, Any]:
+        """
+        get_low_attendance_students(
+            course_id,
+            programme_id=None,
+            week_start=None,
+            week_end=None,
+            threshold_rate=0.8,
+            min_absences=2,
+        )
+
+        返回：
+        {
+          "courseId": "...",
+          "courseName": "...",
+          "students": [
+            {
+              "studentId": "S0001",
+              "name": "Alice",
+              "email": "alice@example.com",
+              "attendanceRate": 0.6,
+              "absentSessions": 4
+            },
+            ...
+          ]
+        }
+        """
+        rows = attendance_detail_for_students(
+            module_id=course_id,
+            programme_id=programme_id,
+            week_start=week_start,
+            week_end=week_end,
+        )
+        # rows: (module_id, module_name, student_id, student_name, email, week, status)
+
+        if not rows:
+            return {
+                "courseId": course_id,
+                "courseName": None,
+                "students": [],
+            }
+
+        course_name = rows[0][1]
+
+        # 按学生聚合 present / absent / total
+        stats: Dict[str, Dict[str, Any]] = {}
+        for _mid, _mname, sid, sname, email, _week, status in rows:
+            if sid not in stats:
+                stats[sid] = {
+                    "name": sname,
+                    "email": email,
+                    "present": 0,
+                    "absent": 0,
+                    "total": 0,
+                }
+            stats[sid]["total"] += 1
+            # status 为 0 / 1（0 缺勤，1 出勤）
+            if status is not None and int(status) == 1:
+                stats[sid]["present"] += 1
+            else:
+                # 只要不是“出勤”，都当成缺勤
+                stats[sid]["absent"] += 1
+
+        students: List[Dict[str, Any]] = []
+        for sid, info in stats.items():
+            total = info["total"]
+            present = info["present"]
+            absent = info["absent"]
+            rate = present / total if total > 0 else 0.0
+
+            if rate < threshold_rate or absent >= min_absences:
+                students.append(
+                    {
+                        "studentId": sid,
+                        "name": info["name"],
+                        "email": info["email"],
+                        "attendanceRate": round(rate, 2),
+                        "absentSessions": int(absent),
+                    }
+                )
+
+        return {
+            "courseId": course_id,
+            "courseName": course_name,
+            "students": students,
+        }

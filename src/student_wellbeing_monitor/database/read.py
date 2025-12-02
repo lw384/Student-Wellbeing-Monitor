@@ -601,3 +601,389 @@ def get_continuous_high_stress_students():
     result = [dict(row) for row in cur.fetchall()]
     conn.close()
     return result
+# ----------  new  ----------
+def get_continuous_high_stress_students():
+    """Students with high stress levels for three or more consecutive weeks."""
+    conn = get_conn()
+    conn.row_factory = _sqlite3.Row
+    cur = conn.cursor()
+    cur.execute(
+        """
+        WITH high AS (
+            SELECT s.student_id, s.name, w.week, w.stress_level
+            FROM wellbeing w 
+            JOIN student s ON w.student_id = s.student_id
+            WHERE w.stress_level >= 4
+        ),
+        grouped AS (
+            SELECT *,
+                week - ROW_NUMBER() OVER (PARTITION BY student_id ORDER BY week) AS grp
+            FROM high
+        )
+        SELECT student_id, name,
+            COUNT(*) AS weeks,
+            GROUP_CONCAT('Week ' || week) AS weeks_list
+        FROM grouped
+        GROUP BY student_id, name, grp
+        HAVING weeks >= 3
+        ORDER BY weeks DESC
+        """
+    )
+    result = [dict(row) for row in cur.fetchall()]
+    conn.close()
+    return result
+
+def attendance_for_course(
+    module_id: str,
+    programme_id: Optional[str] = None,
+    week_start: Optional[int] = None,
+    week_end: Optional[int] = None,
+) -> List[Tuple]:
+    """
+    为 get_attendance_trends 提供原始数据。
+
+    返回每一条出勤记录：
+      (module_id, module_name, student_id, student_name, week, status)
+    """
+    conn = get_conn(row_factory=_sqlite3.Row)
+    cur = conn.cursor()
+
+    sql = """
+        SELECT
+            m.module_id,
+            m.module_name,
+            s.student_id,
+            s.name AS student_name,
+            a.week,
+            a.status
+        FROM attendance AS a
+        JOIN student_module AS sm
+          ON a.student_id = sm.student_id
+         AND a.module_id  = sm.module_id
+        JOIN student AS s
+          ON sm.student_id = s.student_id
+        JOIN module AS m
+          ON sm.module_id = m.module_id
+        WHERE m.module_id = ?
+    """
+    params: List = [module_id]
+
+    if programme_id is not None:
+        sql += " AND s.programme_id = ?"
+        params.append(programme_id)
+
+    if week_start is not None:
+        sql += " AND a.week >= ?"
+        params.append(week_start)
+
+    if week_end is not None:
+        sql += " AND a.week <= ?"
+        params.append(week_end)
+
+    sql += " ORDER BY a.week, s.student_id"
+
+    cur.execute(sql, params)
+    rows = cur.fetchall()
+    conn.close()
+    return [tuple(r) for r in rows]
+
+def attendance_detail_for_students(
+    module_id: str,
+    programme_id: Optional[str] = None,
+    week_start: Optional[int] = None,
+    week_end: Optional[int] = None,
+) -> List[Tuple]:
+    """
+    为 get_low_attendance_students 提供原始数据。
+
+    返回：
+      (module_id, module_name, student_id, student_name, email, week, status)
+    """
+    conn = get_conn(row_factory=_sqlite3.Row)
+    cur = conn.cursor()
+
+    sql = """
+        SELECT
+            m.module_id,
+            m.module_name,
+            s.student_id,
+            s.name AS student_name,
+            s.email,
+            a.week,
+            a.status
+        FROM attendance AS a
+        JOIN student_module AS sm
+          ON a.student_id = sm.student_id
+         AND a.module_id  = sm.module_id
+        JOIN student AS s
+          ON sm.student_id = s.student_id
+        JOIN module AS m
+          ON sm.module_id = m.module_id
+        WHERE m.module_id = ?
+    """
+    params: List = [module_id]
+
+    if programme_id is not None:
+        sql += " AND s.programme_id = ?"
+        params.append(programme_id)
+
+    if week_start is not None:
+        sql += " AND a.week >= ?"
+        params.append(week_start)
+
+    if week_end is not None:
+        sql += " AND a.week <= ?"
+        params.append(week_end)
+
+    sql += " ORDER BY s.student_id, a.week"
+
+    cur.execute(sql, params)
+    rows = cur.fetchall()
+    conn.close()
+    return [tuple(r) for r in rows]
+
+def submissions_for_course(
+    module_id: str,
+    assignment_no: Optional[int] = None,
+    programme_id: Optional[str] = None,
+) -> List[Tuple]:
+    """
+    为 get_submission_summary 提供数据。
+
+    逻辑：
+      - student_module 找到所有选课学生
+      - LEFT JOIN submission 得到 submitted(1/0)，无记录视为 0 (未交)
+
+    返回：
+      (module_id, module_name, student_id, submitted)
+    """
+    conn = get_conn(row_factory=_sqlite3.Row)
+    cur = conn.cursor()
+
+    join_condition = """
+        sm.student_id = sub.student_id
+        AND sm.module_id = sub.module_id
+    """
+    params: List = []
+
+    if assignment_no is not None:
+        join_condition += " AND sub.assignment_no = ?"
+        params.append(assignment_no)
+
+    sql = f"""
+        SELECT
+            m.module_id,
+            m.module_name,
+            s.student_id,
+            COALESCE(sub.submitted, 0) AS submitted
+        FROM student_module AS sm
+        JOIN student AS s
+          ON sm.student_id = s.student_id
+        JOIN module AS m
+          ON sm.module_id = m.module_id
+        LEFT JOIN submission AS sub
+          ON {join_condition}
+        WHERE m.module_id = ?
+    """
+    params.append(module_id)
+
+    if programme_id is not None:
+        sql += " AND s.programme_id = ?"
+        params.append(programme_id)
+
+    sql += " ORDER BY s.student_id"
+
+    cur.execute(sql, params)
+    rows = cur.fetchall()
+    conn.close()
+    return [tuple(r) for r in rows]
+
+def unsubmissions_for_repeated_issues(
+    module_id: Optional[str] = None,
+    programme_id: Optional[str] = None,
+    week_start: Optional[int] = None,
+    week_end: Optional[int] = None,
+) -> List[Tuple]:
+    """
+    为 get_repeated_missing_students 提供数据。
+
+    这里只有“未交(unsubmit)”这一种问题，没有迟交。
+
+    返回：
+      (module_id, module_name, assignment_no,
+       student_id, student_name, email, submitted)
+    """
+    conn = get_conn(row_factory=_sqlite3.Row)
+    cur = conn.cursor()
+
+    sql = """
+        SELECT
+            m.module_id,
+            m.module_name,
+            sub.assignment_no,
+            s.student_id,
+            s.name AS student_name,
+            s.email,
+            sub.submitted
+        FROM submission AS sub
+        JOIN student AS s
+          ON sub.student_id = s.student_id
+        JOIN module AS m
+          ON sub.module_id = m.module_id
+        WHERE 1 = 1
+    """
+    params: List = []
+
+    if module_id is not None:
+        sql += " AND m.module_id = ?"
+        params.append(module_id)
+
+    if programme_id is not None:
+        sql += " AND s.programme_id = ?"
+        params.append(programme_id)
+
+    # 如果你 submission 里没有 week，可以改成按 due_date 范围过滤
+    if week_start is not None:
+        sql += " AND sub.week >= ?"
+        params.append(week_start)
+
+    if week_end is not None:
+        sql += " AND sub.week <= ?"
+        params.append(week_end)
+
+    sql += " ORDER BY s.student_id, m.module_id, sub.assignment_no"
+
+    cur.execute(sql, params)
+    rows = cur.fetchall()
+    conn.close()
+    return [tuple(r) for r in rows]
+
+def attendance_and_grades(
+    module_id: str,
+    programme_id: Optional[str] = None,
+    week_start: Optional[int] = None,
+    week_end: Optional[int] = None,
+) -> List[Tuple]:
+    """
+    为 get_attendance_vs_grades 提供数据。
+
+    返回：
+      (module_id, module_name, student_id, student_name, week, status, grade)
+    """
+    conn = get_conn(row_factory=_sqlite3.Row)
+    cur = conn.cursor()
+
+    sql = """
+        SELECT
+            m.module_id,
+            m.module_name,
+            s.student_id,
+            s.name AS student_name,
+            a.week,
+            a.status,
+            sub.grade
+        FROM attendance AS a
+        JOIN student_module AS sm
+          ON a.student_id = sm.student_id
+         AND a.module_id  = sm.module_id
+        JOIN student AS s
+          ON sm.student_id = s.student_id
+        JOIN module AS m
+          ON sm.module_id = m.module_id
+        LEFT JOIN submission AS sub
+          ON sub.student_id = sm.student_id
+         AND sub.module_id  = sm.module_id
+        WHERE m.module_id = ?
+    """
+    params: List = [module_id]
+
+    if programme_id is not None:
+        sql += " AND s.programme_id = ?"
+        params.append(programme_id)
+
+    if week_start is not None:
+        sql += " AND a.week >= ?"
+        params.append(week_start)
+
+    if week_end is not None:
+        sql += " AND a.week <= ?"
+        params.append(week_end)
+
+    sql += " ORDER BY s.student_id, a.week"
+
+    cur.execute(sql, params)
+    rows = cur.fetchall()
+    conn.close()
+    return [tuple(r) for r in rows]
+
+def programme_wellbeing_engagement(
+    module_id: str,
+    week_start: Optional[int] = None,
+    week_end: Optional[int] = None,
+) -> List[Tuple]:
+    """
+    为 get_programme_wellbeing_engagement 提供数据。
+
+    返回：
+      (module_id, module_name,
+       student_id,
+       programme_id, programme_name,
+       week,
+       stress_level,
+       attendance_status,
+       submission_status,   -- 'submit' / 'unsubmit'
+       grade)
+    """
+    conn = get_conn(row_factory=_sqlite3.Row)
+    cur = conn.cursor()
+
+    sql = """
+        SELECT
+            m.module_id,
+            m.module_name,
+            s.student_id,
+            p.programme_id,
+            p.programme_name,
+            w.week,
+            w.stress_level,
+            a.status AS attendance_status,
+            CASE
+                WHEN sub.submitted = 1 THEN 'submit'
+                WHEN sub.submitted = 0 THEN 'unsubmit'
+                ELSE NULL
+            END AS submission_status,
+            sub.grade
+        FROM student_module AS sm
+        JOIN student AS s
+          ON sm.student_id = s.student_id
+        JOIN module AS m
+          ON sm.module_id = m.module_id
+        LEFT JOIN programme AS p
+          ON s.programme_id = p.programme_id
+        LEFT JOIN wellbeing AS w
+          ON w.student_id = s.student_id
+        LEFT JOIN attendance AS a
+          ON a.student_id = s.student_id
+         AND a.module_id  = sm.module_id
+         AND a.week       = w.week
+        LEFT JOIN submission AS sub
+          ON sub.student_id = s.student_id
+         AND sub.module_id  = sm.module_id
+        WHERE m.module_id = ?
+    """
+    params: List = [module_id]
+
+    if week_start is not None:
+        sql += " AND w.week >= ?"
+        params.append(week_start)
+
+    if week_end is not None:
+        sql += " AND w.week <= ?"
+        params.append(week_end)
+
+    sql += " ORDER BY p.programme_id, s.student_id, w.week"
+
+    cur.execute(sql, params)
+    rows = cur.fetchall()
+    conn.close()
+    return [tuple(r) for r in rows]
