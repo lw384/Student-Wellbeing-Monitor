@@ -3,31 +3,310 @@
 {% set simple_layout = False %}
 
 {% block content %}
-  <div class="main-content">
-    <div class="card-elevated">
-      <div class="page-title">
+<div class="main-content">
+
+  {# ==== 头部标题区 ==== #}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h1 class="page-title mb-1">
         {% if role == "wellbeing" %}
           Wellbeing Officer Dashboard
         {% else %}
           Course Director Dashboard
         {% endif %}
-      </div>
-      <div class="page-subtitle">
-        Select an action from the left menu.
-      </div>
+      </h1>
+      <p class="page-subtitle mb-0">
+        Monitor trends in stress, sleep and engagement over recent weeks.
+      </p>
+    </div>
 
-      <ul class="list-unstyled mb-0">
-        <li class="mb-2">
-          <a href="{{ url_for('view_data', role=role) }}" class="link-muted">
-            • View data tables
-          </a>
-        </li>
-        <li>
-          <a href="{{ url_for('view_charts', role=role) }}" class="link-muted">
-            • View analytics charts
-          </a>
-        </li>
-      </ul>
+    <div class="text-end d-none d-md-block">
+      <a href="{{ url_for('view_data', role=role) }}" class="link-muted d-block">
+        View data tables →
+      </a>
     </div>
   </div>
+
+  {# ==== filter: Week + Programme ==== #}
+  <div class="card-elevated mb-3">
+    <form class="row g-3 align-items-end" method="get"
+          action="{{ url_for('dashboard', role=role) }}">
+     <div class="col-12 col-md-3">
+        <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
+          Start Week
+        </label>
+        <select name="start_week" class="form-select form-select-sm">
+          {# weeks 是后端传入的列表，例如 [1,2,...,12]；current_week 当前选中值 #}
+          {% for w in weeks|default([1,2,3,4,5,6,7,8]) %}
+            <option value="{{ w }}"
+                    {% if w == current_start_week %}selected{% endif %}>
+              Week {{ w }}
+             </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-12 col-md-3">
+        <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
+          End Week
+        </label>
+        <select name="end_week" class="form-select form-select-sm">
+          {# weeks 是后端传入的列表，例如 [1,2,...,12]；current_week 当前选中值 #}
+          {% for w in weeks|default([1,2,3,4,5,6,7,8]) %}
+            <option value="{{ w }}"
+                    {% if w == current_end_week %}selected{% endif %}>
+              Week {{ w }}
+             </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-12 col-md-3">
+        <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
+          Programme
+        </label>
+        <select name="programme_id" class="form-select form-select-sm">
+          <option value="">All programmes</option>
+          {# programme from database #}
+          {% for p in programmes|default([]) %}
+            <option value="{{ p.id }}"
+                    {% if p.id == current_programme|default('') %}selected{% endif %}>
+              {{ p.code }} – {{ p.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-12 col-md-3 text-md-end">
+        <button type="submit" class="btn btn-primary btn-sm px-4">
+          Apply
+        </button>
+      </div>
+    </form>
+  </div>
+
+  {# ==== 指标卡片区：总体睡眠 / 压力 / 样本数 等 ==== #}
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-md-4">
+      <div class="card-elevated h-100">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="small text-uppercase text-muted fw-semibold">
+            Avg Hours Slept
+          </span>
+        </div>
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="fs-3 fw-semibold">
+            {{ summary.avg_sleep|default('--') }}
+          </span>
+          <span class="text-muted small">hrs / night</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">
+          Based on selected week & programme.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card-elevated h-100">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="small text-uppercase text-muted fw-semibold">
+            Avg Stress Level
+          </span>
+        </div>
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="fs-3 fw-semibold">
+            {{ summary.avg_stress|default('--') }}
+          </span>
+          <span class="text-muted small">/ 5</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">
+          Higher values may indicate wellbeing risk.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card-elevated h-100">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="small text-uppercase text-muted fw-semibold">
+            Survey Responses
+          </span>
+        </div>
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="fs-3 fw-semibold">
+            {{ summary.response_count|default('--') }}
+          </span>
+          <span class="text-muted small">students</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">
+          Response rate {{ summary.response_rate|default('--') }}%.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {# ==== 折线图区域：多周趋势（压力 / 睡眠） ==== #}
+   <div class="card-elevated mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">Stress & Sleep over weeks</h6>
+      <span class="text-muted small">Average values per week</span>
+    </div>
+    <div style="height: 320px;">
+      <canvas id="lineChart"></canvas>
+    </div>
+  </div>
+
+  {# ==== 柱状图：按课程的出勤率 / 成绩 ==== #}
+  <!-- <div class="card-elevated mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">Attendance Rate by Module</h6>
+      <span class="text-muted small">0–100% attendance</span>
+    </div>
+    <div style="height: 320px;">
+      <canvas id="barChart"></canvas>
+    </div>
+  </div> -->
+
+    {# ==== 需要联系的学生列表 ==== #}
+  <div class="card-elevated mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">
+        {% if role == "wellbeing" %}
+          Students to contact (wellbeing risk)
+        {% else %}
+          Students to contact (engagement risk)
+        {% endif %}
+      </h6>
+      <span class="text-muted small">
+        Auto-flagged based on recent stress / attendance / submissions.
+      </span>
+    </div>
+
+    {% if students_to_contact %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Student ID</th>
+              <th>Name</th>
+              <th>Reason</th>
+              <th>Details</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in students_to_contact %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ s.student_id }}</td>
+                <td>{{ s.name }}</td>
+                <td>{{ s.reason }}</td>
+                <td>{{ s.detail }}</td>
+                <td>
+                  <!-- <a class="btn btn-sm btn-outline-primary"
+                     href="{{ url_for('view_data', role=role, data_type='wellbeing') }}">
+                    View record
+                  </a> -->
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted small mb-0">
+        No students currently flagged for follow-up in the selected period.
+      </p>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // 从后端传来的数据（Python list -> JS array）
+  const weeks       = {{ weeks_for_chart|tojson }};
+  const avgStress   = {{ avg_stress|tojson }};
+  const avgSleep    = {{ avg_sleep|tojson }};
+  // const programme     = {{ modules_for_chart|tojson }};
+  const attRate     = {{ attendance_rate|tojson }};
+
+  console.log("weeks =", weeks);
+  console.log("avgStress =", avgStress);
+  console.log("avgSleep =", avgSleep);
+  // console.log("modules =", modules);
+  console.log("attRate =", attRate);
+  // ========= 折线图 =========
+  const lineCtx = document.getElementById('lineChart').getContext('2d');
+  new Chart(lineCtx, {
+    type: 'line',
+    data: {
+      labels: weeks,
+      datasets: [
+        {
+          label: 'Avg Stress (1–5)',
+          data: avgStress,
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 3,
+        },
+        {
+          label: 'Avg Sleep (hours)',
+          data: avgSleep,
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 3,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { title: { display: true, text: 'Week' } },
+        y: { title: { display: true, text: 'Value' } }
+      },
+      plugins: {
+        legend: { display: true },
+        tooltip: { enabled: true }
+      }
+    }
+  });
+
+  // ========= 柱状图 =========
+  const barCtx = document.getElementById('barChart').getContext('2d');
+  new Chart(barCtx, {
+    type: 'bar',
+    data: {
+      labels: modules,
+      datasets: [
+        {
+          label: 'Attendance rate (%)',
+          data: attRate.map(x => x * 100),  // 0.85 -> 85
+          borderWidth: 1,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          title: { display: true, text: 'Attendance %' }
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.parsed.y.toFixed(1) + '%'
+          }
+        }
+      }
+    }
+  });
+</script>
 {% endblock %}

@@ -3,18 +3,22 @@ from .base import (
     fake,
     DEFAULT_OUTPUT_DIR,
     STUDENT_FIELDS,
+    PROGRAMME_FIELDS,
     MODULE_FIELDS,
     STUDENT_MODULE_FIELDS,
     ATTENDANCE_FIELDS,
     SUBMISSION_FIELDS,
     WELLBEING_FIELDS,
     write_csv,
+    load_csv,
     clean_mock_csv,
+    clean_old_behaviour_files,
 )
 from .entities import (
     generate_students,
     generate_modules,
     generate_student_modules,
+    generate_programmes,
 )
 from .wellbeing import generate_wellbeing_by_week
 from .attendance import generate_attendance_by_week

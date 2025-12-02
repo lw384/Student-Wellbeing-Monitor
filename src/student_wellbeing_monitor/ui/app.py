@@ -1,9 +1,15 @@
 # src/wellbeing_system/ui/app.py
 from flask import Flask, render_template, request, redirect, url_for, flash
-from student_wellbeing_monitor.services.upload_service import import_csv_by_type
-from student_wellbeing_monitor.database import read
 import os
 import math
+from student_wellbeing_monitor.database.read import (
+    get_programmes,
+    get_all_weeks,
+    get_all_students,
+)
+from student_wellbeing_monitor.services.upload_service import import_csv_by_type
+from student_wellbeing_monitor.services.wellbeing_service import wellbeing_service
+
 
 app = Flask(
     __name__,
@@ -24,19 +30,95 @@ def index():
 
 # -------- 2. Dashboard：based on roles --------
 @app.route("/dashboard/<role>")
+@app.route("/dashboard/<role>")
 def dashboard(role):
-    """
-    /dashboard/wellbeing
-    /dashboard/course_leader
-    """
+    # 简单 role 校验
     if role not in ("wellbeing", "course_leader"):
-        # illegal role，return back
         return redirect(url_for("index"))
+
+    # weeks list
+    weeks = get_all_weeks()  # [1,2,3,4,5,6,7,8]
+    start_week = request.args.get(
+        "start_week", type=int, default=min(weeks) if weeks else 1
+    )
+    end_week = request.args.get(
+        "end_week", type=int, default=max(weeks) if weeks else 8
+    )
+
+    # 3. programme list
+    programme_rows = get_programmes()
+    programmes = [
+        {
+            "id": row["programme_id"],
+            "code": row["programme_code"],
+            "name": row["programme_name"],
+        }
+        for row in programme_rows
+    ]
+    current_programme = request.args.get("programme_id", default="", type=str)
+
+    # summary
+    summary_card = wellbeing_service.get_dashboard_summary(
+        start_week,
+        end_week,
+        programme_id=current_programme if current_programme else None,
+    )
+    summary = {
+        "response_count": summary_card["surveyResponses"]["studentCount"],
+        "response_rate": summary_card["surveyResponses"]["responseRate"],
+        "avg_sleep": summary_card["avgHoursSlept"],
+        "avg_stress": summary_card["avgStressLevel"],
+    }
+
+    # 3) line
+    line = wellbeing_service.get_stress_sleep_trend(
+        start_week,
+        end_week,
+        programme_id=current_programme if current_programme else None,
+    )
+
+    weeks_for_chart = line.get("weeks", [])
+    avg_stress = line.get("stress", [])
+    avg_sleep = line.get("sleep", [])
+
+    # # 4) bar
+    modules_for_chart = ["WG1F6", "CS2A4", "ML3B1", "DS2C3"]
+    attendance_rate = [0.92, 0.85, 0.78, 0.88]
+
+    if role == "wellbeing":
+        table = wellbeing_service.get_risk_students(
+            start_week,
+            end_week,
+            programme_id=current_programme if current_programme else None,
+        )
+
+        items = table.get("items", [])
+        students_to_contact = []
+        for item in items:
+            students_to_contact.append(
+                {
+                    "student_id": int(item["studentId"]),  # 转 int（可选）
+                    "name": item["name"],
+                    "reason": item["reason"],
+                    "detail": item["details"],  # 注意 key 名不同
+                }
+            )
 
     return render_template(
         "dashboard.html",
         role=role,
-        active_page="dashboard",
+        weeks=weeks,
+        current_start_week=start_week,
+        current_end_week=end_week,
+        programmes=programmes,
+        current_programme=current_programme,
+        summary=summary,
+        weeks_for_chart=weeks_for_chart,  # 如果你想区分，可以改前端变量名
+        avg_stress=avg_stress,
+        avg_sleep=avg_sleep,
+        modules_for_chart=modules_for_chart,
+        attendance_rate=attendance_rate,
+        students_to_contact=students_to_contact,
     )
 
 
@@ -83,21 +165,21 @@ def view_data(role, data_type):
 
     if data_type == "students":
         headers = ["Student ID", "Name", "Email"]
-        rows = read.get_all_students()
+        rows = get_all_students()
 
     elif data_type == "wellbeing":
         headers = ["Student ID", "Week", "Stress Level", "Hours Slept"]
-        total = read.count_wellbeing()
-        rows = read.get_wellbeing_page(limit=per_page, offset=offset)
+        total = count_wellbeing()
+        rows = get_wellbeing_page(limit=per_page, offset=offset)
 
     # TODO
     elif data_type == "attendance":
         headers = ["Student ID", "Module Code", "Week", "Status"]
-        rows = read.get_all_attendance()
+        rows = get_all_attendance()
 
     elif data_type == "submissions":
         headers = ["Student ID", "Module Code", "Submitted", "Grade"]
-        rows = read.get_all_submissions()
+        rows = get_all_submissions()
 
     else:
         flash("Unknown data type", "danger")

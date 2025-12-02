@@ -2,10 +2,58 @@
 
 A prototype system designed to support the Student Wellbeing Office and Course Directors by collecting, analysing and visualising student wellbeing and engagement data.
 
+## 项目命令说明
+
+请使用poetry
+
+ 以下所有命令都在项目根目录下运行
+
+**生成假数据**
+
+```
+# 只在 mock-data/mock下生成 表 student programme module 的数据
+poetry run python mock_data/scripts/generate_entities.py
+# 只在 mock-data/mock下根据已有的 student programme module 的数据 生成wellbeing attendance submission 数据
+poetry run python mock_data/scripts/generate_behaviour.py
+# 在 mock-data/mock 下生成全部假数据
+poetry run python mock_data/scripts/generate_all.py
+```
+
+**生成假数据 + 写入本地库中**
+
+```
+# 只生成 student programme module 的数据 并写入
+poetry run setup-demo
+# 生成全部假数据并全部写入
+poetry run setup-demo --with-mock
+```
+
+**生成假数据 + 写入本地库 + 启动前端**
+
+```
+poetry run start
+```
+
+**只启动前端**
+
+```
+poetry run wellbeing-web
+```
+前端入口文件在 ui/app.py
+
+**启动测试**
+
+```
+# 全量测试
+poetry run pytest
+```
+
+
+
 ## Project Setup – Poetry Environment
 
 This project uses Poetry to manage dependencies, virtual environments and scripts.
-Before starting, ensure Poetry is installed:
+Before starting, ensure **Poetry** is installed:
 
 ```
 pip install poetry
@@ -16,6 +64,26 @@ From the project root:
 ```
 poetry install
 ```
+setup with mock data
+
+```
+poetry run start
+```
+
+Insert mock data to database
+
+``````
+poetry run setup-demo
+``````
+
+Setup project without mock 
+
+``````
+poetry run wellbeing-web
+``````
+
+
+
 ## Project Structure
 
 ```
@@ -68,9 +136,7 @@ http://127.0.0.1:5000
  poetry run pytest
  ```
 
-## git commit
-
-
+## Git Commit
 
 1. Commit 由两部分组成
 
@@ -81,31 +147,32 @@ http://127.0.0.1:5000
 
 2. 使用以下 6 个固定 type
 
-type	用途说明
-feat	新功能（新增模块、新接口、新脚本）
-fix	修复 bug、修复逻辑错误
-data	mock 数据相关（generate scripts、CSV、数据结构等）
-refactor	代码重构，不改变功能（重命名、拆分文件）
-docs	文档更新（README、架构文档、注释）
-test	添加或修改测试（pytest/unittest）
+- type	用途说明
+- feat	新功能（新增模块、新接口、新脚本）
+- fix	修复 bug、修复逻辑错误
+- data	mock 数据相关（generate scripts、CSV、数据结构等）
+- refactor	代码重构，不改变功能（重命名、拆分文件）
+- docs	文档更新（README、架构文档、注释）
+- test	添加或修改测试（pytest/unittest）
 
 3. commit message 要简短、具体
 
 好例子：
 
-feat: add attendance generator by week
-fix: correct module_code mapping in submissions
-refactor: split mock_core into 4 modules
-docs: add guide for using generate_all script
-data: regenerate wellbeing mock data for week 1-8
-test: add tests for write_csv helper
+- feat: add attendance generator by week
+
+- fix: correct module_code mapping in submissions
+- refactor: split mock_core into 4 modules
+- docs: add guide for using generate_all script
+- data: regenerate wellbeing mock data for week 1-8
+- test: add tests for write_csv helper
 
 坏例子（不要这样）：
 
-update code
-fix something
-changes
-final version
+- update code
+- fix something
+- changes
+- final version
 
 4. 每次 commit 做“一件事”
 
@@ -118,14 +185,14 @@ final version
 一次 commit 全混在一起。
 
 5. commit 频率建议
-   	•	一天至少 2–4 次（功能点 / 阶段点）
-   	•	每次小改动都要 commit，不要积压到一个大 commit
-
+   - 一天至少 2–4 次（功能点 / 阶段点）
+   - 每次小改动都要 commit，不要积压到一个大 commit
 6. 分支建议（极简）
 
-main        —— 稳定版
-feature/... —— 功能开发
-fix/...     —— 修 bug
+- main: 稳定版
+- dev：开发版
+- feature/... ： 功能开发
+  fix/...: 修 bug
 
 ## Mock
 
