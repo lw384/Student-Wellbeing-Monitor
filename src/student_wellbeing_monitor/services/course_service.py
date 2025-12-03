@@ -2,6 +2,10 @@
 
 from typing import Optional, Dict, Any, List, Tuple
 from collections import defaultdict
+import os
+import json
+
+import requests
 
 from student_wellbeing_monitor.database.read import (
     submissions_for_course,
@@ -405,4 +409,326 @@ class CourseService:
             "courseId": course_id,
             "courseName": course_name,
             "programmes": programmes,
+        }
+
+    # -------------------------------------------------
+    # 7️⃣ 高压少睡学生 vs 其他学生：出勤 / 提交 / 成绩对比
+    # -------------------------------------------------
+    def get_high_stress_sleep_engagement_analysis(
+        self,
+        course_id: str,
+        week_start: Optional[int] = None,
+        week_end: Optional[int] = None,
+        stress_threshold: float = 4.0,
+        sleep_threshold: float = 6.0,
+        min_weeks: int = 1,
+    ) -> Dict[str, Any]:
+        """
+        针对单门课程，在指定周范围内：
+        - 找出“stress 高 AND sleep 少”的学生（满足条件的周数 >= min_weeks）
+        - 对比这类学生和其他学生在：
+            * 出勤率（缺课更多？）
+            * 作业提交率（提交率更低？）
+            * 平均成绩（成绩更差？）
+        """
+        rows = programme_wellbeing_engagement(
+            module_id=course_id,
+            week_start=week_start,
+            week_end=week_end,
+        )
+        # rows: (module_id, module_name,
+        #        student_id,
+        #        programme_id, programme_name,
+        #        week,
+        #        stress_level,
+        #        hours_slept,
+        #        attendance_status,
+        #        submission_status,
+        #        grade)
+
+        if not rows:
+            return {
+                "courseId": course_id,
+                "courseName": None,
+                "params": {
+                    "weekStart": week_start,
+                    "weekEnd": week_end,
+                    "stressThreshold": stress_threshold,
+                    "sleepThreshold": sleep_threshold,
+                    "minWeeks": min_weeks,
+                },
+                "groups": {
+                    "highStressLowSleep": {
+                        "studentCount": 0,
+                        "avgAttendanceRate": None,
+                        "avgSubmissionRate": None,
+                        "avgGrade": None,
+                    },
+                    "others": {
+                        "studentCount": 0,
+                        "avgAttendanceRate": None,
+                        "avgSubmissionRate": None,
+                        "avgGrade": None,
+                    },
+                },
+                "students": {"highStressLowSleep": [], "others": []},
+            }
+
+        course_name = rows[0][1]
+
+        # 1) 按学生聚合
+        per_student: Dict[str, Dict[str, Any]] = {}
+
+        for (
+            _mid,
+            _mname,
+            student_id,
+            _programme_id,
+            _programme_name,
+            week,
+            stress_level,
+            hours_slept,
+            attendance_status,
+            submission_status,
+            grade,
+        ) in rows:
+            sid = str(student_id)
+            if sid not in per_student:
+                per_student[sid] = {
+                    "weeks": [],
+                    "stresses": [],
+                    "sleeps": [],
+                    "att_present": 0,
+                    "att_total": 0,
+                    "sub_submit": 0,
+                    "sub_total": 0,
+                    "grade_sum": 0.0,
+                    "grade_cnt": 0,
+                }
+            info = per_student[sid]
+
+            # wellbeing
+            if week is not None and stress_level is not None:
+                try:
+                    info["weeks"].append(int(week))
+                    info["stresses"].append(float(stress_level))
+                    if hours_slept is not None:
+                        info["sleeps"].append(float(hours_slept))
+                    else:
+                        info["sleeps"].append(None)
+                except (TypeError, ValueError):
+                    # 跳过异常数据
+                    pass
+
+            # attendance
+            if attendance_status is not None:
+                info["att_total"] += 1
+                try:
+                    if int(attendance_status) == 1:
+                        info["att_present"] += 1
+                except (TypeError, ValueError):
+                    pass
+
+            # submission
+            if submission_status in ("submit", "unsubmit"):
+                info["sub_total"] += 1
+                if submission_status == "submit":
+                    info["sub_submit"] += 1
+
+            # grade
+            if grade is not None:
+                try:
+                    info["grade_sum"] += float(grade)
+                    info["grade_cnt"] += 1
+                except (TypeError, ValueError):
+                    pass
+
+        # 2) 划分高压少睡组 vs 其它学生
+        high_group: List[Dict[str, Any]] = []
+        other_group: List[Dict[str, Any]] = []
+
+        for sid, info in per_student.items():
+            stresses: List[float] = info["stresses"]
+            sleeps: List[Optional[float]] = info["sleeps"]
+
+            # 有多少周满足 “stress >= stress_threshold AND sleep < sleep_threshold”
+            high_weeks = 0
+            for s, sl in zip(stresses, sleeps):
+                if s is None or sl is None:
+                    continue
+                if s >= stress_threshold and sl < sleep_threshold:
+                    high_weeks += 1
+
+            is_high = high_weeks >= min_weeks
+
+            # 学生级别指标
+            att_rate = (
+                info["att_present"] / info["att_total"]
+                if info["att_total"] > 0
+                else None
+            )
+            sub_rate = (
+                info["sub_submit"] / info["sub_total"]
+                if info["sub_total"] > 0
+                else None
+            )
+            avg_grade = (
+                info["grade_sum"] / info["grade_cnt"]
+                if info["grade_cnt"] > 0
+                else None
+            )
+
+            record = {
+                "studentId": sid,
+                "attendanceRate": round(att_rate, 2) if att_rate is not None else None,
+                "submissionRate": round(sub_rate, 2) if sub_rate is not None else None,
+                "avgGrade": round(avg_grade, 2) if avg_grade is not None else None,
+            }
+
+            if is_high:
+                high_group.append(record)
+            else:
+                other_group.append(record)
+
+        # 3) 计算两组平均值
+        def _group_stats(group: List[Dict[str, Any]]) -> Dict[str, Any]:
+            if not group:
+                return {
+                    "studentCount": 0,
+                    "avgAttendanceRate": None,
+                    "avgSubmissionRate": None,
+                    "avgGrade": None,
+                }
+
+            def _avg(values: List[Optional[float]]) -> Optional[float]:
+                valid = [v for v in values if v is not None]
+                if not valid:
+                    return None
+                return round(sum(valid) / len(valid), 2)
+
+            return {
+                "studentCount": len(group),
+                "avgAttendanceRate": _avg(
+                    [g.get("attendanceRate") for g in group]
+                ),
+                "avgSubmissionRate": _avg(
+                    [g.get("submissionRate") for g in group]
+                ),
+                "avgGrade": _avg([g.get("avgGrade") for g in group]),
+            }
+
+        params = {
+            "weekStart": week_start,
+            "weekEnd": week_end,
+            "stressThreshold": stress_threshold,
+            "sleepThreshold": sleep_threshold,
+            "minWeeks": min_weeks,
+        }
+
+        return {
+            "courseId": course_id,
+            "courseName": course_name,
+            "params": params,
+            "groups": {
+                "highStressLowSleep": _group_stats(high_group),
+                "others": _group_stats(other_group),
+            },
+            "students": {
+                "highStressLowSleep": high_group,
+                "others": other_group,
+            },
+        }
+
+    # -------------------------------------------------
+    # 8️⃣ 调用外部 AI API，对上述结果做进一步分析
+    # -------------------------------------------------
+    def analyze_high_stress_sleep_with_ai(
+        self,
+        course_id: str,
+        week_start: Optional[int] = None,
+        week_end: Optional[int] = None,
+        stress_threshold: float = 4.0,
+        sleep_threshold: float = 6.0,
+        min_weeks: int = 1,
+    ) -> Dict[str, Any]:
+        """
+        在 get_high_stress_sleep_engagement_analysis 的基础上，
+        调用一个外部 AI HTTP 接口，让 AI 生成自然语言分析。
+
+        需要在环境变量中配置：
+          - AI_ANALYSIS_URL: 外部 AI 服务的 URL
+          - AI_API_KEY:     可选的 Bearer Token
+        """
+        base_result = self.get_high_stress_sleep_engagement_analysis(
+            course_id=course_id,
+            week_start=week_start,
+            week_end=week_end,
+            stress_threshold=stress_threshold,
+            sleep_threshold=sleep_threshold,
+            min_weeks=min_weeks,
+        )
+
+        # Call external AI API to generate natural language analysis
+        ai_url = os.environ.get("AI_ANALYSIS_URL")
+        if not ai_url:
+            return {
+                "baseStats": base_result,
+                "aiAnalysis": {
+                    "status": "error",
+                    "message": "AI_ANALYSIS_URL is not configured in environment variables.",
+                },
+            }
+
+        api_key = os.environ.get("AI_API_KEY", "")
+
+        payload = {
+            "task": "analyze_high_stress_low_sleep_vs_engagement",
+            "prompt": (
+                "You are a data analysis assistant in a university supporting Wellbeing Officer and Course Director."
+                "This system will provide the statistical data of two groups of students: one group is the students with high stress and low sleep (highStressLowSleep), "
+                "the other group is the other students (others). Each group contains: average attendance rate, submission rate, average grade, and some student samples."
+                "Please: "
+                "1. Determine if the students with high stress and low sleep are significantly different in attendance rate, submission rate, and average grade from the other students."
+                "2. Use concise natural language to summarize the key differences between the two groups (quantify as much as possible, e.g., how many percentage points different)."
+                "3. Provide 3–5 actionable recommendations for the school/teacher/Wellbeing team."
+                "4. Answer in concise English."
+            ),
+            "data": {
+                "params": base_result.get("params", {}),
+                "groups": base_result.get("groups", {}),
+                "sampleStudents": {
+                    "highStressLowSleep": base_result.get("students", {})
+                    .get("highStressLowSleep", []),
+                    "others": base_result.get("students", {}).get("others", []),
+                },
+            },
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+        }
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+
+        try:
+            resp = requests.post(
+                ai_url,
+                headers=headers,
+                data=json.dumps(payload),
+                timeout=30,
+            )
+            resp.raise_for_status()
+            ai_output = resp.json()
+        except Exception as e:  # 容错，避免前端因为 AI 失败而崩溃
+            return {
+                "baseStats": base_result,
+                "aiAnalysis": {
+                    "status": "error",
+                    "message": f"AI request failed: {e}",
+                },
+            }
+
+        return {
+            "baseStats": base_result,
+            "aiAnalysis": ai_output,
         }
