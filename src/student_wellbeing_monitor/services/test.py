@@ -154,6 +154,40 @@ def main():
     except Exception as e:
         print("Error in get_programme_wellbeing_engagement:", e)
 
+    # ------------------------------------------------------------------
+    # 7. CourseService.get_high_stress_sleep_engagement_analysis
+    # ------------------------------------------------------------------
+    print_header("7. CourseService.get_high_stress_sleep_engagement_analysis")
+    try:
+        result = course_service.get_high_stress_sleep_engagement_analysis(
+            course_id=test_course_id,
+            week_start=WEEK_START,
+            week_end=WEEK_END,
+            stress_threshold=4.0,
+            sleep_threshold=6.0,
+            min_weeks=1,
+        )
+        pprint(result)
+    except Exception as e:
+        print("Error in get_high_stress_sleep_engagement_analysis:", e)
+
+    # ------------------------------------------------------------------
+    # 8. CourseService.analyze_high_stress_sleep_with_ai
+    # ------------------------------------------------------------------
+    print_header("8. CourseService.analyze_high_stress_sleep_with_ai")
+    try:
+        result = course_service.analyze_high_stress_sleep_with_ai(
+            course_id=test_course_id,
+            week_start=WEEK_START,
+            week_end=WEEK_END,
+            stress_threshold=4.0,
+            sleep_threshold=6.0,
+            min_weeks=1,
+        )
+        pprint(result)
+    except Exception as e:
+        print("Error in analyze_high_stress_sleep_with_ai:", e)
+
     print_header("All test calls finished (does not guarantee business correctness, only that functions executed)")
 
 

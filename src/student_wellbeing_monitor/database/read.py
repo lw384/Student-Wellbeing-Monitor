@@ -963,7 +963,7 @@ def programme_wellbeing_engagement(
     week_end: Optional[int] = None,
 ) -> List[Tuple]:
     """
-    为 get_programme_wellbeing_engagement 提供数据。
+    为 get_programme_wellbeing_engagement 以及其他综合分析提供数据。
 
     返回：
       (module_id, module_name,
@@ -971,6 +971,7 @@ def programme_wellbeing_engagement(
        programme_id, programme_name,
        week,
        stress_level,
+       hours_slept,
        attendance_status,
        submission_status,   -- 'submit' / 'unsubmit'
        grade)
@@ -987,6 +988,7 @@ def programme_wellbeing_engagement(
             p.programme_name,
             w.week,
             w.stress_level,
+            w.hours_slept,
             a.status AS attendance_status,
             CASE
                 WHEN sub.submitted = 1 THEN 'submit'
