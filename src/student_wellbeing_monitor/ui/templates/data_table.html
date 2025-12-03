@@ -56,36 +56,49 @@
 
   <div class="table-responsive">
     <table class="table table-hover align-middle">
-  <thead>
-    <tr>
-      <th scope="col">#</th>
-      {% for col in headers %}
-      <th scope="col">{{ col }}</th>
-      {% endfor %}
-      {% if data_type != 'students' %}
-      <th scope="col">Actions</th>
-      {% endif %}
-    </tr>
-  </thead>
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          {% for col in fields %}
+          <th>{{ col[1] }}</th>
+          {% endfor %}
+          {% if data_type != 'students' %}
+          <th scope="col">Actions</th>
+          {% endif %}
+        </tr>
+      </thead>
 
-  <tbody>
-    {% for row in rows %}
-    <tr>
-      <td>{{ loop.index }}</td>
-      {% for cell in row %}
-      <td>{{ cell }}</td>
-      {% endfor %}
+      {% for row in rows %}
+      <tr>
+        <td>{{ loop.index }}</td>
 
-      {% if data_type != 'students' %}
-      <td>
-        <button class="btn btn-sm btn-outline-secondary">Edit</button>
-        <button class="btn btn-sm btn-outline-danger">Delete</button>
-      </td>
-      {% endif %}
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+        {% for col_key, col_name in fields %}
+        <td>{{ row[col_key] }}</td>
+        {% endfor %}
+
+        {% if data_type != 'students' %}
+        <td class="text-nowrap">
+          <a href="{{ url_for('edit_record',
+                        role=role,
+                        data_type=data_type,
+                        record_id=row['id'],
+                        page=page) }}" class="btn btn-sm btn-outline-secondary">
+            Edit
+          </a>
+
+          <form method="post" action="{{ url_for('delete_record',
+                             role=role,
+                             data_type=data_type,
+                             record_id=row['id'],
+                             page=page) }}" style="display:inline;">
+            <button class="btn btn-sm btn-outline-danger">Delete</button>
+          </form>
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
   </div>
   <nav aria-label="Page navigation" class="d-flex justify-content-center mt-3">
     <ul class="pagination pagination-sm mb-0">

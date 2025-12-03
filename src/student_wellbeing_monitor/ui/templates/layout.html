@@ -1,24 +1,20 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>Student Wellbeing System</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<head>
+  <meta charset="utf-8">
+  <title>Student Wellbeing System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- Bootstrap 5 CDN -->
-  
+
   <!-- Google Font：Inter，偏数据仪表盘风格 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
-    rel="stylesheet"
-  >
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
   <!-- Bootstrap 5 -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-    rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
   <!-- 自定义样式 -->
   <style>
@@ -29,8 +25,10 @@
       --bg-navbar: #111827;
       --border-subtle: #e5e7eb;
 
-      --primary: #2563eb;        /* 主色：蓝色 */
-      --primary-soft: #dbeafe;   /* 浅蓝底 */
+      --primary: #2563eb;
+      /* 主色：蓝色 */
+      --primary-soft: #dbeafe;
+      /* 浅蓝底 */
       --primary-dark: #1d4ed8;
 
       --text-main: #111827;
@@ -47,7 +45,7 @@
 
     body {
       font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
-                   "Segoe UI", sans-serif;
+        "Segoe UI", sans-serif;
       background-color: var(--bg-page);
       color: var(--text-main);
     }
@@ -73,7 +71,8 @@
 
     /* 布局 */
     .sidebar {
-      min-height: calc(100vh - 56px); /* 顶部导航高度 56px */
+      min-height: calc(100vh - 56px);
+      /* 顶部导航高度 56px */
       background-color: var(--bg-sidebar);
       border-right: 1px solid var(--border-subtle);
       padding-top: 1rem;
@@ -186,16 +185,15 @@
       color: var(--primary-dark);
       text-decoration: underline;
     }
-
   </style>
 </head>
-  </head>
+</head>
+
 <body>
   {% if simple_layout %}
-    {# simple_layout：例如 index 登录/选择角色页 #}
-    <div class="d-flex align-items-center justify-content-center"
-         style="min-height: 100vh; background: var(--bg-page);">
-  {% else %}
+  {# simple_layout：例如 index 登录/选择角色页 #}
+  <div class="d-flex align-items-center justify-content-center" style="min-height: 100vh; background: var(--bg-page);">
+    {% else %}
     {# 默认布局：有顶部导航 + 左侧菜单 #}
     <nav class="navbar navbar-dark bg-dark">
       <div class="container-fluid">
@@ -203,12 +201,22 @@
           Student Wellbeing Monitor
         </span>
         {% if role %}
-          <span class="role-badge">
-            Role: {{ role.replace("_", " ").title() }}
-          </span>
+        <span class="role-badge">
+          Role: {{ role.replace("_", " ").title() }}
+        </span>
         {% endif %}
       </div>
     </nav>
+    <div class="position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 2000;">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show shadow">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endfor %}
+      {% endwith %}
+    </div>
 
     <div class="container-fluid">
       <div class="row">
@@ -216,40 +224,57 @@
         <div class="col-2 sidebar pt-3">
           {% if role %}
           <nav class="nav flex-column">
-             <a class="nav-link {% if active_page == 'dashboard' %}active{% endif %}"
-               href="{{ url_for('dashboard', role=role) }}">
+            <a class="nav-link {% if active_page == 'dashboard' %}active{% endif %}"
+              href="{{ url_for('dashboard', role=role) }}">
               Dashboard
             </a>
 
             <a class="nav-link {% if active_page == 'upload' %}active{% endif %}"
-               href="{{ url_for('upload_data', role=role) }}">
+              href="{{ url_for('upload_data', role=role) }}">
               Upload Data
             </a>
 
-           <a class="nav-link {% if active_page == 'data' %}active{% endif %}"
+            <a class="nav-link {% if active_page == 'data' %}active{% endif %}"
               href="{{ url_for('view_data', role=role, data_type='students') }}">Data Table
             </a>
-            
+
           </nav>
           {% endif %}
         </div>
 
         <!-- 主内容区 -->
         <div class="col-10 py-4 main-content">
-  {% endif %}
+          {% endif %}
 
           {# ⭐ 唯一的 block content，在 if/else 外层 ⭐ #}
           {% block content %}{% endblock %}
 
-  {% if simple_layout %}
-    </div>  {# 关闭 simple_layout 外层 div #}
-  {% else %}
-        </div>  {# col-10 #}
-      </div>    {# row #}
-    </div>      {# container-fluid #}
+          {% if simple_layout %}
+        </div> {# 关闭 simple_layout 外层 div #}
+        {% else %}
+      </div> {# col-10 #}
+    </div> {# row #}
+  </div> {# container-fluid #}
   {% endif %}
-   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    // 所有 alert 元素
+    const alerts = document.querySelectorAll('.alert');
+
+    alerts.forEach((alertEl) => {
+      // 3 秒后关闭（你可以改 3000 → 5000 表示 5 秒）
+      setTimeout(() => {
+        const alert = new bootstrap.Alert(alertEl);
+        alert.close();
+      }, 3000);
+    });
+  });
+</script>
   {% block scripts %}{% endblock %}
 </body>
+
 </html>
+
 </html>

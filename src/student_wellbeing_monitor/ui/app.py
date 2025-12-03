@@ -8,9 +8,11 @@ from student_wellbeing_monitor.database.read import (
     get_all_students,
     count_students,
     count_wellbeing,
+    get_wellbeing_by_id,
     get_wellbeing_page,
     # get_course_summary,
 )
+from student_wellbeing_monitor.database.update import update_wellbeing
 from student_wellbeing_monitor.services.upload_service import import_csv_by_type
 from student_wellbeing_monitor.services.wellbeing_service import wellbeing_service
 
@@ -21,6 +23,33 @@ app = Flask(
     static_folder="static",  #  ui/static
 )
 app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY", "dev-secret-key")
+
+TABLE_FIELDS = {
+    "students": [
+        ("student_id", "Student ID"),
+        ("name", "Name"),
+        ("email", "Email"),
+        ("programme", "Programme"),
+    ],
+    "wellbeing": [
+        ("student_id", "Student ID"),
+        ("week", "Week"),
+        ("stress_level", "Stress Level"),
+        ("hours_slept", "Hours Slept"),
+    ],
+    "attendance": [
+        ("student_id", "Student ID"),
+        ("module_code", "Module"),
+        ("week", "Week"),
+        ("status", "Status"),
+    ],
+    "submissions": [
+        ("student_id", "Student ID"),
+        ("module_code", "Module"),
+        ("submitted", "Submitted"),
+        ("grade", "Grade"),
+    ],
+}
 
 
 # -------- 1. entrance: select role --------
@@ -165,15 +194,27 @@ def upload_data(role):
     )
 
 
-def enrich_student_programme(rows, programme_map):
+def enrich_student_programme(raw_rows, programme_map):
     """
-    将学生表中的 programme_id 替换成 'code – name'
+    raw_rows: sqlite3.Row 列表，字段包含 student_id, name, email, programme_id
+    programme_map: { programme_id: "CODE – NAME" }
     """
-    result = []
-    for sid, name, email, pid in rows:
-        display = programme_map.get(pid, f"{pid}")
-        result.append([sid, name, email, display])
-    return result
+    enriched = []
+    for row in raw_rows:
+        enriched.append(
+            {
+                "student_id": row["student_id"],
+                "name": row["name"],
+                "email": row["email"],
+                # 用 map 转成人类可读的文本，如果找不到就回退到原来的 programme_id
+                "programme": programme_map.get(
+                    row["programme_id"], row["programme_id"]
+                ),
+                # 可选保留 id
+                "programme_id": row["programme_id"],
+            }
+        )
+    return enriched
 
 
 # -------- 3. 查看数据表 --------
@@ -193,36 +234,32 @@ def view_data(role, data_type):
         for row in programme_rows
     }
 
+    fields = TABLE_FIELDS[data_type]
+
     # ========== students ==========
     if data_type == "students":
-        headers = ["Student ID", "Name", "Email", "Programme"]
-
-        total = count_students()  # ✅ 总数
-        print(total, "------")
-        rows = get_all_students(limit=per_page, offset=offset)  # ✅ 分页
-        # rows = enrich_student_programme(raw_rows, programme_map)
-        print(len(rows), "________")
+        total = count_students()
+        raw_rows = get_all_students(limit=per_page, offset=offset)
+        rows = enrich_student_programme(raw_rows, programme_map)
 
     # ========== wellbeing ==========
     elif data_type == "wellbeing":
-        headers = ["Student ID", "Week", "Stress Level", "Hours Slept"]
-
-        total = count_wellbeing()  # ✅ 总数
-        rows = get_wellbeing_page(limit=per_page, offset=offset)  # ✅ 分页
+        total = count_wellbeing()
+        rows = get_wellbeing_page(limit=per_page, offset=offset)
 
     # ========== attendance ==========
-    # elif data_type == "attendance":
-    #     headers = ["Student ID", "Module Code", "Week", "Status"]
+    elif data_type == "attendance":
+        headers = ["Student ID", "Module Code", "Week", "Status"]
 
-    #     total = count_attendance()  # ✅ 总数
-    #     rows = get_attendance_page(limit=per_page, offset=offset)  # ✅ 分页
+        total = count_attendance()  # ✅ 总数
+        rows = get_attendance_page(limit=per_page, offset=offset)  # ✅ 分页
 
-    # # ========== submissions ==========
-    # elif data_type == "submissions":
-    #     headers = ["Student ID", "Module Code", "Submitted", "Grade"]
+    # ========== submissions ==========
+    elif data_type == "submissions":
+        headers = ["Student ID", "Module Code", "Submitted", "Grade"]
 
-    #     total = count_submissions()  # ✅ 总数
-    #     rows = get_submissions_page(limit=per_page, offset=offset)  # ✅ 分页
+        total = count_submissions()  # ✅ 总数
+        rows = get_submissions_page(limit=per_page, offset=offset)  # ✅ 分页
 
     else:
         flash("Unknown data type", "danger")
@@ -238,64 +275,72 @@ def view_data(role, data_type):
         "data_table.html",
         role=role,
         data_type=data_type,
-        headers=headers,
         rows=rows,
         page=page,
+        fields=fields,
         total_pages=total_pages,
         active_page="data",
     )
 
 
-# -------- 4. 查看图表 --------
-@app.route("/charts/<role>")
-def view_charts(role):
-    """
-    显示图表页面（先假设 static/charts 下有两个 png）
-    """
-    chart_files = [
-        "attendance_overview.png",
-        "stress_trend.png",
-    ]
-    return render_template(
-        "charts.html",
-        role=role,
-        charts=chart_files,
-        active_page="charts",
-    )
+# app.py
+@app.route("/data/<role>/<data_type>/<int:record_id>/edit", methods=["GET", "POST"])
+def edit_record(role, data_type, record_id):
+    page = request.args.get("page", default=1, type=int)
+
+    if data_type == "wellbeing":
+        # 先查记录
+        record = get_wellbeing_by_id(record_id)
+        if not record:
+            flash("Record not found", "danger")
+            return redirect(
+                url_for("view_data", role=role, data_type=data_type, page=page)
+            )
+
+        if request.method == "POST":
+            # 1. 取表单数据
+            stress = int(request.form["stress_level"])
+            sleep = float(request.form["hours_slept"])
+
+            # 2. 更新数据库
+            update_wellbeing(record_id, stress, sleep)
+
+            # 3. 给提示 + 回到列表页（或留在 edit 页，按你需求）
+            flash("Wellbeing record updated", "success")
+            return redirect(
+                url_for("view_data", role=role, data_type=data_type, page=page)
+            )
+
+        # GET：渲染编辑表单页面，用当前记录预填
+        return render_template(
+            "edit.html",  # 确保这个模板存在
+            role=role,
+            data_type=data_type,
+            record=record,
+            page=page,
+        )
+
+    # 其他 data_type 还没实现
+    flash("Editing this data type is not supported yet.", "warning")
+    return redirect(url_for("view_data", role=role, data_type=data_type, page=page))
 
 
-# -------- 5. 编辑 / 删除（先放空实现，后面再接 DB） --------
-@app.route("/students/edit/<int:student_id>", methods=["GET", "POST"])
-def edit_student(student_id):
-    """
-    GET  -> 渲染编辑表单页面
-    POST -> 保存修改后，跳回 data 表页面
-    """
-    if request.method == "POST":
-        # TODO: 从 request.form 拿数据，更新数据库
-        # 然后重定向到列表页
-        role = request.args.get("role", "wellbeing")  # 你可以自己约定
-        return redirect(url_for("view_data", role=role))
+@app.post("/data/<role>/<data_type>/<int:record_id>/delete")
+def delete_record(role, data_type, record_id):
+    page = request.args.get("page", default=1, type=int)
 
-    # GET：先用假数据填表单，后面换成从 DB 读取
-    dummy_student = {
-        "student_id": student_id,
-        "name": "Demo Name",
-        "email": "demo@warwick.ac.uk",
-        "cohort": "A",
-    }
-    return render_template("edit_student.html", student=dummy_student)
+    if data_type == "wellbeing":
 
+        delete_wellbeing(record_id)
+        flash("Wellbeing record deleted", "success")
 
-@app.route("/students/delete/<int:student_id>")
-def delete_student(student_id):
-    """
-    删除学生后，跳回列表
-    """
-    # TODO: 在这里调用 DB 层：删除学生记录
-    role = request.args.get("role", "wellbeing")
-    # 删除完成后重定向回列表页
-    return redirect(url_for("view_data", role=role))
+    # elif data_type == "attendance": delete_attendance(record_id)
+    # elif data_type == "submissions": delete_submissions(record_id)
+
+    else:
+        flash("Delete not supported for this data type.", "warning")
+
+    return redirect(url_for("view_data", role=role, data_type=data_type, page=page))
 
 
 def run_app():

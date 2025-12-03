@@ -1,0 +1,56 @@
+{# templates/edit_wellbeing.html #}
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card-elevated">
+  <div class="card-body">
+    <h5 class="card-title mb-3">Edit Wellbeing Record</h5>
+
+    <form method="post">
+      <div class="mb-3">
+        <label class="form-label">Student ID</label>
+        <input type="text" class="form-control" value="{{ record.student_id }}" disabled>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Week</label>
+        <input type="number" class="form-control" value="{{ record.week }}" disabled>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Stress Level (1-5)</label>
+        <input
+          type="number"
+          name="stress_level"
+          class="form-control"
+          min="1" max="5"
+          value="{{ record.stress_level }}"
+          required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Hours Slept</label>
+        <input
+          type="number"
+          name="hours_slept"
+          step="0.1"
+          class="form-control"
+          value="{{ record.hours_slept }}"
+          required>
+      </div>
+
+      <div class="d-flex justify-content-between">
+        <a
+          href="{{ url_for('view_data', role=role, data_type=data_type, page=page) }}"
+          class="btn btn-outline-secondary">
+          Cancel
+        </a>
+
+        <button type="submit" class="btn btn-primary">
+          Save changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

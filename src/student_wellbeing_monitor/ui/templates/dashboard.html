@@ -34,14 +34,23 @@
 
   {# ==== filter: Week + Programme ==== #}
   <div class="card-elevated mb-3">
-    <form class="row g-3 align-items-end" method="get" action="{{ url_for('dashboard', role=role) }}">
-      <div class="col-12 col-md-3">
+    <form class="d-flex flex-wrap align-items-end gap-3" method="get" action="{{ url_for('dashboard', role=role) }}">
+
+      <style>
+        /* 统一所有筛选项的宽度 */
+        .filter-field {
+          width: 180px;
+          /* 你可以改成 160 / 200 */
+        }
+      </style>
+
+      {# ---- Start Week ---- #}
+      <div class="filter-field">
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
           Start Week
         </label>
         <select name="start_week" class="form-select form-select-sm">
-          {# weeks 是后端传入的列表，例如 [1,2,...,12]；current_week 当前选中值 #}
-          {% for w in weeks|default([1,2,3,4,5,6,7,8]) %}
+          {% for w in weeks %}
           <option value="{{ w }}" {% if w==current_start_week %}selected{% endif %}>
             Week {{ w }}
           </option>
@@ -49,13 +58,13 @@
         </select>
       </div>
 
-      <div class="col-12 col-md-3">
+      {# ---- End Week ---- #}
+      <div class="filter-field">
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
           End Week
         </label>
         <select name="end_week" class="form-select form-select-sm">
-          {# weeks 是后端传入的列表，例如 [1,2,...,12]；current_week 当前选中值 #}
-          {% for w in weeks|default([1,2,3,4,5,6,7,8]) %}
+          {% for w in weeks %}
           <option value="{{ w }}" {% if w==current_end_week %}selected{% endif %}>
             Week {{ w }}
           </option>
@@ -63,29 +72,30 @@
         </select>
       </div>
 
-      <div class="col-12 col-md-3">
+      {# ---- Programme ---- #}
+      <div class="filter-field">
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
           Programme
         </label>
         <select name="programme_id" class="form-select form-select-sm">
           <option value="">All programmes</option>
-          {# programme from database #}
-          {% for p in programmes|default([]) %}
-          <option value="{{ p.id }}" {% if p.id==current_programme|default('') %}selected{% endif %}>
+          {% for p in programmes %}
+          <option value="{{ p.id }}" {% if p.id==current_programme %}selected{% endif %}>
             {{ p.code }} – {{ p.name }}
           </option>
           {% endfor %}
         </select>
       </div>
 
+      {# ---- Module（仅 course_leader 显示） ---- #}
       {% if role == 'course_leader' %}
-      <div class="col-12 col-md-3">
+      <div class="filter-field">
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
           Module
         </label>
         <select name="module_code" class="form-select form-select-sm">
           <option value="">All modules</option>
-          {% for m in modules|default([]) %}
+          {% for m in modules %}
           <option value="{{ m.code }}" {% if m.code==current_module %}selected{% endif %}>
             {{ m.code }} – {{ m.name }}
           </option>
@@ -94,14 +104,15 @@
       </div>
       {% endif %}
 
-      <div class="col-12 col-md-3 text-md-end">
+      {# ---- Apply button ---- #}
+      <div class="ms-auto">
         <button type="submit" class="btn btn-primary btn-sm px-4">
           Apply
         </button>
       </div>
+
     </form>
   </div>
-
   {# ==== 指标卡片区：根据 role 切换 ==== #}
   {% if role == 'wellbeing' %}
 
@@ -230,7 +241,7 @@
   {% endif %}
 
   {# ==== 折线图区域：多周趋势（压力 / 睡眠） ==== #}
-   {% if role == 'wellbeing' %}
+  {% if role == 'wellbeing' %}
   <div class="card-elevated mb-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="mb-0">Stress & Sleep over weeks</h6>
@@ -240,10 +251,10 @@
       <canvas id="lineChart"></canvas>
     </div>
   </div>
-    {% endif %}
+  {% endif %}
 
   {# ==== 柱状图：按课程的出勤率 / 成绩 ==== #}
-   {% if role == 'course_leader' %}
+  {% if role == 'course_leader' %}
   <div class="card-elevated mb-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="mb-0">Attendance Rate by Module</h6>
@@ -253,7 +264,7 @@
       <canvas id="barChart"></canvas>
     </div>
   </div>
-   {% endif %}
+  {% endif %}
 
   {# ==== 需要联系的学生列表 ==== #}
   <div class="card-elevated mb-3">

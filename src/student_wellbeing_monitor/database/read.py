@@ -158,7 +158,7 @@ def get_wellbeing_page(limit=20, offset=0):
     cur = conn.cursor()
     cur.execute(
         """
-        SELECT student_id, week, stress_level, hours_slept
+        SELECT id, student_id, week, stress_level, hours_slept
         FROM wellbeing
         ORDER BY student_id, week
         LIMIT ? OFFSET ?
@@ -168,6 +168,21 @@ def get_wellbeing_page(limit=20, offset=0):
     rows = cur.fetchall()
     conn.close()
     return rows
+
+
+def get_wellbeing_by_id(record_id: int):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """ 
+          SELECT id, student_id, week, stress_level, hours_slept  
+          FROM wellbeing 
+          WHERE id = ?""",
+        (record_id,),
+    )
+    row = cur.fetchone()
+    conn.close()
+    return row
 
 
 # ================== Programme (Read) ==================
