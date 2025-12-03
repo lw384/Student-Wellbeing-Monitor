@@ -19,6 +19,7 @@ class WellbeingService:
     """
     Service layer for student wellbeing data processing and analysis
     """
+
     def __init__(self):
         pass
 
@@ -53,7 +54,7 @@ class WellbeingService:
 
         input:
             - start_week:
-            - end_week: 
+            - end_week:
             - programme_id: if None, means all programmes
 
         output structure:
@@ -165,7 +166,7 @@ class WellbeingService:
                     pass
 
         all_weeks = sorted(set(list(stress_sum.keys()) + list(sleep_sum.keys())))
-        
+
         weeks: List[int] = []
         stress: List[float] = []
         sleep: List[float] = []
@@ -181,11 +182,7 @@ class WellbeingService:
             stress.append(avg_stress)
             sleep.append(avg_sleep)
 
-        return {
-            "weeks": weeks,      
-            "stress": stress, 
-            "sleep": sleep 
-        }
+        return {"weeks": weeks, "stress": stress, "sleep": sleep}
 
     # =========================================================
     # getRiskStudents: identify risk students and their risk types

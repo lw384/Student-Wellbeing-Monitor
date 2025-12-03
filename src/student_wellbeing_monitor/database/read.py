@@ -205,6 +205,22 @@ def get_programmes():
     return rows
 
 
+# ================== Module (Read) ==================
+def get_all_modules():
+    conn = get_conn(row_factory=_sqlite3.Row)
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT programme_id, module_code, module_name
+        FROM module
+        ORDER BY programme_id, module_code
+        """
+    )
+    rows = cur.fetchall()
+    conn.close()
+    return rows
+
+
 # ================== Attendance (Read) ==================
 
 

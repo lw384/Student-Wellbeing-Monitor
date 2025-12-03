@@ -5,7 +5,7 @@
 {% block content %}
 <div class="main-content">
 
-  {# ==== 头部标题区 ==== #}
+  {# ==== title ==== #}
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
       <h1 class="page-title mb-1">
@@ -31,16 +31,13 @@
       </a>
     </div>
   </div>
-
-  {# ==== filter: Week + Programme ==== #}
+  {# ==== filter: Week + Programme (+ Module for course_leader) ==== #}
   <div class="card-elevated mb-3">
     <form class="d-flex flex-wrap align-items-end gap-3" method="get" action="{{ url_for('dashboard', role=role) }}">
 
       <style>
-        /* 统一所有筛选项的宽度 */
         .filter-field {
           width: 180px;
-          /* 你可以改成 160 / 200 */
         }
       </style>
 
@@ -77,8 +74,20 @@
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
           Programme
         </label>
-        <select name="programme_id" class="form-select form-select-sm">
+        <select id="programme-select" name="programme_id" class="form-select form-select-sm" {% if role=='course_leader'
+          %}required{% endif %}>
+
+          {# wellbeing 可以选全部 #}
+          {% if role == 'wellbeing' %}
           <option value="">All programmes</option>
+
+          {# course_leader 必须选一个具体专业，不提供 All；给一个 disabled 占位 #}
+          {% elif role == 'course_leader' %}
+          <option value="" disabled {% if not current_programme %}selected{% endif %}>
+            Select programme...
+          </option>
+          {% endif %}
+
           {% for p in programmes %}
           <option value="{{ p.id }}" {% if p.id==current_programme %}selected{% endif %}>
             {{ p.code }} – {{ p.name }}
@@ -87,19 +96,34 @@
         </select>
       </div>
 
-      {# ---- Module（仅 course_leader 显示） ---- #}
+      {# ---- Module 仅在 course_leader 角色时显示 ---- #}
       {% if role == 'course_leader' %}
       <div class="filter-field">
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
           Module
         </label>
-        <select name="module_code" class="form-select form-select-sm">
-          <option value="">All modules</option>
+
+        {# ======== Disable until programme selected ======== #}
+        <select id="module-select" name="module_code" class="form-select form-select-sm" {% if not current_programme
+          %}disabled{% endif %}>
+
+          {% if current_programme %}
+          {# ------ programme selected → show All modules ------ #}
+          <option value="" {% if not current_module %}selected{% endif %}>
+            All modules
+          </option>
+
           {% for m in modules %}
           <option value="{{ m.code }}" {% if m.code==current_module %}selected{% endif %}>
             {{ m.code }} – {{ m.name }}
           </option>
           {% endfor %}
+
+          {% else %}
+          {# ------ programme NOT selected → show placeholder ------ #}
+          <option value="">Select programme first</option>
+          {% endif %}
+
         </select>
       </div>
       {% endif %}
@@ -113,10 +137,10 @@
 
     </form>
   </div>
-  {# ==== 指标卡片区：根据 role 切换 ==== #}
+  {# ==== index card: based on roles ==== #}
   {% if role == 'wellbeing' %}
 
-  {# ------- Student Wellbeing Officer 看到的卡片 ------- #}
+  {# ------- Student Wellbeing Officer ------- #}
   <div class="row g-3 mb-3">
     <div class="col-12 col-md-4">
       <div class="card-elevated h-100">
@@ -178,7 +202,7 @@
 
   {% elif role == 'course_leader' %}
 
-  {# ------- Course Leader 看到的卡片 ------- #}
+  {# ------- Course Leader ------- #}
   <div class="row g-3 mb-3">
     <div class="col-12 col-md-4">
       <div class="card-elevated h-100">
@@ -240,7 +264,7 @@
 
   {% endif %}
 
-  {# ==== 折线图区域：多周趋势（压力 / 睡眠） ==== #}
+  {# ==== line chart: trend across week(stress/sleep/response) ==== #}
   {% if role == 'wellbeing' %}
   <div class="card-elevated mb-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -266,7 +290,7 @@
   </div>
   {% endif %}
 
-  {# ==== 需要联系的学生列表 ==== #}
+  {# ==== student at risk ==== #}
   <div class="card-elevated mb-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="mb-0">
@@ -408,4 +432,69 @@
     }
   });
 </script>
+
+<script>
+const modules = {{ modules_for_chart | tojson }};
+</script>
+
+{% if role == 'course_leader' %}
+<script>
+  // 从后端传来的映射
+  const MODULES_BY_PROGRAMME = {{ modules_by_programme | tojson }};
+  const CURRENT_PROGRAMME = {{ current_programme | tojson }};
+  let CURRENT_MODULE = {{ current_module | tojson }};
+
+  console.log("MODULES_BY_PROGRAMME =", MODULES_BY_PROGRAMME);
+
+  function updateModuleOptions(programmeId) {
+    const moduleSelect = document.getElementById("module-select");
+    if (!moduleSelect) return;
+
+    // programme 未选 → 禁用
+    if (!programmeId || !MODULES_BY_PROGRAMME[programmeId]) {
+      moduleSelect.innerHTML = "<option value=''>Select programme first</option>";
+      moduleSelect.disabled = true;
+      return;
+    }
+
+    // programme 已选 → 填充 module
+    const moduleList = MODULES_BY_PROGRAMME[programmeId] || [];
+    moduleSelect.disabled = false;
+
+    moduleSelect.innerHTML = "";
+
+    // ALL modules
+    const allOpt = document.createElement("option");
+    allOpt.value = "";
+    allOpt.textContent = "All modules";
+    if (!CURRENT_MODULE) allOpt.selected = true;
+    moduleSelect.appendChild(allOpt);
+
+    // append modules
+    moduleList.forEach(m => {
+      const opt = document.createElement("option");
+      opt.value = m.code;
+      opt.textContent = `${m.code} – ${m.name}`;
+      if (m.code === CURRENT_MODULE) {
+        opt.selected = true;
+      }
+      moduleSelect.appendChild(opt);
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const programmeSelect = document.getElementById("programme-select");
+    if (!programmeSelect) return;
+
+    // 初次加载
+    updateModuleOptions(CURRENT_PROGRAMME || programmeSelect.value);
+
+    // programme 改变时联动 module
+    programmeSelect.addEventListener("change", (e) => {
+      CURRENT_MODULE = "";   // 清空旧 module
+      updateModuleOptions(e.target.value);
+    });
+  });
+</script>
+{% endif %}
 {% endblock %}

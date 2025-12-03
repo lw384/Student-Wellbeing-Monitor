@@ -4,6 +4,7 @@ import os
 import math
 from student_wellbeing_monitor.database.read import (
     get_programmes,
+    get_all_modules,
     get_all_weeks,
     get_all_students,
     count_students,
@@ -63,7 +64,6 @@ def index():
 
 # -------- 2. Dashboard：based on roles --------
 @app.route("/dashboard/<role>")
-@app.route("/dashboard/<role>")
 def dashboard(role):
     # 简单 role 校验
     if role not in ("wellbeing", "course_leader"):
@@ -78,7 +78,7 @@ def dashboard(role):
         "end_week", type=int, default=max(weeks) if weeks else 8
     )
 
-    # 3. programme list
+    # 2. programme list
     programme_rows = get_programmes()
     programmes = [
         {
@@ -90,6 +90,22 @@ def dashboard(role):
     ]
     current_programme = request.args.get("programme_id", default="", type=str)
 
+    # 3. module list
+    current_module = request.args.get("module_code", default="", type=str)
+
+    # ✅ 一次性查所有 modules，然后按 programme_id 分组
+    all_module_rows = get_all_modules()
+    modules_by_programme: dict[str, list[dict]] = {}
+
+    for row in all_module_rows:
+        pid = row["programme_id"]
+        modules_by_programme.setdefault(pid, []).append(
+            {
+                "code": row["module_code"],
+                "name": row["module_name"],
+            }
+        )
+    print(modules_by_programme, "module_____")
     if role == "wellbeing":
         # summary
         summary_card = wellbeing_service.get_dashboard_summary(
@@ -154,7 +170,9 @@ def dashboard(role):
         current_start_week=start_week,
         current_end_week=end_week,
         programmes=programmes,
+        modules_by_programme=modules_by_programme,
         current_programme=current_programme,
+        current_module=current_module,
         summary=summary,
         weeks_for_chart=weeks_for_chart,  # 如果你想区分，可以改前端变量名
         avg_stress=avg_stress,
