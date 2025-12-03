@@ -81,11 +81,6 @@
           {% if role == 'wellbeing' %}
           <option value="">All programmes</option>
 
-          {# course_leader 必须选一个具体专业，不提供 All；给一个 disabled 占位 #}
-          {% elif role == 'course_leader' %}
-          <option value="" disabled {% if not current_programme %}selected{% endif %}>
-            Select programme...
-          </option>
           {% endif %}
 
           {% for p in programmes %}
@@ -104,7 +99,7 @@
         </label>
 
         {# ======== Disable until programme selected ======== #}
-        <select id="module-select" name="module_code" class="form-select form-select-sm" {% if not current_programme
+        <select id="module-select" name="module_id" class="form-select form-select-sm" {% if not current_programme
           %}disabled{% endif %}>
 
           {% if current_programme %}
@@ -114,7 +109,7 @@
           </option>
 
           {% for m in modules %}
-          <option value="{{ m.code }}" {% if m.code==current_module %}selected{% endif %}>
+          <option value="{{ m.id }}" {% if m.id==current_module %}selected{% endif %}>
             {{ m.code }} – {{ m.name }}
           </option>
           {% endfor %}
@@ -213,7 +208,7 @@
         </div>
         <div class="d-flex align-items-baseline gap-2">
           <span class="fs-3 fw-semibold">
-            {{ (summary.avg_attendance_rate * 100)|round(1)|default('--') }}
+          {{ ((summary.avg_attendance_rate or 0) * 100)|round(1) }}
           </span>
           <span class="text-muted small">%</span>
         </div>
@@ -232,7 +227,7 @@
         </div>
         <div class="d-flex align-items-baseline gap-2">
           <span class="fs-3 fw-semibold">
-            {{ (summary.avg_submission_rate * 100)|round(1)|default('--') }}
+            {{ (summary.avg_submission_rate or 0) * 100|round(1) }}
           </span>
           <span class="text-muted small">%</span>
         </div>
@@ -251,7 +246,7 @@
         </div>
         <div class="d-flex align-items-baseline gap-2">
           <span class="fs-3 fw-semibold">
-            {{ summary.avg_grade|round(1)|default('--') }}
+            {{ (summary.avg_grade or 0)|round(1)|default('--') }}
           </span>
           <span class="text-muted small">/ 100</span>
         </div>

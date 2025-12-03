@@ -4,14 +4,13 @@ from typing import Optional, Dict, Any, List, Tuple
 from collections import defaultdict
 import os
 import json
-
-import requests
-
 from student_wellbeing_monitor.database.read import (
     submissions_for_course,
     unsubmissions_for_repeated_issues,
     attendance_and_grades,
     programme_wellbeing_engagement,
+    get_attendance_filtered,
+    get_submissions_filtered,
 )
 
 
@@ -25,6 +24,67 @@ class CourseService:
       5️⃣ get_attendance_vs_grades      （出勤率 vs 成绩）
       6️⃣ get_programme_wellbeing_engagement （按专业的 wellbeing + engagement 汇总）
     """
+
+    def get_course_leader_summary(
+        self,
+        programme_id: Optional[str],
+        module_id: Optional[str],
+        week_start: int,
+        week_end: int,
+    ):
+        """
+         返回课程负责人 Dashboard 的三项核心指标：
+         - avg_attendance_rate
+         - avg_submission_rate
+        - avg_grade
+        """
+
+        # -------------------------------
+        # 1) Attendance
+        # -------------------------------
+        attendance_rows = get_attendance_filtered(
+            programme_id=programme_id,
+            module_id=module_id,
+            week_start=week_start,
+            week_end=week_end,
+        )
+        # rows: (student_id, module_code, week, status)
+
+        present = sum(1 for r in attendance_rows if r["status"] == "present")
+        absent = sum(1 for r in attendance_rows if r["status"] == "absent")
+        total_att_records = present + absent
+
+        avg_attendance_rate = (
+            present / total_att_records if total_att_records > 0 else None
+        )
+
+        # -------------------------------
+        # 2) Submissions
+        # -------------------------------
+        submission_rows = get_submissions_filtered(
+            programme_id=programme_id,
+            module_id=module_id,
+        )
+        # rows: (student_id, module_code, submitted, grade)
+
+        submit_count = sum(1 for r in submission_rows if r["submitted"] == 1)
+        total_sub_records = len(submission_rows)
+
+        avg_submission_rate = (
+            submit_count / total_sub_records if total_sub_records > 0 else None
+        )
+
+        # -------------------------------
+        # 3) Grade
+        # -------------------------------
+        grades = [r["grade"] for r in submission_rows if r["grade"] is not None]
+        avg_grade = sum(grades) / len(grades) if grades else None
+
+        return {
+            "avg_attendance_rate": avg_attendance_rate,
+            "avg_submission_rate": avg_submission_rate,
+            "avg_grade": avg_grade,
+        }
 
     # -------------------------------------------------
     # 2️⃣ 课程作业提交情况统计（已交 / 未交）
@@ -247,9 +307,7 @@ class CourseService:
             grade_cnt = info["grade_cnt"]
 
             att_rate = present / total if total > 0 else 0.0
-            avg_grade = (
-                info["grade_sum"] / grade_cnt if grade_cnt > 0 else None
-            )
+            avg_grade = info["grade_sum"] / grade_cnt if grade_cnt > 0 else None
 
             points.append(
                 {
@@ -388,9 +446,7 @@ class CourseService:
                 else None
             )
             avg_grade = (
-                info["grade_sum"] / info["grade_cnt"]
-                if info["grade_cnt"] > 0
-                else None
+                info["grade_sum"] / info["grade_cnt"] if info["grade_cnt"] > 0 else None
             )
 
             programmes.append(
@@ -398,9 +454,15 @@ class CourseService:
                     "programmeId": info["programmeId"],
                     "programmeName": info["programmeName"],
                     "studentCount": len(info["students"]),
-                    "avgStress": round(stress_avg, 2) if stress_avg is not None else None,
-                    "attendanceRate": round(att_rate, 2) if att_rate is not None else None,
-                    "submissionRate": round(sub_rate, 2) if sub_rate is not None else None,
+                    "avgStress": (
+                        round(stress_avg, 2) if stress_avg is not None else None
+                    ),
+                    "attendanceRate": (
+                        round(att_rate, 2) if att_rate is not None else None
+                    ),
+                    "submissionRate": (
+                        round(sub_rate, 2) if sub_rate is not None else None
+                    ),
                     "avgGrade": round(avg_grade, 2) if avg_grade is not None else None,
                 }
             )
@@ -573,9 +635,7 @@ class CourseService:
                 else None
             )
             avg_grade = (
-                info["grade_sum"] / info["grade_cnt"]
-                if info["grade_cnt"] > 0
-                else None
+                info["grade_sum"] / info["grade_cnt"] if info["grade_cnt"] > 0 else None
             )
 
             record = {
@@ -608,12 +668,8 @@ class CourseService:
 
             return {
                 "studentCount": len(group),
-                "avgAttendanceRate": _avg(
-                    [g.get("attendanceRate") for g in group]
-                ),
-                "avgSubmissionRate": _avg(
-                    [g.get("submissionRate") for g in group]
-                ),
+                "avgAttendanceRate": _avg([g.get("attendanceRate") for g in group]),
+                "avgSubmissionRate": _avg([g.get("submissionRate") for g in group]),
                 "avgGrade": _avg([g.get("avgGrade") for g in group]),
             }
 
@@ -697,8 +753,9 @@ class CourseService:
                 "params": base_result.get("params", {}),
                 "groups": base_result.get("groups", {}),
                 "sampleStudents": {
-                    "highStressLowSleep": base_result.get("students", {})
-                    .get("highStressLowSleep", []),
+                    "highStressLowSleep": base_result.get("students", {}).get(
+                        "highStressLowSleep", []
+                    ),
                     "others": base_result.get("students", {}).get("others", []),
                 },
             },
@@ -732,3 +789,66 @@ class CourseService:
             "baseStats": base_result,
             "aiAnalysis": ai_output,
         }
+
+
+def get_course_leader_summary(
+    self,
+    programme_id: Optional[str],
+    module_code: Optional[str],
+    week_start: int,
+    week_end: int,
+):
+    """
+    返回课程负责人 Dashboard 的三项核心指标：
+    - avg_attendance_rate
+    - avg_submission_rate
+    - avg_grade
+    """
+
+    # -------------------------------
+    # 1) Attendance
+    # -------------------------------
+    attendance_rows = get_attendance_filtered(
+        programme_id=programme_id,
+        module_code=module_code,
+        week_start=week_start,
+        week_end=week_end,
+    )
+    # rows: (student_id, module_code, week, status)
+
+    present = sum(1 for r in attendance_rows if r["status"] == "present")
+    absent = sum(1 for r in attendance_rows if r["status"] == "absent")
+    total_att_records = present + absent
+
+    avg_attendance_rate = present / total_att_records if total_att_records > 0 else None
+
+    # -------------------------------
+    # 2) Submissions
+    # -------------------------------
+    submission_rows = get_submissions_filtered(
+        programme_id=programme_id,
+        module_code=module_code,
+    )
+    # rows: (student_id, module_code, submitted, grade)
+
+    submit_count = sum(1 for r in submission_rows if r["submitted"] == 1)
+    total_sub_records = len(submission_rows)
+
+    avg_submission_rate = (
+        submit_count / total_sub_records if total_sub_records > 0 else None
+    )
+
+    # -------------------------------
+    # 3) Grade
+    # -------------------------------
+    grades = [r["grade"] for r in submission_rows if r["grade"] is not None]
+    avg_grade = sum(grades) / len(grades) if grades else None
+
+    return {
+        "avg_attendance_rate": avg_attendance_rate,
+        "avg_submission_rate": avg_submission_rate,
+        "avg_grade": avg_grade,
+    }
+
+
+course_service = CourseService()

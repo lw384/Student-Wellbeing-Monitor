@@ -257,6 +257,44 @@ def get_attendance_rate(sid):
     return present * 1.0 / total
 
 
+def get_attendance_filtered(
+    programme_id=None, module_id=None, week_start=None, week_end=None
+):
+
+    conn = get_conn(row_factory=_sqlite3.Row)
+    cur = conn.cursor()
+
+    sql = """
+        SELECT a.student_id, a.module_id, a.week, a.status
+        FROM attendance a
+        JOIN student s ON a.student_id = s.student_id
+        WHERE 1=1
+    """
+
+    params = []
+
+    if programme_id:
+        sql += " AND s.programme_id = ?"
+        params.append(programme_id)
+
+    if module_id:  # if empty = all modules
+        sql += " AND a.module_id = ?"
+        params.append(module_id)
+
+    if week_start:
+        sql += " AND a.week >= ?"
+        params.append(week_start)
+
+    if week_end:
+        sql += " AND a.week <= ?"
+        params.append(week_end)
+
+    cur.execute(sql, params)
+    rows = cur.fetchall()
+    conn.close()
+    return rows
+
+
 # ================== Submissions (Read) ==================
 
 
@@ -265,9 +303,37 @@ def get_submissions_by_student(sid):
     cur = conn.cursor()
     cur.execute(
         "SELECT assignment_id, due_date, submit_date, grade "
-        "FROM submissions WHERE student_id = ? ORDER BY submission_id",
+        "FROM submission WHERE student_id = ? ORDER BY submission_id",
         (sid,),
     )
+    rows = cur.fetchall()
+    conn.close()
+    return rows
+
+
+def get_submissions_filtered(programme_id=None, module_id=None):
+
+    conn = get_conn(row_factory=_sqlite3.Row)
+    cur = conn.cursor()
+
+    sql = """
+        SELECT sub.student_id, sub.module_id, sub.submitted, sub.grade
+        FROM submission sub
+        JOIN student s ON sub.student_id = s.student_id
+        WHERE 1=1
+    """
+
+    params = []
+
+    if programme_id:
+        sql += " AND s.programme_id = ?"
+        params.append(programme_id)
+
+    if module_id:
+        sql += " AND sub.module_id = ?"
+        params.append(module_id)
+
+    cur.execute(sql, params)
     rows = cur.fetchall()
     conn.close()
     return rows

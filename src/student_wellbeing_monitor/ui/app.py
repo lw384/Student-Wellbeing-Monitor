@@ -16,6 +16,7 @@ from student_wellbeing_monitor.database.read import (
 from student_wellbeing_monitor.database.update import update_wellbeing
 from student_wellbeing_monitor.services.upload_service import import_csv_by_type
 from student_wellbeing_monitor.services.wellbeing_service import wellbeing_service
+from student_wellbeing_monitor.services.course_service import course_service
 
 
 app = Flask(
@@ -88,10 +89,14 @@ def dashboard(role):
         }
         for row in programme_rows
     ]
-    current_programme = request.args.get("programme_id", default="", type=str)
+    current_programme = request.args.get("programme_id")
+
+    # 如果是 course_leader 且没有选择 → 默认第一个 programme
+    if role == "course_leader" and not current_programme and programmes:
+        current_programme = programmes[0]["id"]
 
     # 3. module list
-    current_module = request.args.get("module_code", default="", type=str)
+    current_module = request.args.get("module_id", default="", type=str)
 
     # ✅ 一次性查所有 modules，然后按 programme_id 分组
     all_module_rows = get_all_modules()
@@ -120,12 +125,15 @@ def dashboard(role):
             "avg_stress": summary_card["avgStressLevel"],
         }
     elif role == "course_leader":
-        # summary_course = get_course_summary(start_week, end_week)
-        summary = {
-            "avg_attendance_rate": 0.89,  # summary_course["avgAttendanceRate"],  # 0–1
-            "avg_submission_rate": 0.70,  # summary_course["avgSubmissionRate"],  # 0–1
-            "avg_grade": 56,  # summary_course["avgGrade"],  # 0–100
-        }
+        print(
+            start_week, end_week, current_module, current_programme, "summary--------"
+        )
+        summary = course_service.get_course_leader_summary(
+            programme_id=current_programme,
+            module_id=current_module,
+            week_start=start_week,
+            week_end=end_week,
+        )
 
     # 3) line
     line = wellbeing_service.get_stress_sleep_trend(
