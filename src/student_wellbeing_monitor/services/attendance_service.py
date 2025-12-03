@@ -47,13 +47,12 @@ class AttendanceService:
         }
         """
         rows = attendance_for_course(
-            module_id=course_id,
             programme_id=programme_id,
+            module_id=course_id,
             week_start=week_start,
             week_end=week_end,
         )
         # rows: (module_id, module_name, student_id, student_name, week, status)
-
         if not rows:
             return {
                 "courseId": course_id,
@@ -88,7 +87,6 @@ class AttendanceService:
                     "totalCount": int(total),
                 }
             )
-
         return {
             "courseId": course_id,
             "courseName": course_name,
@@ -192,3 +190,6 @@ class AttendanceService:
             "courseName": course_name,
             "students": students,
         }
+
+
+attendance_service = AttendanceService()

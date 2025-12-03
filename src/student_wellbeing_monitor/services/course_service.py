@@ -50,8 +50,8 @@ class CourseService:
         )
         # rows: (student_id, module_code, week, status)
 
-        present = sum(1 for r in attendance_rows if r["status"] == "present")
-        absent = sum(1 for r in attendance_rows if r["status"] == "absent")
+        present = sum(1 for r in attendance_rows if r["status"] == 1)
+        absent = sum(1 for r in attendance_rows if r["status"] == 0)
         total_att_records = present + absent
 
         avg_attendance_rate = (
@@ -91,9 +91,9 @@ class CourseService:
     # -------------------------------------------------
     def get_submission_summary(
         self,
-        course_id: str,
+        programme_id: str,
+        course_id: Optional[str] = None,
         assignment_no: Optional[int] = None,
-        programme_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         返回某课程在指定作业上的“已交 / 未交”统计。

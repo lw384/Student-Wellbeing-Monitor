@@ -208,7 +208,7 @@
         </div>
         <div class="d-flex align-items-baseline gap-2">
           <span class="fs-3 fw-semibold">
-          {{ ((summary.avg_attendance_rate or 0) * 100)|round(1) }}
+            {{ ((summary.avg_attendance_rate or 0) * 100)|round(1) }}
           </span>
           <span class="text-muted small">%</span>
         </div>
@@ -262,80 +262,175 @@
   {# ==== line chart: trend across week(stress/sleep/response) ==== #}
   {% if role == 'wellbeing' %}
   <div class="card-elevated mb-3">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="mb-0">Stress & Sleep over weeks</h6>
-      <span class="text-muted small">Average values per week</span>
-    </div>
+    <h6 class="mb-0">Stress & Sleep over weeks</h6>
     <div style="height: 320px;">
-      <canvas id="lineChart"></canvas>
+      <canvas id="lineChartWellbeing"></canvas>
     </div>
   </div>
   {% endif %}
-
-  {# ==== 柱状图：按课程的出勤率 / 成绩 ==== #}
   {% if role == 'course_leader' %}
   <div class="card-elevated mb-3">
+    <h6 class="mb-0">Attendance Trend over Weeks</h6>
+    <div style="height: 320px;">
+      <canvas id="lineChartCourse"></canvas>
+    </div>
+  </div>
+
+  <div class="card-elevated mb-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="mb-0">Attendance Rate by Module</h6>
-      <span class="text-muted small">0–100% attendance</span>
+      <h6 class="mb-0">Submissions by Module</h6>
+      <span class="text-muted small">Submitted vs Unsubmitted</span>
     </div>
     <div style="height: 320px;">
-      <canvas id="barChart"></canvas>
+      <canvas id="submissionBarChart"></canvas>
     </div>
   </div>
   {% endif %}
 
   {# ==== student at risk ==== #}
   <div class="card-elevated mb-3">
-    <div class="d-flex justify-content-between align-items-center mb-2">
+
+    {% if students_to_contact %}
+      {% if role == "wellbeing" %}
+       <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="mb-0">
         {% if role == "wellbeing" %}
         Students to contact (wellbeing risk)
-        {% else %}
-        Students to contact (engagement risk)
-        {% endif %}
+         {% endif %}
       </h6>
       <span class="text-muted small">
         Auto-flagged based on recent stress / attendance / submissions.
       </span>
     </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Student ID</th>
+              <th>Name</th>
+              <th>Reason</th>
+              <th>Details</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in students_to_contact %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ s.student_id }}</td>
+              <td>{{ s.name }}</td>
+              <td>{{ s.reason }}</td>
+              <td>{{ s.detail }}</td>
+              <td>
+                <a class="btn btn-sm btn-outline-primary"
+                  href="{{ url_for('view_data', role=role, data_type='wellbeing') }}">
+                  View record
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-muted small mb-0">
+        No students currently flagged for follow-up in the selected period.
+      </p>
+      {% endif %}
 
-    {% if students_to_contact %}
-    <div class="table-responsive">
-      <table class="table table-hover align-middle">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Student ID</th>
-            <th>Name</th>
-            <th>Reason</th>
-            <th>Details</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in students_to_contact %}
-          <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ s.student_id }}</td>
-            <td>{{ s.name }}</td>
-            <td>{{ s.reason }}</td>
-            <td>{{ s.detail }}</td>
-            <td>
-              <!-- <a class="btn btn-sm btn-outline-primary"
-                     href="{{ url_for('view_data', role=role, data_type='wellbeing') }}">
-                    View record
-                  </a> -->
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p class="text-muted small mb-0">
-      No students currently flagged for follow-up in the selected period.
-    </p>
+    {% elif role == "course_leader" %}
+      {# --- 出勤风险学生表 --- #}
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0">Students to contact (attendance risk)</h6>
+        <span class="text-muted small">
+          Low attendance over selected weeks.
+        </span>
+      </div>
+      {% if attendance_risk_students %}
+      <div class="table-responsive mb-3">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Module</th>
+              <th>Student ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Attendance rate</th>
+              <th>Absent sessions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in attendance_risk_students %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ s.module_code }}</td>
+              <td>{{ s.student_id }}</td>
+              <td>{{ s.name }}</td>
+              <td>{{ s.email }}</td>
+              <td>{{ (s.attendance_rate * 100)|round(1) }}%</td>
+              <td>{{ s.absent_sessions }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-muted small">
+        No students with low attendance in the selected range.
+      </p>
+       {% endif %}
+      {# --- 提交风险学生表（如果你后面加） --- #}
+      <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+        <h6 class="mb-0">Students to contact (submission risk)</h6>
+        <span class="text-muted small">
+          Missing or late submissions.
+        </span>
+      </div>
+
+        {% if submission_risk_students %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Student ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Missing submissions</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in submission_risk_students %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ s.student_id }}</td>
+                <td>{{ s.name }}</td>
+                <td>{{ s.email }}</td>
+                <td>{{ s.offending_module_count }}</td>
+                <td>
+                  {# 展开 details：每一门课缺了什么 #}
+                  <ul class="mb-0 ps-3">
+                    {% for d in s.details %}
+                      <li>
+                        {{ d.courseId }} – {{ d.courseName }}
+                        (Assignment {{ d.assignmentNo }}, {{ d.status }})
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted small mb-0">
+          No students with submission issues in the selected range.
+        </p>
+        {% endif %}
     {% endif %}
   </div>
 </div>
@@ -344,92 +439,126 @@
 
 {% block scripts %}
 <script>
-  // 从后端传来的数据（Python list -> JS array）
+  const ROLE = {{ role| tojson }};
+
   const weeks = {{ weeks_for_chart| tojson }};
   const avgStress = {{ avg_stress| tojson }};
   const avgSleep = {{ avg_sleep| tojson }};
-  // const programme     = {{ modules_for_chart|tojson }};
-  const attRate = {{ attendance_rate| tojson }};
+  const attendanceTrend = {{ attendance_trend| tojson }};
+  const gradeTrend = {{ grade_trend| tojson }};
 
+  console.log("ROLE =", ROLE);
   console.log("weeks =", weeks);
   console.log("avgStress =", avgStress);
   console.log("avgSleep =", avgSleep);
-  // console.log("modules =", modules);
-  console.log("attRate =", attRate);
-  // ========= 折线图 =========
-  const lineCtx = document.getElementById('lineChart').getContext('2d');
-  new Chart(lineCtx, {
-    type: 'line',
-    data: {
-      labels: weeks,
-      datasets: [
-        {
-          label: 'Avg Stress (1–5)',
-          data: avgStress,
-          tension: 0.3,
-          borderWidth: 2,
-          pointRadius: 3,
+  console.log("attendanceTrend =", attendanceTrend);
+  console.log("gradeTrend =", gradeTrend);
+
+  function renderLineChart(canvasId, labels, datasets) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: datasets
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { title: { display: true, text: 'Week' } },
+          y: { title: { display: true, text: 'Value' } }
         },
-        {
-          label: 'Avg Sleep (hours)',
-          data: avgSleep,
-          tension: 0.3,
-          borderWidth: 2,
-          pointRadius: 3,
+        plugins: {
+          legend: { display: true },
+          tooltip: { enabled: true }
         }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { title: { display: true, text: 'Week' } },
-        y: { title: { display: true, text: 'Value' } }
-      },
-      plugins: {
-        legend: { display: true },
-        tooltip: { enabled: true }
       }
-    }
-  });
+    });
+  }
 
-  // ========= 柱状图 =========
-  const barCtx = document.getElementById('barChart').getContext('2d');
-  new Chart(barCtx, {
-    type: 'bar',
-    data: {
-      labels: modules,
-      datasets: [
-        {
-          label: 'Attendance rate (%)',
-          data: attRate.map(x => x * 100),  // 0.85 -> 85
-          borderWidth: 1,
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          beginAtZero: true,
-          max: 100,
-          title: { display: true, text: 'Attendance %' }
-        }
+  // ========= wellbeing 折线图 =========
+  if (ROLE === "wellbeing" && weeks.length > 0) {
+    renderLineChart("lineChartWellbeing", weeks, [
+      {
+        label: "Avg Stress (1–5)",
+        data: avgStress,
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 3,
       },
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label: ctx => ctx.parsed.y.toFixed(1) + '%'
+      {
+        label: "Avg Sleep (hours)",
+        data: avgSleep,
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 3,
+      }
+    ]);
+  }
+
+  // ========= course_leader 折线图 =========
+  if (ROLE === "course_leader" && weeks.length > 0) {
+    renderLineChart("lineChartCourse", weeks, [
+      {
+        label: "Attendance Rate (%)",
+        data: attendanceTrend.map(x => x * 100),  // 0.8 -> 80
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 3,
+      }
+    ]);
+  }
+  // ========== Submission Chart ==========
+  const subLabels = {{ submission_labels | default ([], true) | tojson }};
+  const subSubmitted = {{ submission_submitted | default ([], true) | tojson }};
+  const subUnsubmitted = {{ submission_unsubmitted | default ([], true) | tojson }};
+
+  console.log("subLabels =", subLabels);
+  console.log("subSubmitted =", subSubmitted);
+  console.log("subUnsubmitted =", subUnsubmitted);
+
+  const subCtx = document.getElementById('submissionBarChart');
+  if (subCtx) {
+    new Chart(subCtx.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: subLabels,   // X 轴：每个 module
+        datasets: [
+          {
+            label: 'Submitted',
+            data: subSubmitted,
+            borderWidth: 1,
+          },
+          {
+            label: 'Unsubmitted',
+            data: subUnsubmitted,
+            borderWidth: 1,
           }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            stacked: false
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'Number of students' }
+          }
+        },
+        plugins: {
+          tooltip: { enabled: true },
+          legend: { display: true }
         }
       }
-    }
-  });
-</script>
-
-<script>
-const modules = {{ modules_for_chart | tojson }};
+    });
+  }
 </script>
 
 {% if role == 'course_leader' %}

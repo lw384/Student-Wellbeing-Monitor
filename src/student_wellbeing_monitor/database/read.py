@@ -211,7 +211,7 @@ def get_all_modules():
     cur = conn.cursor()
     cur.execute(
         """
-        SELECT programme_id, module_code, module_name
+        SELECT programme_id, module_id, module_code, module_name
         FROM module
         ORDER BY programme_id, module_code
         """
@@ -736,16 +736,23 @@ def get_continuous_high_stress_students():
 
 
 def attendance_for_course(
-    module_id: str,
-    programme_id: Optional[str] = None,
+    programme_id: str,
+    module_id: Optional[str] = None,
     week_start: Optional[int] = None,
     week_end: Optional[int] = None,
 ) -> List[Tuple]:
     """
-    为 get_attendance_trends 提供原始数据。
+    为 get_attendance_trends / course_leader_summary 提供原始数据。
 
     返回每一条出勤记录：
       (module_id, module_name, student_id, student_name, week, status)
+
+    逻辑：
+    - programme_id 为必传：只看该专业的学生；
+    - module_id 可选：
+         传入 → 限定到这一门课
+         None  → 该专业所有 module 的出勤记录
+    - week_start / week_end 可选：限定周范围
     """
     conn = get_conn(row_factory=_sqlite3.Row)
     cur = conn.cursor()
@@ -766,14 +773,16 @@ def attendance_for_course(
           ON sm.student_id = s.student_id
         JOIN module AS m
           ON sm.module_id = m.module_id
-        WHERE m.module_id = ?
+        WHERE s.programme_id = ?
     """
-    params: List = [module_id]
+    params: List = [programme_id]
 
-    if programme_id is not None:
-        sql += " AND s.programme_id = ?"
-        params.append(programme_id)
+    # 可选：按 module_id 进一步过滤
+    if module_id:
+        sql += " AND m.module_id = ?"
+        params.append(module_id)
 
+    # 可选：周范围
     if week_start is not None:
         sql += " AND a.week >= ?"
         params.append(week_start)
@@ -787,6 +796,7 @@ def attendance_for_course(
     cur.execute(sql, params)
     rows = cur.fetchall()
     conn.close()
+
     return [tuple(r) for r in rows]
 
 
@@ -948,13 +958,13 @@ def unsubmissions_for_repeated_issues(
         params.append(programme_id)
 
     # 如果你 submission 里没有 week，可以改成按 due_date 范围过滤
-    if week_start is not None:
-        sql += " AND sub.week >= ?"
-        params.append(week_start)
+    # if week_start is not None:
+    #     sql += " AND sub.week >= ?"
+    #     params.append(week_start)
 
-    if week_end is not None:
-        sql += " AND sub.week <= ?"
-        params.append(week_end)
+    # if week_end is not None:
+    #     sql += " AND sub.week <= ?"
+    #     params.append(week_end)
 
     sql += " ORDER BY s.student_id, m.module_id, sub.assignment_no"
 
