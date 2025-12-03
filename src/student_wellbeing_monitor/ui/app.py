@@ -69,7 +69,7 @@ def dashboard(role):
     if role not in ("wellbeing", "course_leader"):
         return redirect(url_for("index"))
 
-    # weeks list
+    # 1. weeks list
     weeks = get_all_weeks()  # [1,2,3,4,5,6,7,8]
     start_week = request.args.get(
         "start_week", type=int, default=min(weeks) if weeks else 1
@@ -105,7 +105,7 @@ def dashboard(role):
                 "name": row["module_name"],
             }
         )
-    print(modules_by_programme, "module_____")
+
     if role == "wellbeing":
         # summary
         summary_card = wellbeing_service.get_dashboard_summary(
