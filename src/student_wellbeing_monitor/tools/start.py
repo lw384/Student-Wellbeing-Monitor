@@ -3,7 +3,7 @@ import sys
 
 
 def run():
-    # 第一阶段：生成假数据
+    # step One: Generate false data
     print("🔧 Step 1: Reset + seed mock data (setup-demo)")
     result = subprocess.run(
         [
@@ -19,6 +19,6 @@ def run():
 
     print("✅ Mock data generated successfully!\n")
 
-    # 第二阶段：启动 Web
+    # step2：start Web
     print("🌐 Step 2: Starting wellbeing dashboard ...")
     subprocess.run([sys.executable, "-m", "student_wellbeing_monitor.ui.app"])

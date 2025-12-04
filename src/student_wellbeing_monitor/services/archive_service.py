@@ -200,7 +200,9 @@ def export_submission_summary(output_dir: str) -> None:
 
     for row in rows:
         module_id = row["module_id"]
-        due_date = row["due_date"]  # 可以是 str 或 datetime，CSV 会按 str 写出去
+        due_date = row[
+            "due_date"
+        ]  # It can be either str or datetime. CSV will be written out according to str
         submitted = row["submitted"]
         grade = row["grade"]
 
@@ -214,7 +216,7 @@ def export_submission_summary(output_dir: str) -> None:
             if submitted is not None and int(submitted) == 1:
                 agg["submitted"] += 1
 
-                # 只对已提交的算平均分
+                # Only calculate the average score for those that have been submitted
                 if grade is not None:
                     try:
                         g = float(grade)
@@ -223,7 +225,7 @@ def export_submission_summary(output_dir: str) -> None:
                     except (TypeError, ValueError):
                         pass
         except (TypeError, ValueError):
-            # 如果 submitted 不是 0/1，就当作未提交，跳过
+            #  If "submitted" is not 0/1, it is treated as unsubmitted and skipped
             pass
 
     out_rows = []
@@ -273,7 +275,7 @@ def delete_all_data():
     delete_all_wellbeing()
     delete_all_attendance()
     delete_all_submissions()
-    delete_all_student_modules()  # ✅ 先清空关系表
+    delete_all_student_modules()  # delete relationship first
 
     # 2) Finally delete from student
     delete_all_students()

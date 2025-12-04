@@ -1,4 +1,7 @@
-# read.py
+"""
+student_wellbeing_monitor.database.read 的 Docstring
+"""
+
 from student_wellbeing_monitor.database.db_core import get_conn, _hash_pwd
 import sqlite3 as _sqlite3
 import pandas as pd
@@ -40,7 +43,7 @@ def _query_students(
         base_sql += " LIMIT ?"
         params.append(limit)
 
-        # offset 如果没传就默认 0
+        # offset default = 0
         if offset is not None:
             base_sql += " OFFSET ?"
             params.append(offset)
@@ -98,7 +101,7 @@ def get_wellbeing_records(
     conn = get_conn()
     cur = conn.cursor()
 
-    # ------ 1. 基础 SQL ------
+    # ------ 1. SQL ------
     sql = """
         SELECT 
             w.student_id,
@@ -182,12 +185,12 @@ def get_wellbeing_page(
     """
     params = []
 
-    # ------- 1) student 精确查询 -------
+    # ------- 1) student id search -------
     if student_id:
         sql += " WHERE w.student_id = ?"
         params.append(student_id)
 
-    # ------- 2) 排序 -------
+    # ------- 2) rank -------
     if sort_week == "asc":
         sql += " ORDER BY week ASC"
     elif sort_week == "desc":
@@ -195,7 +198,7 @@ def get_wellbeing_page(
     else:
         sql += " ORDER BY w.student_id, week"
 
-    # ------- 3) 分页 -------
+    # ------- 3) page -------
     sql += " LIMIT ? OFFSET ?"
     params.extend([limit, offset])
 
@@ -224,7 +227,7 @@ def get_wellbeing_by_id(record_id: int):
 
 
 def get_programmes():
-    conn = get_conn(row_factory=_sqlite3.Row)  # 让返回值变成 dict-like
+    conn = get_conn(row_factory=_sqlite3.Row)
     cur = conn.cursor()
 
     cur.execute(
@@ -340,12 +343,12 @@ def get_attendance_page(
 
     params = []
 
-    # ---------- Student 精确筛选 ----------
+    # ---------- Student id ----------
     if student_id:
         sql += " WHERE a.student_id = ?"
         params.append(student_id)
 
-    # ---------- 排序规则 ----------
+    # ---------- rank ----------
     if sort_week == "asc":
         sql += " ORDER BY a.week ASC"
     elif sort_week == "desc":
@@ -353,7 +356,7 @@ def get_attendance_page(
     else:
         sql += " ORDER BY a.student_id, a.week"
 
-    # ---------- 分页 ----------
+    # ---------- page ----------
     sql += " LIMIT ? OFFSET ?"
     params.extend([limit, offset])
 
@@ -441,7 +444,6 @@ def get_submission_page(
     conn = get_conn()
     cur = conn.cursor()
 
-    # 先写基础查询
     sql = """
         SELECT 
             sub.id,
@@ -461,12 +463,12 @@ def get_submission_page(
     """
     params: list = []
 
-    # -------- 1) student_id 精确查询 --------
+    # -------- 1) student_id  --------
     if student_id:
         sql += " WHERE sub.student_id = ?"
         params.append(student_id)
 
-    # -------- 3) 分页 --------
+    # -------- 2) page --------
     sql += " LIMIT ? OFFSET ?"
     params.extend([limit, offset])
 
@@ -928,12 +930,12 @@ def attendance_for_course(
     """
     params: List = [programme_id]
 
-    # 可选：按 module_id 进一步过滤
+    # Optional: Further filter by module_id
     if module_id:
         sql += " AND m.module_id = ?"
         params.append(module_id)
 
-    # 可选：周范围
+    # Optional: Weekly range
     if week_start is not None:
         sql += " AND a.week >= ?"
         params.append(week_start)
@@ -1108,7 +1110,7 @@ def unsubmissions_for_repeated_issues(
         sql += " AND s.programme_id = ?"
         params.append(programme_id)
 
-    # 如果你 submission 里没有 week，可以改成按 due_date 范围过滤
+    # If there is no "week" in your submission, you can change it to filter by the due_date range
     # if week_start is not None:
     #     sql += " AND sub.week >= ?"
     #     params.append(week_start)
@@ -1126,7 +1128,7 @@ def unsubmissions_for_repeated_issues(
 
 
 def attendance_and_grades(
-    module_id: Optional[str] = None,  # ✅ 改成可选
+    module_id: Optional[str] = None,
     programme_id: Optional[str] = None,
     week_start: Optional[int] = None,
     week_end: Optional[int] = None,
@@ -1254,7 +1256,7 @@ def programme_wellbeing_engagement(
     """
     params: List = []
 
-    # filter by programme（真正按专业维度）
+    # filter by programme
     if programme_id is not None:
         sql += " AND s.programme_id = ?"
         params.append(programme_id)

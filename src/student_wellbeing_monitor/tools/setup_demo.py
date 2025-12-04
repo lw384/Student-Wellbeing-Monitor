@@ -1,8 +1,13 @@
-# 生成假数据、插入数据库中
-# 只插入student\programme\module相关数据
-# poetry run setup-demo
-# 所有数据全部都插入，运行下边这条命令
-# poetry run setup-demo --with-mock
+"""
+student_wellbeing_monitor.tools.setup_demo
+Generate false data and insert it into the database
+    Only insert data related to student\programme\module
+        poetry run setup-demo
+    All data are inserted
+        poetry run setup-demo --with-mock
+"""
+
+#
 import csv
 import subprocess
 import sys
@@ -19,7 +24,6 @@ MOCK_SCRIPT = BASE_DIR / "mock_data" / "scripts" / "generate_entities.py"
 BEHAVIOUR_SCRIPT = BASE_DIR / "mock_data" / "scripts" / "generate_behaviour.py"
 
 print("Path------------", BASE_DIR, "----", MOCK_DIR, MOCK_SCRIPT)
-
 
 
 def parse_args():

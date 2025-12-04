@@ -191,10 +191,10 @@
 
 <body>
   {% if simple_layout %}
-  {# simple_layout：例如 index 登录/选择角色页 #}
+  {# simple_layout: For example, index login/Select role page #}
   <div class="d-flex align-items-center justify-content-center" style="min-height: 100vh; background: var(--bg-page);">
     {% else %}
-    {# 默认布局：有顶部导航 + 左侧菜单 #}
+   {# Default layout: Top navigation + left menu #}
     <nav class="navbar navbar-dark bg-dark">
       <div class="container-fluid">
         <span class="navbar-brand mb-0 h4">
@@ -246,11 +246,10 @@
         <div class="col-10 py-4 main-content">
           {% endif %}
 
-          {# ⭐ 唯一的 block content，在 if/else 外层 ⭐ #}
           {% block content %}{% endblock %}
 
           {% if simple_layout %}
-        </div> {# 关闭 simple_layout 外层 div #}
+        </div> 
         {% else %}
       </div> {# col-10 #}
     </div> {# row #}
@@ -260,11 +259,10 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
   document.addEventListener("DOMContentLoaded", () => {
-    // 所有 alert 元素
     const alerts = document.querySelectorAll('.alert');
 
     alerts.forEach((alertEl) => {
-      // 3 秒后关闭（你可以改 3000 → 5000 表示 5 秒）
+      // 3s close
       setTimeout(() => {
         const alert = new bootstrap.Alert(alertEl);
         alert.close();

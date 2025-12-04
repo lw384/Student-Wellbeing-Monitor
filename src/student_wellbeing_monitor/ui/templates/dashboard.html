@@ -76,7 +76,7 @@
         <select id="programme-select" name="programme_id" class="form-select form-select-sm" {% if role=='course_leader'
           %}required{% endif %}>
 
-          {# wellbeing 可以选全部 #}
+          {# wellbeing can choose all #}
           {% if role == 'wellbeing' %}
           <option value="">All programmes</option>
 
@@ -90,7 +90,7 @@
         </select>
       </div>
 
-      {# ---- Module 仅在 course_leader 角色时显示 ---- #}
+      {# ---- Module only show role = course_leader  ---- #}
       {% if role == 'course_leader' %}
       <div class="filter-field">
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
@@ -439,7 +439,7 @@
             <td>{{ s.email }}</td>
             <td>{{ s.offending_module_count }}</td>
             <td>
-              {# 展开 details：每一门课缺了什么 #}
+             {# Expand details: What's Missing in Each Course #}
               <ul class="mb-0 ps-3">
                 {% for d in s.details %}
                 <li>
@@ -473,7 +473,7 @@
         <h6 class="mb-0">AI insight: high stress & low sleep group</h6>
 
         <form method="get" action="{{ url_for('dashboard', role=role) }}" class="d-inline">
-          {# 保持当前的筛选条件 #}
+           {# Keep the current filter conditions #}
           <input type="hidden" name="start_week" value="{{ current_start_week }}">
           <input type="hidden" name="end_week" value="{{ current_end_week }}">
           <input type="hidden" name="programme_id" value="{{ current_programme }}">
@@ -554,7 +554,7 @@
     });
   }
 
-  // ========= wellbeing 折线图 =========
+  // ========= wellbeing line chart=========
   if (ROLE === "wellbeing" && weeks.length > 0) {
     renderLineChart("lineChartWellbeing", weeks, [
       {
@@ -579,8 +579,7 @@
     const ctxProg = document.getElementById("programmeEngagementChart");
     if (ctxProg) {
       const ctx = ctxProg.getContext("2d");
-
-      // 小工具：安全 map，避免 null 报错
+      
       const toPercent = (arr) =>
         (arr || []).map(v => (v == null ? null : v * 100));
 
@@ -619,7 +618,7 @@
             {
               label: "Average stress (1–5)",
               data: stressData,
-              type: "line",        // 用折线叠加在柱状图上
+              type: "line",        // line on bar
               borderWidth: 2,
               pointRadius: 3,
               yAxisID: "y1",
@@ -633,20 +632,20 @@
             x: {
               title: { display: true, text: "Programme" },
             },
-            // 左轴：百分比 + 成绩
+             // Left axis: Percentage + grade
             y: {
               position: "left",
               beginAtZero: true,
               title: { display: true, text: "Attendance / Submission / Grade (%)" }
             },
-            // 右轴：stress 1–5
+            // right：stress 1–5
             y1: {
               position: "right",
               beginAtZero: true,
               min: 0,
               max: 5,
               title: { display: true, text: "Average stress (1–5)" },
-              grid: { drawOnChartArea: false } // 不在中间画第二套网格
+              grid: { drawOnChartArea: false } 
             }
           },
           plugins: {
@@ -658,7 +657,7 @@
     }
   }
 
-  // ========= course_leader 折线图 =========
+  // ========= course_leader line =========
   if (ROLE === "course_leader" && weeks.length > 0) {
     renderLineChart("lineChartCourse", weeks, [
       {
@@ -676,7 +675,7 @@
     const scatterCanvas = document.getElementById("attendanceGradeScatter");
     if (scatterCanvas && Array.isArray(scatterPoints) && scatterPoints.length > 0) {
 
-      // 转成 Chart.js 需要的 {x, y} 格式，x 用百分比
+      //  Chart.js need {x, y} 
       const scatterData = scatterPoints
         .filter(p => p.attendanceRate != null && p.avgGrade != null)
         .map(p => ({
@@ -740,7 +739,7 @@
     new Chart(subCtx.getContext('2d'), {
       type: 'bar',
       data: {
-        labels: subLabels,   // X 轴：每个 module
+        labels: subLabels,   // X ：every module
         datasets: [
           {
             label: 'Submitted',
@@ -784,7 +783,7 @@
       const end = parseInt(endSelect.value);
 
       if (start > end) {
-        endSelect.value = start;  // 自动纠正
+        endSelect.value = start;
       }
     }
 
@@ -794,8 +793,7 @@
 </script>
 
 {% if role == 'course_leader' %}
-<script>
-  // 从后端传来的映射
+<script>  
   const MODULES_BY_PROGRAMME = {{ modules_by_programme | tojson }};
   const CURRENT_PROGRAMME = {{ current_programme | tojson }};
   let CURRENT_MODULE = {{ current_module | tojson }};
@@ -806,14 +804,14 @@
     const moduleSelect = document.getElementById("module-select");
     if (!moduleSelect) return;
 
-    // programme 未选 → 禁用
+   // programme Not selected → Disabled
     if (!programmeId || !MODULES_BY_PROGRAMME[programmeId]) {
       moduleSelect.innerHTML = "<option value=''>Select programme first</option>";
       moduleSelect.disabled = true;
       return;
     }
 
-    // programme 已选 → 填充 module
+    // programme selected → Fill module
     const moduleList = MODULES_BY_PROGRAMME[programmeId] || [];
     moduleSelect.disabled = false;
 
@@ -842,12 +840,12 @@
     const programmeSelect = document.getElementById("programme-select");
     if (!programmeSelect) return;
 
-    // 初次加载
+    // first loading
     updateModuleOptions(CURRENT_PROGRAMME || programmeSelect.value);
-
-    // programme 改变时联动 module
+    
+    // When the programme changes, link with the module
     programmeSelect.addEventListener("change", (e) => {
-      CURRENT_MODULE = "";   // 清空旧 module
+      CURRENT_MODULE = "";   // clear old module
       updateModuleOptions(e.target.value);
     });
   });

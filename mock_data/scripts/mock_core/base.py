@@ -43,7 +43,7 @@ def write_csv(filename: Path, fieldnames: list[str], rows: list[dict]) -> None:
         writer = csv.DictWriter(
             f,
             fieldnames=fieldnames,
-            extrasaction="ignore",  # 忽略多余字段，防止小拼写错误直接崩掉
+            extrasaction="ignore",  # Ignore redundant fields to prevent minor spelling mistakes from crashing directly
         )
         writer.writeheader()
         writer.writerows(rows)
@@ -58,7 +58,7 @@ def clean_mock_csv(output_dir: Path):
 
     for f in output_dir.glob("*.csv"):
         print(f"Removing {f}")
-        f.unlink()  # 删除文件
+        f.unlink()  # delete files
 
 
 def clean_old_behaviour_files(out_dir: Path):
@@ -72,7 +72,7 @@ def clean_old_behaviour_files(out_dir: Path):
     for csv_file in out_dir.glob("*.csv"):
         name = csv_file.name
         if any(name.startswith(p) for p in prefixes):
-            csv_file.unlink()  # 删除文件
+            csv_file.unlink()
             removed += 1
 
     print(f"🧹 Cleaned {removed} old behaviour CSV files.")

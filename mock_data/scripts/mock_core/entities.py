@@ -138,20 +138,20 @@ def generate_modules(
 
     for prog in programmes:
         prog_id = prog["programme_id"]
-        # 用 programme_id 的前两个字母作为前缀，例如 "AI" / "DS"
+        # Use the first two letters of programme_id as a prefix, such as "AI"/"DS"
         prefix = prog_id[:2].upper()
 
         num_modules = random.randint(min_per_prog, max_per_prog)
 
         for _ in range(num_modules):
-            # module_code：如 AI1F6 / DS2B3
+            # module_code：AI1F6 / DS2B3
             prefix = random.choice(letters) + random.choice(letters)
             level = str(random.randint(1, 3))
             mid_letter = random.choice(letters)
             tail_digit = str(random.randint(1, 9))
             module_code = prefix + level + mid_letter + tail_digit
 
-            # module_id：7 位数字
+            # module_id：7 numbers
             while True:
                 module_id = random.randint(1000000, 9999999)
                 if module_id not in used_ids:
@@ -171,32 +171,34 @@ def generate_modules(
 
 
 # ------------------------------
-# 4. Student-Modules 关系表
+# 4. Student-Modules Relationship Table
 # ------------------------------
 
 
 def generate_student_modules(
     students: list[dict],
     modules: list[dict],
-    min_courses: int = 3,  # 每个学生至少 3 门
-    max_courses: int = 5,  # 每个学生最多 5 门
+    min_courses: int = 3,  # Each student must take at least three courses
+    max_courses: int = 5,  # Each student can take up to five courses at most
 ) -> list[dict]:
     """
-    目标：
-    - 每个 module 至少 5 个学生
-    - 每个学生 3–5 门课
-    - 学生只属于一个 programme（students 里已经有 programme_id）
-    - modules 里每个 module 也有 programme_id
+    Requirements:
+        At least five students are required for each module
+        Each student takes 3 to 5 courses
+        students belong to only one programme (there is already programme_id in students).
+        Each module in the modules also has programme_id
 
-    返回：
+    Return
     - records: [{ "student_id": ..., "module_id": ... }, ...]
-    同时回写 students[i]["modules"] = "AY2V2, FK1E6, ..."
+    students[i]["modules"] = "AY2V2, FK1E6, ..."
     """
 
     records: list[dict] = []
-    assignment_set: set[tuple[int, int]] = set()  # (student_id, module_id) 去重
+    assignment_set: set[tuple[int, int]] = (
+        set()
+    )  # (student_id, module_id) deduplication
 
-    # 1) 按 programme 分组 modules & students
+    # 1) Group modules & students by programme
     modules_by_prog: dict[str, list[dict]] = defaultdict(list)
     for m in modules:
         modules_by_prog[m["programme_id"]].append(m)
@@ -205,34 +207,34 @@ def generate_student_modules(
     for s in students:
         students_by_prog[s["programme_id"]].append(s)
 
-    # 统计每个学生已选课程数
+    # Count the number of courses each student has selected
     student_course_count: dict[int, int] = defaultdict(int)
 
-    # 2) 第一轮：保证每个 module 至少 5 个学生
+    # Round One: Ensure that each module has at least five students
     MIN_PER_MODULE = 5
 
     for m in modules:
         prog_id = m["programme_id"]
         module_id = m["module_id"]
 
-        # 优先从本 programme 的学生里选
+        # Give priority to choosing from the students of this programme
         candidates = students_by_prog.get(prog_id, [])
 
-        # 如果本专业学生太少，就从全局学生里补
+        # If there are too few students in this major, they will be supplemented from all the students
         if len(candidates) < MIN_PER_MODULE:
             candidates = students
 
         if not candidates:
             continue
 
-        # 尝试优先选还没到 5 门课的学生
+        # Try to give priority to students who haven't taken five courses yet
         flexible_candidates = [
             s for s in candidates if student_course_count[s["student_id"]] < max_courses
         ]
         if len(flexible_candidates) >= MIN_PER_MODULE:
             pool = flexible_candidates
         else:
-            # 实在不够，就放宽上限（避免死锁），宁可有个别学生 >5 门
+            #  If it's really not enough, the upper limit can be relaxed (to avoid deadlock)
             pool = candidates
 
         k = min(MIN_PER_MODULE, len(pool))
@@ -247,31 +249,30 @@ def generate_student_modules(
             records.append({"student_id": sid, "module_id": module_id})
             student_course_count[sid] += 1
 
-    # 3) 第二轮：保证每个学生至少 3 门课（3–5 区间）
+    # 3) Round Two: Ensure that each student takes at least three courses (within the range of 3 to 5)
     for s in students:
         sid = s["student_id"]
         prog_id = s["programme_id"]
 
         current_count = student_course_count.get(sid, 0)
         if current_count >= min_courses:
-            continue  # 已经满足下限
+            continue
 
         need = min_courses - current_count
         max_extra = max_courses - current_count
         if max_extra <= 0:
-            continue  # 这个学生已经最多课了
+            continue  # This student has taken the most classes
 
         need = min(need, max_extra)
-
-        # 候选课程：优先本 programme 下的 module
+        #   Candidate Courses: Modules under this programme are preferred
         candidate_modules = modules_by_prog.get(prog_id, [])
 
-        # 过滤掉该学生已经选过的课程
+        # Filter out the courses that the student has already selected
         available_modules = [
             m for m in candidate_modules if (sid, m["module_id"]) not in assignment_set
         ]
 
-        # 如果本专业课不够，就允许从全局补
+        #  If the courses in one's own major are insufficient, it is allowed to make up for them from a global perspective
         if len(available_modules) < need:
             more_modules = [
                 m for m in modules if (sid, m["module_id"]) not in assignment_set
@@ -293,7 +294,7 @@ def generate_student_modules(
             records.append({"student_id": sid, "module_id": mid})
             student_course_count[sid] += 1
 
-    # 4) 把 module_code 写回 student["modules"] 字段
+    # write module_code in student["modules"]
     modules_by_id: dict[int, str] = {m["module_id"]: m["module_code"] for m in modules}
     modules_for_student: dict[int, list[str]] = defaultdict(list)
 

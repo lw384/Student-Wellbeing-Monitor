@@ -1,10 +1,9 @@
-# src/wellbeing_system/ui/app.py
-from flask import Flask, render_template, request, redirect, url_for, flash
+"""src/wellbeing_system/ui/app.py"""
+
 import os
 import math
+from flask import Flask, render_template, request, redirect, url_for, flash
 from dotenv import load_dotenv
-
-load_dotenv()
 from student_wellbeing_monitor.database.read import (
     get_programmes,
     get_all_modules,
@@ -33,6 +32,9 @@ from student_wellbeing_monitor.services.upload_service import import_csv_by_type
 from student_wellbeing_monitor.services.wellbeing_service import wellbeing_service
 from student_wellbeing_monitor.services.course_service import course_service
 from student_wellbeing_monitor.services.attendance_service import attendance_service
+
+
+load_dotenv()
 
 
 app = Flask(
@@ -81,7 +83,7 @@ TABLE_FIELDS = {
 @app.route("/")
 def index():
     """
-    首页：让用户选择角色（Wellbeing Officer / Course Director）
+    Home page: Let user choose role (Wellbeing Officer / Course Director)
     """
     return render_template("index.html")
 
@@ -90,11 +92,11 @@ def index():
 @app.route("/dashboard/<role>")
 def dashboard(role):
 
-    # ---------- 0. 校验 ----------
+    # ---------- 0. Validation ----------
     if role not in ("wellbeing", "course_leader"):
         return redirect(url_for("index"))
 
-    # ---------- 1. 基础参数 ----------
+    # ---------- 1. Base parameters ----------
     weeks = get_all_weeks() or [1]
     start_week = request.args.get("start_week", type=int, default=min(weeks))
     end_week = request.args.get("end_week", type=int, default=max(weeks))
@@ -111,14 +113,14 @@ def dashboard(role):
     ]
     current_programme = request.args.get("programme_id")
 
-    # 如果是 course_leader 强制默认第一个 programme
+    # If course_leader, force default to first programme
     if role == "course_leader" and not current_programme and programmes:
         current_programme = programmes[0]["id"]
 
     # module
     current_module = request.args.get("module_id", default="", type=str)
 
-    # ---------- 2. 模块数据（统一加载一次） ----------
+    # ---------- 2. Module data (load once) ----------
     modules_by_programme = {}
     all_module_rows = get_all_modules()
 
@@ -128,7 +130,7 @@ def dashboard(role):
             {"id": r["module_id"], "code": r["module_code"], "name": r["module_name"]}
         )
 
-    # ---------- 3. Summary 卡片 ----------
+    # ---------- 3. Summary cards ----------
     if role == "wellbeing":
         s = wellbeing_service.get_dashboard_summary(
             start_week, end_week, programme_id=current_programme or None
@@ -147,7 +149,7 @@ def dashboard(role):
             week_end=end_week,
         )
 
-    # ---------- 4. 折线图 ----------
+    # ---------- 4. Line chart ----------
     weeks_for_chart = []
     avg_stress = []
     avg_sleep = []
@@ -199,8 +201,8 @@ def dashboard(role):
     # 4) attendance vs grade scatter
     if role == "course_leader" and current_programme:
         scatter = course_service.get_attendance_vs_grades(
-            course_id=current_module,  # 当前选中 module
-            programme_id=current_programme,  # 当前 programme
+            course_id=current_module,  # currently selected module
+            programme_id=current_programme,  # current programme
             week_start=start_week,
             week_end=end_week,
         )
@@ -208,7 +210,7 @@ def dashboard(role):
     else:
         scatter_points = []
 
-    # ---------- 5. 作业提交柱状图 ----------
+    # ---------- 5. Submission bar chart ----------
     submission_labels = []
     submission_submitted = []
     submission_unsubmitted = []
@@ -216,7 +218,7 @@ def dashboard(role):
     if role == "course_leader" and current_programme:
         programme_modules = modules_by_programme.get(current_programme, [])
 
-        # 决定绘制哪些 module
+        # Decide which modules to plot
         if current_module:
             target_modules = [m for m in programme_modules if m["id"] == current_module]
         else:
@@ -232,11 +234,10 @@ def dashboard(role):
             submission_submitted.append(ss.get("submit", 0))
             submission_unsubmitted.append(ss.get("unsubmit", 0))
 
-    # ---------- 6. 风险学生 ----------
+    # ---------- 6. Risk students ----------
     students_to_contact = []
     attendance_risk_students = []
     submission_risk_students = []
-    high_stress_ai = None
 
     if role == "wellbeing":
         table = wellbeing_service.get_risk_students(
@@ -263,7 +264,7 @@ def dashboard(role):
             week_end=end_week,
         )
     else:  # course leader
-        # -------- A. 出勤风险 --------
+        # -------- A. Attendance risk --------
         if current_programme:
             programme_modules = modules_by_programme.get(current_programme, [])
             if current_module:
@@ -294,7 +295,7 @@ def dashboard(role):
                         }
                     )
 
-        # -------- B. 作业提交风险（跨课程） --------
+        # -------- B. Submission risk (cross-course) --------
         repeated = course_service.get_repeated_missing_students(
             course_id=current_module or None,
             programme_id=current_programme or None,
@@ -315,7 +316,7 @@ def dashboard(role):
             )
     print(ai_result, "jhjdhfjh")
 
-    # ---------- 7. 渲染 ----------
+    # ---------- 7. Render ----------
     return render_template(
         "dashboard.html",
         role=role,
@@ -357,8 +358,8 @@ def upload_data(role):
         data_type = request.form.get(
             "data_type"
         )  # wellbeing / attendance / submissions
-        # TODO: 根据 data_type 解析 CSV，写入数据库
-        # 处理完之后跳回对应列表页：
+        # TODO: Parse CSV based on data_type and write to database
+        # After processing, redirect back to corresponding list page:
         if not file or file.filename == "":
             flash("Please select a CSV file to upload.", "warning")
             return redirect(url_for("upload_data", role=role))
@@ -368,7 +369,7 @@ def upload_data(role):
             flash(f"Successfully imported {data_type} data.", "success")
             return redirect(url_for("view_data", role=role))
         except Exception as e:
-            # 真项目里可以 log，这里简单一点
+            # In real project can log, here keep it simple
             print("Upload error:", e)
             flash(f"Failed to import {data_type} data: {e}", "danger")
 
@@ -381,7 +382,7 @@ def upload_data(role):
 
 def enrich_student_programme(raw_rows, programme_map):
     """
-    raw_rows: sqlite3.Row 列表，字段包含 student_id, name, email, programme_id
+    raw_rows: sqlite3.Row list, fields include student_id, name, email, programme_id
     programme_map: { programme_id: "CODE – NAME" }
     """
     enriched = []
@@ -391,18 +392,18 @@ def enrich_student_programme(raw_rows, programme_map):
                 "student_id": row["student_id"],
                 "name": row["name"],
                 "email": row["email"],
-                # 用 map 转成人类可读的文本，如果找不到就回退到原来的 programme_id
+                # Convert to human-readable text using map, fallback to programme_id if not found
                 "programme": programme_map.get(
                     row["programme_id"], row["programme_id"]
                 ),
-                # 可选保留 id
+                # Optional: keep id
                 "programme_id": row["programme_id"],
             }
         )
     return enriched
 
 
-# -------- 3. 查看数据表 --------
+# -------- 3. View data tables --------
 @app.route("/data/<role>", defaults={"data_type": "students"})
 @app.route("/data/<role>/<data_type>")
 def view_data(role, data_type):
@@ -429,7 +430,7 @@ def view_data(role, data_type):
         if student_id_filter:
             row = get_student_by_id(student_id_filter)
             if row:
-                rows = [row]  # 存入列表，以便模板正常渲染
+                rows = [row]  # Put into list for template rendering
                 total = 1
             else:
                 rows = []
@@ -474,7 +475,7 @@ def view_data(role, data_type):
         flash("Unknown data type", "danger")
         return redirect(url_for("dashboard", role=role))
 
-    # 统一计算总页数
+    # Calculate total pages uniformly
     total_pages = max(1, math.ceil(total / per_page))
 
     if page > total_pages:
@@ -498,7 +499,7 @@ def edit_record(role, data_type, record_id):
     page = request.args.get("page", default=1, type=int)
 
     if data_type == "wellbeing":
-        # 先查记录
+        # First find the record
         record = get_wellbeing_by_id(record_id)
         if not record:
             flash("Record not found", "danger")
@@ -507,22 +508,22 @@ def edit_record(role, data_type, record_id):
             )
 
         if request.method == "POST":
-            # 1. 取表单数据
+            # 1. Get form data
             stress = int(request.form["stress_level"])
             sleep = float(request.form["hours_slept"])
 
-            # 2. 更新数据库
+            # 2. Update database
             update_wellbeing(record_id, stress, sleep)
 
-            # 3. 给提示 + 回到列表页（或留在 edit 页，按你需求）
+            # 3. Show message + return to list page (or stay on edit page, depends on needs)
             flash("Wellbeing record updated", "success")
             return redirect(
                 url_for("view_data", role=role, data_type=data_type, page=page)
             )
 
-        # GET：渲染编辑表单页面，用当前记录预填
+        # GET: Render edit form page with current record pre-filled
         return render_template(
-            "edit.html",  # 确保这个模板存在
+            "edit.html",  # Make sure this template exists
             role=role,
             data_type=data_type,
             record=record,
@@ -581,7 +582,7 @@ def edit_record(role, data_type, record_id):
             record=record,
             page=page,
         )
-        # 其他 data_type 还没实现
+        # Other data_type not implemented yet
     else:
         flash("Editing this data type is not supported yet.", "warning")
 
@@ -607,7 +608,7 @@ def delete_record(role, data_type, record_id):
 
 
 def run_app():
-    # 你 pyproject.toml 里 wellbeing-web 脚本会调用这个
+    # The wellbeing-web script in pyproject.toml will call this
     app.run(debug=True)
 
 
