@@ -4,6 +4,7 @@ from typing import Optional, Dict, Any, List, Tuple
 from collections import defaultdict
 import os
 import json
+from google import genai
 from student_wellbeing_monitor.database.read import (
     submissions_for_course,
     unsubmissions_for_repeated_issues,
@@ -478,7 +479,7 @@ class CourseService:
     # -------------------------------------------------
     def get_high_stress_sleep_engagement_analysis(
         self,
-        course_id: str,
+        programme_id: str,
         week_start: Optional[int] = None,
         week_end: Optional[int] = None,
         stress_threshold: float = 4.0,
@@ -494,7 +495,7 @@ class CourseService:
             * 平均成绩（成绩更差？）
         """
         rows = programme_wellbeing_engagement(
-            module_id=course_id,
+            programme_id=programme_id,
             week_start=week_start,
             week_end=week_end,
         )
@@ -510,7 +511,7 @@ class CourseService:
 
         if not rows:
             return {
-                "courseId": course_id,
+                "programme_id": programme_id,
                 "courseName": None,
                 "params": {
                     "weekStart": week_start,
@@ -682,7 +683,7 @@ class CourseService:
         }
 
         return {
-            "courseId": course_id,
+            "courseId": programme_id,
             "courseName": course_name,
             "params": params,
             "groups": {
@@ -700,7 +701,7 @@ class CourseService:
     # -------------------------------------------------
     def analyze_high_stress_sleep_with_ai(
         self,
-        course_id: str,
+        programme_id: str,
         week_start: Optional[int] = None,
         week_end: Optional[int] = None,
         stress_threshold: float = 4.0,
@@ -709,14 +710,14 @@ class CourseService:
     ) -> Dict[str, Any]:
         """
         在 get_high_stress_sleep_engagement_analysis 的基础上，
-        调用一个外部 AI HTTP 接口，让 AI 生成自然语言分析。
+        使用 Gemini 模型生成自然语言分析。
 
         需要在环境变量中配置：
-          - AI_ANALYSIS_URL: 外部 AI 服务的 URL
-          - AI_API_KEY:     可选的 Bearer Token
+        - GEMINI_API_KEY: Gemini API key
         """
+        # 1) 先拿到基础统计结果（不变）
         base_result = self.get_high_stress_sleep_engagement_analysis(
-            course_id=course_id,
+            programme_id=programme_id,
             week_start=week_start,
             week_end=week_end,
             stress_threshold=stress_threshold,
@@ -724,131 +725,137 @@ class CourseService:
             min_weeks=min_weeks,
         )
 
-        # Call external AI API to generate natural language analysis
-        ai_url = os.environ.get("AI_ANALYSIS_URL")
-        if not ai_url:
+        # 2) 读取 API key
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
             return {
                 "baseStats": base_result,
                 "aiAnalysis": {
                     "status": "error",
-                    "message": "AI_ANALYSIS_URL is not configured in environment variables.",
+                    "message": "GEMINI_API_KEY is not configured in environment variables.",
                 },
             }
 
-        api_key = os.environ.get("AI_API_KEY", "")
-
-        payload = {
-            "task": "analyze_high_stress_low_sleep_vs_engagement",
-            "prompt": (
-                "You are a data analysis assistant in a university supporting Wellbeing Officer and Course Director."
-                "This system will provide the statistical data of two groups of students: one group is the students with high stress and low sleep (highStressLowSleep), "
-                "the other group is the other students (others). Each group contains: average attendance rate, submission rate, average grade, and some student samples."
-                "Please: "
-                "1. Determine if the students with high stress and low sleep are significantly different in attendance rate, submission rate, and average grade from the other students."
-                "2. Use concise natural language to summarize the key differences between the two groups (quantify as much as possible, e.g., how many percentage points different)."
-                "3. Provide 3–5 actionable recommendations for the school/teacher/Wellbeing team."
-                "4. Answer in concise English."
-            ),
-            "data": {
-                "params": base_result.get("params", {}),
-                "groups": base_result.get("groups", {}),
-                "sampleStudents": {
-                    "highStressLowSleep": base_result.get("students", {}).get(
-                        "highStressLowSleep", []
-                    ),
-                    "others": base_result.get("students", {}).get("others", []),
-                },
+        # 3) 创建 Gemini client
+        client = genai.Client(api_key=api_key)
+        print(api_key)
+        # 4) 构造 prompt + 数据（只给需要的部分，避免太长）
+        analysis_data = {
+            "params": base_result.get("params", {}),
+            "groups": base_result.get("groups", {}),
+            "sampleStudents": {
+                "highStressLowSleep": base_result.get("students", {}).get(
+                    "highStressLowSleep", []
+                ),
+                "others": base_result.get("students", {}).get("others", []),
             },
         }
 
-        headers = {
-            "Content-Type": "application/json",
-        }
-        if api_key:
-            headers["Authorization"] = f"Bearer {api_key}"
+        prompt = (
+            "You are a data analysis assistant in a university supporting the Wellbeing Officer "
+            "and Course Director.\n\n"
+            "You are given aggregated statistics for two groups of students:\n"
+            "  • highStressLowSleep: students whose stress is high and sleep is low.\n"
+            "  • others: all other students.\n\n"
+            "For each group you have:\n"
+            "  - average attendance rate\n"
+            "  - average submission rate\n"
+            "  - average grade\n"
+            "  - some example students with their individual metrics.\n\n"
+            "Please:\n"
+            "1) Compare the two groups on attendance rate, submission rate and average grade.\n"
+            "   Quantify differences where possible (e.g. ‘attendance is about 12 percentage points lower’).\n"
+            "2) Summarise in clear, concise English what this means for student wellbeing and engagement.\n"
+            "3) Provide 3–5 actionable recommendations for the school/teachers/Wellbeing team.\n"
+            "4) Keep the answer short and structured (use bullet points or numbered list).\n\n"
+            "Here is the JSON data:\n"
+            f"{json.dumps(analysis_data, indent=2)}\n"
+        )
 
         try:
-            resp = requests.post(
-                ai_url,
-                headers=headers,
-                data=json.dumps(payload),
-                timeout=30,
+            # 5) 调用 Gemini
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
             )
-            resp.raise_for_status()
-            ai_output = resp.json()
-        except Exception as e:  # 容错，避免前端因为 AI 失败而崩溃
+            ai_text = getattr(response, "text", None) or ""
+            return {
+                "baseStats": base_result,
+                "aiAnalysis": {
+                    "status": "ok",
+                    "text": ai_text,
+                },
+            }
+        except Exception as e:
+            # 容错，避免前端崩溃
             return {
                 "baseStats": base_result,
                 "aiAnalysis": {
                     "status": "error",
-                    "message": f"AI request failed: {e}",
+                    "message": f"Gemini request failed: {e}",
                 },
             }
 
+    def get_course_leader_summary(
+        self,
+        programme_id: Optional[str],
+        module_code: Optional[str],
+        week_start: int,
+        week_end: int,
+    ):
+        """
+        返回课程负责人 Dashboard 的三项核心指标：
+        - avg_attendance_rate
+        - avg_submission_rate
+        - avg_grade
+        """
+
+        # -------------------------------
+        # 1) Attendance
+        # -------------------------------
+        attendance_rows = get_attendance_filtered(
+            programme_id=programme_id,
+            module_code=module_code,
+            week_start=week_start,
+            week_end=week_end,
+        )
+        # rows: (student_id, module_code, week, status)
+
+        present = sum(1 for r in attendance_rows if r["status"] == "present")
+        absent = sum(1 for r in attendance_rows if r["status"] == "absent")
+        total_att_records = present + absent
+
+        avg_attendance_rate = (
+            present / total_att_records if total_att_records > 0 else None
+        )
+
+        # -------------------------------
+        # 2) Submissions
+        # -------------------------------
+        submission_rows = get_submissions_filtered(
+            programme_id=programme_id,
+            module_code=module_code,
+        )
+        # rows: (student_id, module_code, submitted, grade)
+
+        submit_count = sum(1 for r in submission_rows if r["submitted"] == 1)
+        total_sub_records = len(submission_rows)
+
+        avg_submission_rate = (
+            submit_count / total_sub_records if total_sub_records > 0 else None
+        )
+
+        # -------------------------------
+        # 3) Grade
+        # -------------------------------
+        grades = [r["grade"] for r in submission_rows if r["grade"] is not None]
+        avg_grade = sum(grades) / len(grades) if grades else None
+
         return {
-            "baseStats": base_result,
-            "aiAnalysis": ai_output,
+            "avg_attendance_rate": avg_attendance_rate,
+            "avg_submission_rate": avg_submission_rate,
+            "avg_grade": avg_grade,
         }
-
-
-def get_course_leader_summary(
-    self,
-    programme_id: Optional[str],
-    module_code: Optional[str],
-    week_start: int,
-    week_end: int,
-):
-    """
-    返回课程负责人 Dashboard 的三项核心指标：
-    - avg_attendance_rate
-    - avg_submission_rate
-    - avg_grade
-    """
-
-    # -------------------------------
-    # 1) Attendance
-    # -------------------------------
-    attendance_rows = get_attendance_filtered(
-        programme_id=programme_id,
-        module_code=module_code,
-        week_start=week_start,
-        week_end=week_end,
-    )
-    # rows: (student_id, module_code, week, status)
-
-    present = sum(1 for r in attendance_rows if r["status"] == "present")
-    absent = sum(1 for r in attendance_rows if r["status"] == "absent")
-    total_att_records = present + absent
-
-    avg_attendance_rate = present / total_att_records if total_att_records > 0 else None
-
-    # -------------------------------
-    # 2) Submissions
-    # -------------------------------
-    submission_rows = get_submissions_filtered(
-        programme_id=programme_id,
-        module_code=module_code,
-    )
-    # rows: (student_id, module_code, submitted, grade)
-
-    submit_count = sum(1 for r in submission_rows if r["submitted"] == 1)
-    total_sub_records = len(submission_rows)
-
-    avg_submission_rate = (
-        submit_count / total_sub_records if total_sub_records > 0 else None
-    )
-
-    # -------------------------------
-    # 3) Grade
-    # -------------------------------
-    grades = [r["grade"] for r in submission_rows if r["grade"] is not None]
-    avg_grade = sum(grades) / len(grades) if grades else None
-
-    return {
-        "avg_attendance_rate": avg_attendance_rate,
-        "avg_submission_rate": avg_submission_rate,
-        "avg_grade": avg_grade,
-    }
 
 
 course_service = CourseService()

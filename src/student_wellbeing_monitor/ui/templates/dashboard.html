@@ -468,6 +468,50 @@
     {% endif %}
     {% endif %}
   </div>
+  {# --- AI insight: high stress & low sleep vs engagement --- #}
+  {% if high_stress_ai and high_stress_ai.aiAnalysis %}
+  {% set ai = high_stress_ai.aiAnalysis %}
+  <div class="card-elevated mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">AI insight: high stress & low sleep students</h6>
+      <span class="text-muted small">
+        Based on stress, sleep, attendance, submissions and grades.
+      </span>
+    </div>
+
+    {# 1) 如果后端返回错误（比如没配置 AI_ANALYSIS_URL） #}
+    {% if ai.status == 'error' %}
+    <p class="text-muted small mb-0">
+      {{ ai.message }}
+    </p>
+
+    {% else %}
+    {# 2) 主体分析文本：假设外部 AI 返回 summary 字段 #}
+    {% if ai.summary %}
+    <p class="small mb-2">
+      {{ ai.summary }}
+    </p>
+    {% elif ai.text %}
+    <p class="small mb-2">
+      {{ ai.text }}
+    </p>
+    {% elif ai.message %}
+    <p class="small mb-2">
+      {{ ai.message }}
+    </p>
+    {% endif %}
+
+    {# 3) 建议列表：假设外部 AI 返回 recommendations: [ ... ] #}
+    {% if ai.recommendations %}
+    <ul class="small mb-0">
+      {% for rec in ai.recommendations %}
+      <li>{{ rec }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
 </div>
 
 {% endblock %}
@@ -480,9 +524,9 @@
   const avgSleep = {{ avg_sleep| tojson }};
   const attendanceTrend = {{ attendance_trend| tojson }};
   const scatterPoints = {{ scatter_points | tojson }};
-  const programmes = {{programmes | tojson}}
+  const programmes = {{ programmes | tojson}}
 
-  
+
   const programmeStats = {{ programme_stats | tojson }};
   const programmeLabels = programmeStats.labels || [];
   const programmeAvgStress = programmeStats.avgStress || [];
@@ -543,7 +587,7 @@
     ]);
   }
 
-    // ========= Programme wellbeing & engagement (wellbeing role only) =========
+  // ========= Programme wellbeing & engagement (wellbeing role only) =========
   if (ROLE === "wellbeing" && programmeLabels.length > 0) {
     const ctxProg = document.getElementById("programmeEngagementChart");
     if (ctxProg) {
