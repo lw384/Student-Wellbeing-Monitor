@@ -399,6 +399,21 @@ def get_attendance_filtered(programme_id, module_id, week_start, week_end):
     return rows
 
 
+def get_attendance_by_id(record_id: int):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """ 
+          SELECT id, student_id, week, status  
+          FROM attendance 
+          WHERE id = ?""",
+        (record_id,),
+    )
+    row = cur.fetchone()
+    conn.close()
+    return row
+
+
 # ================== Submissions (Read) ==================
 def count_submission(student_id: Optional[str] = None):
     conn = get_conn()
@@ -487,6 +502,21 @@ def get_submissions_filtered(programme_id=None, module_id=None):
     rows = cur.fetchall()
     conn.close()
     return rows
+
+
+def get_submission_by_id(record_id: int):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """ 
+          SELECT id, student_id, module_id, submitted,grade, due_date, submit_date  
+          FROM submission 
+          WHERE id = ?""",
+        (record_id,),
+    )
+    row = cur.fetchone()
+    conn.close()
+    return row
 
 
 # ================== User & Roles  ==================

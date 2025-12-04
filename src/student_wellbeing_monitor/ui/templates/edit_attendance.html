@@ -1,0 +1,40 @@
+{# templates/edit_attendance.html #}
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="card-elevated">
+    <div class="card-body">
+        <h5 class="card-title mb-3">Edit Attendance Record</h5>
+        <form method="post">
+            <div class="mb-3">
+                <label class="form-label">Student ID</label>
+                <input type="text" class="form-control" value="{{ record.student_id }}" disabled>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Week</label>
+                <input type="number" class="form-control" value="{{ record.week }}" disabled>
+            </div>
+
+            <div class="mb-3">
+                <label>Status</label>
+                <select name="status" class="form-select">
+                    <option value="1" {% if record.status==1 %}selected{% endif %}>Present</option>
+                    <option value="0" {% if record.status==0 %}selected{% endif %}>Absent</option>
+                </select>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('view_data', role=role, data_type=data_type, page=page) }}"
+                    class="btn btn-outline-secondary">
+                    Cancel
+                </a>
+
+                <button type="submit" class="btn btn-primary">
+                    Save changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

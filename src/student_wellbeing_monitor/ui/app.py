@@ -13,12 +13,19 @@ from student_wellbeing_monitor.database.read import (
     count_attendance,
     count_submission,
     get_wellbeing_by_id,
+    get_attendance_by_id,
+    get_submission_by_id,
     get_wellbeing_page,
     get_attendance_page,
     get_submission_page,
     # get_course_summary,
 )
-from student_wellbeing_monitor.database.update import update_wellbeing
+from student_wellbeing_monitor.database.update import (
+    update_attendance,
+    update_wellbeing,
+    update_submission,
+)
+
 from student_wellbeing_monitor.services.upload_service import import_csv_by_type
 from student_wellbeing_monitor.services.wellbeing_service import wellbeing_service
 from student_wellbeing_monitor.services.course_service import course_service
@@ -465,9 +472,63 @@ def edit_record(role, data_type, record_id):
             record=record,
             page=page,
         )
+    elif data_type == "attendance":
+        record = get_attendance_by_id(record_id)
+        if not record:
+            flash("Record not found", "danger")
+            return redirect(
+                url_for("view_data", role=role, data_type=data_type, page=page)
+            )
 
-    # 其他 data_type 还没实现
-    flash("Editing this data type is not supported yet.", "warning")
+        if request.method == "POST":
+            status = int(request.form["status"])
+            current_week = record["week"]
+            update_attendance(record_id, status, current_week)
+
+            flash("Attendance record updated", "success")
+            return redirect(
+                url_for("view_data", role=role, data_type=data_type, page=page)
+            )
+
+        return render_template(
+            "edit_attendance.html",
+            role=role,
+            data_type=data_type,
+            record=record,
+            page=page,
+        )
+    elif data_type == "submissions":
+        record = get_submission_by_id(record_id)
+        if not record:
+            flash("Record not found", "danger")
+            return redirect(
+                url_for("view_data", role=role, data_type=data_type, page=page)
+            )
+
+        if request.method == "POST":
+            submitted = int(request.form["submitted"])
+            grade = float(request.form["grade"] or 0)
+            due_date = request.form["due_date"]
+            submit_date = request.form["submit_date"]
+
+            update_submission(record_id, submitted, grade, due_date, submit_date)
+
+            flash("Submission record updated", "success")
+            return redirect(
+                url_for("view_data", role=role, data_type=data_type, page=page)
+            )
+
+        return render_template(
+            "edit_submission.html",
+            role=role,
+            data_type=data_type,
+            record=record,
+            page=page,
+        )
+        # 其他 data_type 还没实现
+    else:
+        flash("Editing this data type is not supported yet.", "warning")
+
     return redirect(url_for("view_data", role=role, data_type=data_type, page=page))
 
 
