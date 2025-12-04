@@ -253,14 +253,14 @@ def dashboard(role):
                 }
             )
 
-        high_stress_ai = course_service.analyze_high_stress_sleep_with_ai(
+    run_ai = request.args.get("run_ai") == "1"
+    ai_result = None
+
+    if role == "wellbeing" and current_programme and run_ai:
+        ai_result = course_service.analyze_high_stress_sleep_with_ai(
             programme_id=current_programme,
             week_start=start_week,
             week_end=end_week,
-            # 阈值你可以保持默认，也可以从 query 参数里读
-            stress_threshold=4.0,
-            sleep_threshold=6.0,
-            min_weeks=1,
         )
     else:  # course leader
         # -------- A. 出勤风险 --------
@@ -313,6 +313,7 @@ def dashboard(role):
                     "details": stu.get("details", []),
                 }
             )
+    print(ai_result, "jhjdhfjh")
 
     # ---------- 7. 渲染 ----------
     return render_template(
@@ -338,7 +339,7 @@ def dashboard(role):
         students_to_contact=students_to_contact,
         attendance_risk_students=attendance_risk_students,
         submission_risk_students=submission_risk_students,
-        high_stress_ai=high_stress_ai,
+        ai_result=ai_result,
         programme_stats={
             "labels": programme_labels,
             "avgStress": programme_avg_stress,

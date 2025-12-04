@@ -1,7 +1,6 @@
 {% extends "layout.html" %}
 {% set active_page = 'dashboard' %}
 {% set simple_layout = False %}
-
 {% block content %}
 <div class="main-content">
 
@@ -469,49 +468,37 @@
     {% endif %}
   </div>
   {# --- AI insight: high stress & low sleep vs engagement --- #}
-  {% if high_stress_ai and high_stress_ai.aiAnalysis %}
-  {% set ai = high_stress_ai.aiAnalysis %}
-  <div class="card-elevated mt-3">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="mb-0">AI insight: high stress & low sleep students</h6>
-      <span class="text-muted small">
-        Based on stress, sleep, attendance, submissions and grades.
-      </span>
-    </div>
+    <div class="mt-3 pt-3 border-top">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0">AI insight: high stress & low sleep group</h6>
 
-    {# 1) 如果后端返回错误（比如没配置 AI_ANALYSIS_URL） #}
-    {% if ai.status == 'error' %}
-    <p class="text-muted small mb-0">
-      {{ ai.message }}
-    </p>
-
-    {% else %}
-    {# 2) 主体分析文本：假设外部 AI 返回 summary 字段 #}
-    {% if ai.summary %}
-    <p class="small mb-2">
-      {{ ai.summary }}
-    </p>
-    {% elif ai.text %}
-    <p class="small mb-2">
-      {{ ai.text }}
-    </p>
-    {% elif ai.message %}
-    <p class="small mb-2">
-      {{ ai.message }}
-    </p>
-    {% endif %}
-
-    {# 3) 建议列表：假设外部 AI 返回 recommendations: [ ... ] #}
-    {% if ai.recommendations %}
-    <ul class="small mb-0">
-      {% for rec in ai.recommendations %}
-      <li>{{ rec }}</li>
-      {% endfor %}
-    </ul>
-    {% endif %}
-    {% endif %}
+        <form method="get" action="{{ url_for('dashboard', role=role) }}" class="d-inline">
+          {# 保持当前的筛选条件 #}
+          <input type="hidden" name="start_week" value="{{ current_start_week }}">
+          <input type="hidden" name="end_week" value="{{ current_end_week }}">
+          <input type="hidden" name="programme_id" value="{{ current_programme }}">
+          <input type="hidden" name="run_ai" value="1">
+          <button type="submit" class="btn btn-sm btn-outline-primary">
+            Run AI analysis
+          </button>
+        </form>
+      </div>
+  {% if ai_result %}
+  {% if ai_result.aiAnalysis.status == 'ok' %}
+  <div class="small p-2 rounded bg-light" style="white-space: pre-line;">
+    {{ ai_result.aiAnalysis.text }}
+  </div>
+  {% else %}
+  <div class="small text-danger">
+    AI analysis error: {{ ai_result.aiAnalysis.message }}
   </div>
   {% endif %}
+  {% else %}
+  <p class="small text-muted mb-0">
+    Click "Run AI analysis" to generate a short summary comparing high stress & low sleep students with others.
+  </p>
+  {% endif %}
+</div>
 </div>
 
 {% endblock %}

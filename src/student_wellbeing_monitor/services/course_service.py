@@ -767,7 +767,7 @@ class CourseService:
             "   Quantify differences where possible (e.g. ‘attendance is about 12 percentage points lower’).\n"
             "2) Summarise in clear, concise English what this means for student wellbeing and engagement.\n"
             "3) Provide 3–5 actionable recommendations for the school/teachers/Wellbeing team.\n"
-            "4) Keep the answer short and structured (use bullet points or numbered list).\n\n"
+            "4) Keep the answer short and structured (no Markdown, use bullet points or numbered list).\n\n"
             "Here is the JSON data:\n"
             f"{json.dumps(analysis_data, indent=2)}\n"
         )
