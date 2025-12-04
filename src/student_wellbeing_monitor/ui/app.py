@@ -57,6 +57,7 @@ TABLE_FIELDS = {
     "submissions": [
         ("student_id", "Student ID"),
         ("student_name", "Name"),
+        ("programme_name", "Programme"),
         ("module_name", "Module"),
         ("submitted", "Submitted"),
         ("grade", "Grade"),
@@ -399,7 +400,6 @@ def view_data(role, data_type):
 
     # ========== submissions ==========
     elif data_type == "submissions":
-
         total = count_submission(student_id_filter or None)
         rows = get_submission_page(
             limit=per_page,

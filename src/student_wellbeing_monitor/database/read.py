@@ -431,7 +431,8 @@ def get_submission_page(
         SELECT 
             sub.id,
             sub.student_id,
-            s.name AS student_name,    
+            s.name AS student_name, 
+            p.programme_name,   
             sub.module_id,
             m.module_name,              
             sub.submitted,
@@ -441,12 +442,13 @@ def get_submission_page(
         FROM submission AS sub
         JOIN student AS s ON sub.student_id = s.student_id
         JOIN module AS m ON sub.module_id = m.module_id
+        JOIN programme AS p ON s.programme_id = p.programme_id
     """
     params: list = []
 
     # -------- 1) student_id 精确查询 --------
     if student_id:
-        sql += " WHERE student_id = ?"
+        sql += " WHERE sub.student_id = ?"
         params.append(student_id)
 
     # -------- 3) 分页 --------

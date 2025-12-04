@@ -227,7 +227,7 @@
         </div>
         <div class="d-flex align-items-baseline gap-2">
           <span class="fs-3 fw-semibold">
-          {{ ((summary.avg_submission_rate or 0) * 100) | round(1) }}
+            {{ ((summary.avg_submission_rate or 0) * 100) | round(1) }}
           </span>
           <span class="text-muted small">%</span>
         </div>
@@ -289,8 +289,8 @@
 
   {# ==== student at risk ==== #}
   <div class="card-elevated mb-3">
-      {% if role == "wellbeing" %}
-       <div class="d-flex justify-content-between align-items-center mb-2">
+    {% if role == "wellbeing" %}
+    <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="mb-0">
         Students to contact (wellbeing risk)
       </h6>
@@ -298,138 +298,151 @@
         Auto-flagged based on recent stress / attendance / submissions.
       </span>
     </div>
-     {% if students_to_contact %}
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Student ID</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Reason</th>
-              <th>Details</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for s in students_to_contact %}
-            <tr>
-              <td>{{ loop.index }}</td>
-              <td>{{ s.student_id }}</td>
-              <td>{{ s.name }}</td>
-              <td>{{ s.email }}</td>
-              <td>{{ s.reason }}</td>
-              <td>{{ s.detail }}</td>
-              <td>
-                <a class="btn btn-sm btn-outline-primary"
-                  href="{{ url_for('view_data', role=role, data_type='wellbeing') }}">
-                  View record
-                </a>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <p class="text-muted small mb-0">
-        No students currently flagged for follow-up in the selected period.
-      </p>
-      {% endif %}
+    {% if students_to_contact %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Reason</th>
+            <th>Details</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students_to_contact %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ s.student_id }}</td>
+            <td>{{ s.name }}</td>
+            <td>{{ s.email }}</td>
+            <td>{{ s.reason }}</td>
+            <td>{{ s.detail }}</td>
+            <td>
+              <a class="btn btn-sm btn-outline-primary"
+                href="{{ url_for('view_data', role=role, data_type='wellbeing',student_id=s.student_id)}}">
+                View record
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted small mb-0">
+      No students currently flagged for follow-up in the selected period.
+    </p>
+    {% endif %}
 
     {% elif role == "course_leader" %}
-      {# --- Attendance risk --- #}
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="mb-0">Students to contact (attendance risk)</h6>
-        <span class="text-muted small">
-          Low attendance over selected weeks.
-        </span>
-      </div>
-      {% if attendance_risk_students %}
-      <div class="table-responsive mb-3">
-        <table class="table table-hover align-middle">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Module</th>
-              <th>Student ID</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Attendance rate</th>
-              <th>Absent sessions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for s in attendance_risk_students %}
-            <tr>
-              <td>{{ loop.index }}</td>
-              <td>{{ s.module_code }}</td>
-              <td>{{ s.student_id }}</td>
-              <td>{{ s.name }}</td>
-              <td>{{ s.email }}</td>
-              <td>{{ (s.attendance_rate * 100)|round(1) }}%</td>
-              <td>{{ s.absent_sessions }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-      <p class="text-muted small">
-        No students with low attendance in the selected range.
-      </p>
-       {% endif %}
-      {# --- submission risk  --- #}
-      <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
-        <h6 class="mb-0">Students to contact (submission risk)</h6>
-        <span class="text-muted small">
-          Missing or late submissions.
-        </span>
-      </div>
+    {# --- Attendance risk --- #}
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">Students to contact (attendance risk)</h6>
+      <span class="text-muted small">
+        Low attendance over selected weeks.
+      </span>
+    </div>
+    {% if attendance_risk_students %}
+    <div class="table-responsive mb-3">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Module</th>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Attendance rate</th>
+            <th>Absent sessions</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in attendance_risk_students %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ s.module_code }}</td>
+            <td>{{ s.student_id }}</td>
+            <td>{{ s.name }}</td>
+            <td>{{ s.email }}</td>
+            <td>{{ (s.attendance_rate * 100)|round(1) }}%</td>
+            <td>{{ s.absent_sessions }}</td>
+             <td>
+              <a class="btn btn-sm btn-outline-primary"
+                href="{{ url_for('view_data', role=role, data_type='attendance',student_id=s.student_id)}}">
+                View record
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted small">
+      No students with low attendance in the selected range.
+    </p>
+    {% endif %}
+    {# --- submission risk --- #}
+    <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+      <h6 class="mb-0">Students to contact (submission risk)</h6>
+      <span class="text-muted small">
+        Missing or late submissions.
+      </span>
+    </div>
 
-        {% if submission_risk_students %}
-        <div class="table-responsive">
-          <table class="table table-hover align-middle">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Student ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Missing submissions</th>
-                <th>Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for s in submission_risk_students %}
-              <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ s.student_id }}</td>
-                <td>{{ s.name }}</td>
-                <td>{{ s.email }}</td>
-                <td>{{ s.offending_module_count }}</td>
-                <td>
-                  {# 展开 details：每一门课缺了什么 #}
-                  <ul class="mb-0 ps-3">
-                    {% for d in s.details %}
-                      <li>
-                        {{ d.courseId }} – {{ d.courseName }}
-                        (Assignment {{ d.assignmentNo }}, {{ d.status }})
-                      </li>
-                    {% endfor %}
-                  </ul>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% else %}
-        <p class="text-muted small mb-0">
-          No students with submission issues in the selected range.
-        </p>
-        {% endif %}
+    {% if submission_risk_students %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Missing submissions</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in submission_risk_students %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ s.student_id }}</td>
+            <td>{{ s.name }}</td>
+            <td>{{ s.email }}</td>
+            <td>{{ s.offending_module_count }}</td>
+            <td>
+              {# 展开 details：每一门课缺了什么 #}
+              <ul class="mb-0 ps-3">
+                {% for d in s.details %}
+                <li>
+                  {{ d.courseId }} – {{ d.courseName }}
+                  (Assignment {{ d.assignmentNo }}, {{ d.status }})
+                </li>
+                {% endfor %}
+              </ul>
+            </td>
+             <td>
+              <a class="btn btn-sm btn-outline-primary"
+                href="{{ url_for('view_data', role=role, data_type='submissions',student_id=s.student_id)}}">
+                View record
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted small mb-0">
+      No students with submission issues in the selected range.
+    </p>
+    {% endif %}
     {% endif %}
   </div>
 </div>
