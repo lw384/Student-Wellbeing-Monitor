@@ -9,6 +9,7 @@ __pycache__/
 # Ignore generated mock CSV files
 mock_data/mock/*.csv
 mock_data/mock/**/*.csv
+archive/
 
 # Distribution / packaging
 .Python
