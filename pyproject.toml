@@ -33,7 +33,8 @@ archive-data = "student_wellbeing_monitor.tools.archive:main"
 dev = [
     "pylint (>=4.0.4,<5.0.0)",
     "ruff (>=0.14.8,<0.15.0)",
-    "black (>=25.11.0,<26.0.0)"
+    "black (>=25.11.0,<26.0.0)",
+    "pytest-cov (>=7.0.0,<8.0.0)"
 ]
 
 
