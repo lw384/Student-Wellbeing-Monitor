@@ -18,7 +18,6 @@
         {% endif %}
       </h5>
       <div class="mb-3">
-
         <!-- 所有角色都能看 Students -->
         <a href="{{ url_for('view_data', role=role, data_type='students') }}"
           class="btn btn-outline-primary btn-sm {% if data_type=='students' %}active{% endif %}">
@@ -47,6 +46,47 @@
         {% endif %}
 
       </div>
+      <div class="mb-3">
+        <form method="get" action="{{ url_for('view_data', role=role, data_type=data_type) }}">
+
+          <div class="d-flex flex-wrap align-items-end gap-3">
+
+            <!-- Student ID -->
+            <div style="min-width: 220px;">
+              <label class="form-label small text-muted mb-1">Student ID</label>
+              <input type="text" name="student_id" value="{{ request.args.get('student_id','') }}"
+                class="form-control form-control-sm" placeholder="Enter Student ID">
+            </div>
+
+            <!-- Week Sorting -->
+            {% set column_keys = fields|map(attribute=0)|list %}
+            {% if 'week' in column_keys %}
+            <div style="min-width: 220px;">
+              <label class="form-label small text-muted mb-1">Sort by Week</label>
+              <select name="sort_week" class="form-select form-select-sm">
+                <option value="">No sorting</option>
+                <option value="asc" {% if request.args.get('sort_week')=='asc' %}selected{% endif %}>
+                  Week ↑ Ascending
+                </option>
+                <option value="desc" {% if request.args.get('sort_week')=='desc' %}selected{% endif %}>
+                  Week ↓ Descending
+                </option>
+              </select>
+            </div>
+            {% endif %}
+
+            <!-- Apply Button -->
+            <div>
+              <button class="btn btn-primary btn-sm px-4">
+                Apply
+              </button>
+            </div>
+
+          </div>
+
+        </form>
+      </div>
+
 
       <p class="text-muted mb-0" style="font-size: 0.85rem;">
         Showing page {{ page }} of {{ total_pages }}
@@ -73,7 +113,43 @@
         <td>{{ loop.index }}</td>
 
         {% for col_key, col_name in fields %}
-        <td>{{ row[col_key] }}</td>
+        <td>
+          {% set value = row[col_key] %}
+
+          {# ------------------------------------------------------------- #}
+          {# 1) Unified handling for empty values (None, empty string). #}
+          {# Any empty value should be displayed as "--". #}
+          {# ------------------------------------------------------------- #}
+          {% if value is none or value == '' %}
+          --
+
+          {# ------------------------------------------------------------- #}
+          {# 2) Special formatting: attendance status (0/1 → Present/Absent) #}
+          {# ------------------------------------------------------------- #}
+          {% elif col_key == 'status' %}
+          {% if value == 1 %}
+          Present
+          {% else %}
+          Absent
+          {% endif %}
+
+          {# ------------------------------------------------------------- #}
+          {# 3) Special formatting: submission status (0/1 → Submitted/Not Submitted) #}
+          {# ------------------------------------------------------------- #}
+          {% elif col_key == 'submitted' %}
+          {% if value == 1 %}
+          Submitted
+          {% else %}
+          Not Submitted
+          {% endif %}
+
+          {# ------------------------------------------------------------- #}
+          {# 4) Default: display raw value #}
+          {# ------------------------------------------------------------- #}
+          {% else %}
+          {{ value }}
+          {% endif %}
+        </td>
         {% endfor %}
 
         {% if data_type != 'students' %}

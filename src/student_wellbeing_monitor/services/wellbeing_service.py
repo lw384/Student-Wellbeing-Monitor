@@ -218,6 +218,7 @@ class WellbeingService:
                   "studentId": "5000001",
                   "name": "Alice",
                   "riskType": "high_risk" or "potential_risk" or "normal",
+                  "email": "alice@warwick.ac.uk",
                   "reason": "...",
                   "details": "...",
                   "modules": ["WM9QF"]
@@ -250,6 +251,11 @@ class WellbeingService:
 
         student_name_map: Dict[str, str] = {
             str(row[0]): row[1]  # 0 = student_id, 1 = name
+            for row in student_rows
+            if row[0] is not None
+        }
+        student_email_map: Dict[str, str] = {
+            str(row[0]): row[2]  # 0 = student_id, 1 = name
             for row in student_rows
             if row[0] is not None
         }
@@ -364,6 +370,7 @@ class WellbeingService:
                         {
                             "studentId": sid,
                             "name": student_name_map.get(sid),
+                            "email": student_email_map.get(sid),
                             "riskType": risk_type,
                             "reason": reason,
                             "details": details,
@@ -385,6 +392,7 @@ class WellbeingService:
                 {
                     "studentId": sid,
                     "name": student_name_map.get(sid),
+                    "email": student_email_map.get(sid),
                     "riskType": risk_type,
                     "reason": reason,
                     "details": details,

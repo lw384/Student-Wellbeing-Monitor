@@ -144,27 +144,62 @@ def get_all_weeks() -> list[int]:
     return [r[0] for r in rows]
 
 
-def count_wellbeing():
+def count_wellbeing(student_id: Optional[str] = None):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM wellbeing")
+
+    if student_id:
+        cur.execute(
+            "SELECT COUNT(*) FROM wellbeing WHERE student_id = ?", (student_id,)
+        )
+    else:
+        cur.execute("SELECT COUNT(*) FROM wellbeing")
+
     total = cur.fetchone()[0]
     conn.close()
     return total
 
 
-def get_wellbeing_page(limit=20, offset=0):
+def get_wellbeing_page(
+    limit=20,
+    offset=0,
+    student_id: Optional[str] = None,
+    sort_week: Optional[str] = None,  # 'asc' / 'desc' / None
+):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(
-        """
-        SELECT id, student_id, week, stress_level, hours_slept
-        FROM wellbeing
-        ORDER BY student_id, week
-        LIMIT ? OFFSET ?
-        """,
-        (limit, offset),
-    )
+
+    sql = """
+       SELECT 
+            w.id,
+            w.student_id,
+            s.name,              
+            w.week,
+            w.stress_level,
+            w.hours_slept
+        FROM wellbeing AS w
+        JOIN student AS s ON w.student_id = s.student_id
+    """
+    params = []
+
+    # ------- 1) student 精确查询 -------
+    if student_id:
+        sql += " WHERE w.student_id = ?"
+        params.append(student_id)
+
+    # ------- 2) 排序 -------
+    if sort_week == "asc":
+        sql += " ORDER BY week ASC"
+    elif sort_week == "desc":
+        sql += " ORDER BY week DESC"
+    else:
+        sql += " ORDER BY w.student_id, week"
+
+    # ------- 3) 分页 -------
+    sql += " LIMIT ? OFFSET ?"
+    params.extend([limit, offset])
+
+    cur.execute(sql, params)
     rows = cur.fetchall()
     conn.close()
     return rows
@@ -224,10 +259,18 @@ def get_all_modules():
 # ================== Attendance (Read) ==================
 
 
-def count_attendance():
+def count_attendance(student_id: Optional[str] = None):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM attendance")
+
+    sql = "SELECT COUNT(*) FROM attendance"
+    params = []
+
+    if student_id:
+        sql += " WHERE student_id = ?"
+        params.append(student_id)
+
+    cur.execute(sql, params)
     total = cur.fetchone()[0]
     conn.close()
     return total
@@ -266,18 +309,55 @@ def get_attendance_rate(sid):
     return present * 1.0 / total
 
 
-def get_attendance_page(limit=20, offset=0):
+def get_attendance_page(
+    limit=20,
+    offset=0,
+    student_id: Optional[str] = None,
+    sort_week: Optional[str] = None,
+):
+    """
+    返回带学生姓名 + 模块名称的分页出勤记录：
+    id, student_id, student_name, module_code, module_name, week, status
+    """
+
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(
-        """
-        SELECT id, student_id, module_id, week, status
-        FROM attendance
-        ORDER BY student_id, week
-        LIMIT ? OFFSET ?
-        """,
-        (limit, offset),
-    )
+
+    sql = """
+        SELECT 
+            a.id,
+            a.student_id,
+            s.name,
+            a.module_id,
+            m.module_code,
+            m.module_name,
+            a.week,
+            a.status
+        FROM attendance AS a
+        JOIN student AS s ON a.student_id = s.student_id
+        JOIN module  AS m ON a.module_id = m.module_id
+    """
+
+    params = []
+
+    # ---------- Student 精确筛选 ----------
+    if student_id:
+        sql += " WHERE a.student_id = ?"
+        params.append(student_id)
+
+    # ---------- 排序规则 ----------
+    if sort_week == "asc":
+        sql += " ORDER BY a.week ASC"
+    elif sort_week == "desc":
+        sql += " ORDER BY a.week DESC"
+    else:
+        sql += " ORDER BY a.student_id, a.week"
+
+    # ---------- 分页 ----------
+    sql += " LIMIT ? OFFSET ?"
+    params.extend([limit, offset])
+
+    cur.execute(sql, params)
     rows = cur.fetchall()
     conn.close()
     return rows
@@ -320,40 +400,60 @@ def get_attendance_filtered(programme_id, module_id, week_start, week_end):
 
 
 # ================== Submissions (Read) ==================
-def count_submission():
+def count_submission(student_id: Optional[str] = None):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM submission")
+
+    sql = "SELECT COUNT(*) FROM submission"
+    params = []
+
+    if student_id:
+        sql += " WHERE student_id = ?"
+        params.append(student_id)
+
+    cur.execute(sql, params)
     total = cur.fetchone()[0]
     conn.close()
     return total
 
 
-def get_submissions_by_student(sid):
+def get_submission_page(
+    limit: int = 20,
+    offset: int = 0,
+    student_id: Optional[str] = None,
+    sort_due: Optional[str] = None,  # 'asc' / 'desc' / None
+):
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(
-        "SELECT assignment_id, due_date, submit_date, grade "
-        "FROM submission WHERE student_id = ? ORDER BY submission_id",
-        (sid,),
-    )
-    rows = cur.fetchall()
-    conn.close()
-    return rows
 
+    # 先写基础查询
+    sql = """
+        SELECT 
+            sub.id,
+            sub.student_id,
+            s.name AS student_name,    
+            sub.module_id,
+            m.module_name,              
+            sub.submitted,
+            sub.grade,
+            sub.due_date,
+            sub.submit_date
+        FROM submission AS sub
+        JOIN student AS s ON sub.student_id = s.student_id
+        JOIN module AS m ON sub.module_id = m.module_id
+    """
+    params: list = []
 
-def get_submission_page(limit=20, offset=0):
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(
-        """
-        SELECT id, student_id, module_id, submitted, grade, due_date, submit_date
-        FROM submission
-        ORDER BY student_id
-        LIMIT ? OFFSET ?
-        """,
-        (limit, offset),
-    )
+    # -------- 1) student_id 精确查询 --------
+    if student_id:
+        sql += " WHERE student_id = ?"
+        params.append(student_id)
+
+    # -------- 3) 分页 --------
+    sql += " LIMIT ? OFFSET ?"
+    params.extend([limit, offset])
+
+    cur.execute(sql, params)
     rows = cur.fetchall()
     conn.close()
     return rows
@@ -410,35 +510,6 @@ def get_user_role(username):
     if row is None:
         return None
     return row[0]
-
-
-def get_student_info(username, sid):
-    """
-    CD: id, name, attendance rate
-    SWO: id, name, attendance record, wellbeing, submissions
-    """
-    role = get_user_role(username)
-    if role is None:
-        print("User does not exist:", username)
-        return None
-
-    basic = get_student_information(sid)
-    if basic is None:
-        print("The student does not exist:", sid)
-        return None
-
-    if role == "cd":
-        rate = get_attendance_rate(sid)
-        return (basic[0], basic[1], rate)
-
-    if role == "swo":
-        att = get_attendance_by_student(sid)
-        wb = get_wellbeing_by_student(sid)
-        sub = get_submissions_by_student(sid)
-        return [basic, att, wb, sub]
-
-    print("The role does not have permission:", role)
-    return None
 
 
 # ================== Course-level stats ==================

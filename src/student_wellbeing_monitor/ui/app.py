@@ -7,6 +7,7 @@ from student_wellbeing_monitor.database.read import (
     get_all_modules,
     get_all_weeks,
     get_all_students,
+    get_student_by_id,
     count_students,
     count_wellbeing,
     count_attendance,
@@ -40,21 +41,27 @@ TABLE_FIELDS = {
     ],
     "wellbeing": [
         ("student_id", "Student ID"),
+        ("name", "Student Name"),
         ("week", "Week"),
         ("stress_level", "Stress Level"),
         ("hours_slept", "Hours Slept"),
     ],
     "attendance": [
         ("student_id", "Student ID"),
-        ("module_code", "Module"),
+        ("name", "Name"),
+        ("module_code", "Module Code"),
+        ("module_name", "Module"),
         ("week", "Week"),
         ("status", "Status"),
     ],
     "submissions": [
         ("student_id", "Student ID"),
-        ("module_code", "Module"),
+        ("student_name", "Name"),
+        ("module_name", "Module"),
         ("submitted", "Submitted"),
         ("grade", "Grade"),
+        ("due_date", "Due"),
+        ("submit_date", "Submit"),
     ],
 }
 
@@ -195,6 +202,7 @@ def dashboard(role):
                 {
                     "student_id": int(item["studentId"]),
                     "name": item["name"],
+                    "email": item["email"],
                     "reason": item["reason"],
                     "detail": item["details"],
                 }
@@ -349,30 +357,55 @@ def view_data(role, data_type):
 
     fields = TABLE_FIELDS[data_type]
 
+    student_id_filter = request.args.get("student_id", "", type=str).strip()
+    sort_week = request.args.get("sort_week", "", type=str).strip()
+
     # ========== students ==========
     if data_type == "students":
-        total = count_students()
-        raw_rows = get_all_students(limit=per_page, offset=offset)
-        rows = enrich_student_programme(raw_rows, programme_map)
+        if student_id_filter:
+            row = get_student_by_id(student_id_filter)
+            if row:
+                rows = [row]  # 存入列表，以便模板正常渲染
+                total = 1
+            else:
+                rows = []
+                total = 0
+        else:
+            total = count_students()
+            raw_rows = get_all_students(limit=per_page, offset=offset)
+            rows = raw_rows
+
+        rows = enrich_student_programme(rows, programme_map)
 
     # ========== wellbeing ==========
     elif data_type == "wellbeing":
-        total = count_wellbeing()
-        rows = get_wellbeing_page(limit=per_page, offset=offset)
+        total = count_wellbeing(student_id_filter or None)
+        rows = get_wellbeing_page(
+            limit=per_page,
+            offset=offset,
+            student_id=student_id_filter or None,
+            sort_week=sort_week or None,
+        )
 
     # ========== attendance ==========
     elif data_type == "attendance":
-        headers = ["Student ID", "Module Code", "Week", "Status"]
-
-        total = count_attendance()  # ✅ 总数
-        rows = get_attendance_page(limit=per_page, offset=offset)  # ✅ 分页
+        total = count_attendance(student_id_filter or None)
+        rows = get_attendance_page(
+            limit=per_page,
+            offset=offset,
+            student_id=student_id_filter or None,
+            sort_week=sort_week or None,
+        )
 
     # ========== submissions ==========
     elif data_type == "submissions":
-        headers = ["Student ID", "Module Code", "Submitted", "Grade"]
 
-        total = count_submission()  # ✅ 总数
-        rows = get_submission_page(limit=per_page, offset=offset)  # ✅ 分页
+        total = count_submission(student_id_filter or None)
+        rows = get_submission_page(
+            limit=per_page,
+            offset=offset,
+            student_id=student_id_filter or None,
+        )
 
     else:
         flash("Unknown data type", "danger")
