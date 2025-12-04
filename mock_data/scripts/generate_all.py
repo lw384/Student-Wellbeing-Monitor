@@ -44,8 +44,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--students",
         type=int,
-        default=30,
-        help="Number of students to generate (entities step, default: 30)",
+        default=50,
+        help="Number of students to generate (entities step, default: 50)",
     )
     parser.add_argument(
         "--weeks",

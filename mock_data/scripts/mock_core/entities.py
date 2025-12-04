@@ -2,6 +2,9 @@ import random
 from .base import fake
 import random
 import string
+from collections import defaultdict
+import random
+from typing import List, Dict
 
 
 # ------------------------------
@@ -175,63 +178,135 @@ def generate_modules(
 def generate_student_modules(
     students: list[dict],
     modules: list[dict],
-    min_courses: int = 2,
-    max_courses: int = 4,
-    cross_programme_prob: float = 0.1,
+    min_courses: int = 3,  # 每个学生至少 3 门
+    max_courses: int = 5,  # 每个学生最多 5 门
 ) -> list[dict]:
     """
-    Assign 2-4 modules to each student and generate a `student_modules` table.
-    规则：
-    - 默认从“学生所属 programme 下的 module”中选课
-    - 少量课程可以跨专业（cross_programme_prob）
-    - 同时把学生选的 module_code 写入 students['modules'] 方便导出到 CSV
+    目标：
+    - 每个 module 至少 5 个学生
+    - 每个学生 3–5 门课
+    - 学生只属于一个 programme（students 里已经有 programme_id）
+    - modules 里每个 module 也有 programme_id
 
     返回：
-    - records: 关系表列表，每行 { student_id, module_id }
+    - records: [{ "student_id": ..., "module_id": ... }, ...]
+    同时回写 students[i]["modules"] = "AY2V2, FK1E6, ..."
     """
-    records: list[dict] = []
 
-    # 先按 programme 分组 modules，方便针对某专业筛选可选课程
-    modules_by_prog: dict[str, list[dict]] = {}
+    records: list[dict] = []
+    assignment_set: set[tuple[int, int]] = set()  # (student_id, module_id) 去重
+
+    # 1) 按 programme 分组 modules & students
+    modules_by_prog: dict[str, list[dict]] = defaultdict(list)
     for m in modules:
-        modules_by_prog.setdefault(m["programme_id"], []).append(m)
+        modules_by_prog[m["programme_id"]].append(m)
+
+    students_by_prog: dict[str, list[dict]] = defaultdict(list)
+    for s in students:
+        students_by_prog[s["programme_id"]].append(s)
+
+    # 统计每个学生已选课程数
+    student_course_count: dict[int, int] = defaultdict(int)
+
+    # 2) 第一轮：保证每个 module 至少 5 个学生
+    MIN_PER_MODULE = 5
+
+    for m in modules:
+        prog_id = m["programme_id"]
+        module_id = m["module_id"]
+
+        # 优先从本 programme 的学生里选
+        candidates = students_by_prog.get(prog_id, [])
+
+        # 如果本专业学生太少，就从全局学生里补
+        if len(candidates) < MIN_PER_MODULE:
+            candidates = students
+
+        if not candidates:
+            continue
+
+        # 尝试优先选还没到 5 门课的学生
+        flexible_candidates = [
+            s for s in candidates if student_course_count[s["student_id"]] < max_courses
+        ]
+        if len(flexible_candidates) >= MIN_PER_MODULE:
+            pool = flexible_candidates
+        else:
+            # 实在不够，就放宽上限（避免死锁），宁可有个别学生 >5 门
+            pool = candidates
+
+        k = min(MIN_PER_MODULE, len(pool))
+        chosen_students = random.sample(pool, k)
+
+        for s in chosen_students:
+            sid = s["student_id"]
+            key = (sid, module_id)
+            if key in assignment_set:
+                continue
+            assignment_set.add(key)
+            records.append({"student_id": sid, "module_id": module_id})
+            student_course_count[sid] += 1
+
+    # 3) 第二轮：保证每个学生至少 3 门课（3–5 区间）
+    for s in students:
+        sid = s["student_id"]
+        prog_id = s["programme_id"]
+
+        current_count = student_course_count.get(sid, 0)
+        if current_count >= min_courses:
+            continue  # 已经满足下限
+
+        need = min_courses - current_count
+        max_extra = max_courses - current_count
+        if max_extra <= 0:
+            continue  # 这个学生已经最多课了
+
+        need = min(need, max_extra)
+
+        # 候选课程：优先本 programme 下的 module
+        candidate_modules = modules_by_prog.get(prog_id, [])
+
+        # 过滤掉该学生已经选过的课程
+        available_modules = [
+            m for m in candidate_modules if (sid, m["module_id"]) not in assignment_set
+        ]
+
+        # 如果本专业课不够，就允许从全局补
+        if len(available_modules) < need:
+            more_modules = [
+                m for m in modules if (sid, m["module_id"]) not in assignment_set
+            ]
+            available_modules = more_modules
+
+        if not available_modules:
+            continue
+
+        k = min(need, len(available_modules))
+        extra_modules = random.sample(available_modules, k)
+
+        for m in extra_modules:
+            mid = m["module_id"]
+            key = (sid, mid)
+            if key in assignment_set:
+                continue
+            assignment_set.add(key)
+            records.append({"student_id": sid, "module_id": mid})
+            student_course_count[sid] += 1
+
+    # 4) 把 module_code 写回 student["modules"] 字段
+    modules_by_id: dict[int, str] = {m["module_id"]: m["module_code"] for m in modules}
+    modules_for_student: dict[int, list[str]] = defaultdict(list)
+
+    for r in records:
+        sid = r["student_id"]
+        mid = r["module_id"]
+        code = modules_by_id.get(mid)
+        if code and code not in modules_for_student[sid]:
+            modules_for_student[sid].append(code)
 
     for s in students:
-        prog_id = s["programme_id"]
-        same_prog_modules = modules_by_prog.get(prog_id, [])
-
-        # 选课数量
-        count = random.randint(min_courses, max_courses)
-
-        chosen_modules: list[dict] = []
-
-        if same_prog_modules:
-            # 绝大部分课从自己专业选
-            k = min(count, len(same_prog_modules))
-            chosen_modules = random.sample(same_prog_modules, k)
-
-            # 有少量概率加一两门跨专业课
-            if random.random() < cross_programme_prob:
-                other_modules = [m for m in modules if m["programme_id"] != prog_id]
-                if other_modules:
-                    extra = random.choice(other_modules)
-                    if extra not in chosen_modules:
-                        chosen_modules.append(extra)
-
-        else:
-            # 极端情况：该专业暂时没有绑课程，就全局抽
-            chosen_modules = random.sample(modules, min(count, len(modules)))
-
-        # 写入关系表
-        for m in chosen_modules:
-            records.append(
-                {
-                    "student_id": s["student_id"],
-                    "module_id": m["module_id"],
-                }
-            )
-
-        # 同时在 student 记录上加一个易读字段：module_code 列表
-        s["modules"] = ", ".join(m["module_code"] for m in chosen_modules)
+        sid = s["student_id"]
+        codes = modules_for_student.get(sid, [])
+        s["modules"] = ", ".join(codes)
 
     return records

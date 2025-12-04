@@ -227,7 +227,7 @@
         </div>
         <div class="d-flex align-items-baseline gap-2">
           <span class="fs-3 fw-semibold">
-            {{ (summary.avg_submission_rate or 0) * 100|round(1) }}
+          {{ ((summary.avg_submission_rate or 0) * 100) | round(1) }}
           </span>
           <span class="text-muted small">%</span>
         </div>
@@ -246,7 +246,7 @@
         </div>
         <div class="d-flex align-items-baseline gap-2">
           <span class="fs-3 fw-semibold">
-            {{ (summary.avg_grade or 0)|round(1)|default('--') }}
+            {{ (summary.avg_grade or 0) | round(1) }}
           </span>
           <span class="text-muted small">/ 100</span>
         </div>
@@ -289,19 +289,16 @@
 
   {# ==== student at risk ==== #}
   <div class="card-elevated mb-3">
-
-    {% if students_to_contact %}
       {% if role == "wellbeing" %}
        <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="mb-0">
-        {% if role == "wellbeing" %}
         Students to contact (wellbeing risk)
-         {% endif %}
       </h6>
       <span class="text-muted small">
         Auto-flagged based on recent stress / attendance / submissions.
       </span>
     </div>
+     {% if students_to_contact %}
       <div class="table-responsive">
         <table class="table table-hover align-middle">
           <thead>
@@ -597,9 +594,9 @@
     // append modules
     moduleList.forEach(m => {
       const opt = document.createElement("option");
-      opt.value = m.code;
+      opt.value = m.id;
       opt.textContent = `${m.code} – ${m.name}`;
-      if (m.code === CURRENT_MODULE) {
+      if (m.id === CURRENT_MODULE) {
         opt.selected = true;
       }
       moduleSelect.appendChild(opt);

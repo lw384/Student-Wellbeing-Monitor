@@ -49,7 +49,6 @@ class CourseService:
             week_end=week_end,
         )
         # rows: (student_id, module_code, week, status)
-
         present = sum(1 for r in attendance_rows if r["status"] == 1)
         absent = sum(1 for r in attendance_rows if r["status"] == 0)
         total_att_records = present + absent

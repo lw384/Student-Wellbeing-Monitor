@@ -31,8 +31,8 @@ def parse_args():
     parser.add_argument(
         "--students",
         type=int,
-        default=30,
-        help="Number of students (default: 30)",
+        default=50,
+        help="Number of students (default: 50)",
     )
     parser.add_argument(
         "--modules",

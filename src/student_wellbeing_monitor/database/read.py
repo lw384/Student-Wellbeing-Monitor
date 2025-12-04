@@ -283,9 +283,7 @@ def get_attendance_page(limit=20, offset=0):
     return rows
 
 
-def get_attendance_filtered(
-    programme_id=None, module_id=None, week_start=None, week_end=None
-):
+def get_attendance_filtered(programme_id, module_id, week_start, week_end):
 
     conn = get_conn(row_factory=_sqlite3.Row)
     cur = conn.cursor()
