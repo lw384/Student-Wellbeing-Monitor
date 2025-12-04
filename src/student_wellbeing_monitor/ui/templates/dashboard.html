@@ -46,7 +46,7 @@
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
           Start Week
         </label>
-        <select name="start_week" class="form-select form-select-sm">
+        <select id="start-week-select" name="start_week" class="form-select form-select-sm">
           {% for w in weeks %}
           <option value="{{ w }}" {% if w==current_start_week %}selected{% endif %}>
             Week {{ w }}
@@ -60,7 +60,7 @@
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
           End Week
         </label>
-        <select name="end_week" class="form-select form-select-sm">
+        <select id="end-week-select" name="end_week" class="form-select form-select-sm">
           {% for w in weeks %}
           <option value="{{ w }}" {% if w==current_end_week %}selected{% endif %}>
             Week {{ w }}
@@ -371,7 +371,7 @@
             <td>{{ s.email }}</td>
             <td>{{ (s.attendance_rate * 100)|round(1) }}%</td>
             <td>{{ s.absent_sessions }}</td>
-             <td>
+            <td>
               <a class="btn btn-sm btn-outline-primary"
                 href="{{ url_for('view_data', role=role, data_type='attendance',student_id=s.student_id)}}">
                 View record
@@ -427,7 +427,7 @@
                 {% endfor %}
               </ul>
             </td>
-             <td>
+            <td>
               <a class="btn btn-sm btn-outline-primary"
                 href="{{ url_for('view_data', role=role, data_type='submissions',student_id=s.student_id)}}">
                 View record
@@ -571,6 +571,24 @@
       }
     });
   }
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const startSelect = document.getElementById("start-week-select");
+    const endSelect = document.getElementById("end-week-select");
+
+    function syncWeeks() {
+        const start = parseInt(startSelect.value);
+        const end = parseInt(endSelect.value);
+
+        if (start > end) {
+            endSelect.value = start;  // 自动纠正
+        }
+    }
+
+    startSelect.addEventListener("change", syncWeeks);
+    endSelect.addEventListener("change", syncWeeks);
+});
 </script>
 
 {% if role == 'course_leader' %}
