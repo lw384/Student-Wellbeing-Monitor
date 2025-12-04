@@ -329,17 +329,19 @@ class CourseService:
     # -------------------------------------------------
     def get_programme_wellbeing_engagement(
         self,
-        course_id: str,
+        programme_id: Optional[str] = None,
         week_start: Optional[int] = None,
         week_end: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
-        按专业 (programme) 维度，汇总某门课在指定周内的 wellbeing + engagement 指标。
+        按“专业 (programme)”维度，对 wellbeing + engagement 做汇总。
+
+        - programme_id 为 None：返回所有专业的汇总列表（适合做对比图表）
+        - programme_id 有值：只返回该专业的汇总（列表里通常只有 1 条）
 
         返回示例：
         {
-          "courseId": "...",
-          "courseName": "...",
+          "programmeId": "12345" 或 None,
           "programmes": [
             {
               "programmeId": "...",
@@ -355,7 +357,7 @@ class CourseService:
         }
         """
         rows = programme_wellbeing_engagement(
-            module_id=course_id,
+            programme_id=programme_id,
             week_start=week_start,
             week_end=week_end,
         )
@@ -364,18 +366,16 @@ class CourseService:
         #        programme_id, programme_name,
         #        week,
         #        stress_level,
+        #        hours_slept,
         #        attendance_status,
-        #        submission_status,   -- 'submit' / 'unsubmit'
+        #        submission_status,
         #        grade)
 
         if not rows:
             return {
-                "courseId": course_id,
-                "courseName": None,
+                "programmeId": programme_id,
                 "programmes": [],
             }
-
-        course_name = rows[0][1]
 
         agg: Dict[str, Dict[str, Any]] = {}
 
@@ -383,19 +383,20 @@ class CourseService:
             _mid,
             _mname,
             student_id,
-            programme_id,
-            programme_name,
+            prog_id_row,
+            prog_name,
             _week,
             stress_level,
+            _hours_slept,
             attendance_status,
             submission_status,
             grade,
         ) in rows:
-            if programme_id not in agg:
-                agg[programme_id] = {
-                    "programmeId": programme_id,
-                    "programmeName": programme_name,
-                    "students": set(),  # 去重统计学生数
+            if prog_id_row not in agg:
+                agg[prog_id_row] = {
+                    "programmeId": prog_id_row,
+                    "programmeName": prog_name,
+                    "students": set(),  # unique students count
                     "stress_sum": 0.0,
                     "stress_cnt": 0,
                     "att_present": 0,
@@ -406,7 +407,7 @@ class CourseService:
                     "grade_cnt": 0,
                 }
 
-            info = agg[programme_id]
+            info = agg[prog_id_row]
             info["students"].add(student_id)
 
             if stress_level is not None:
@@ -415,7 +416,7 @@ class CourseService:
 
             if attendance_status is not None:
                 info["att_total"] += 1
-                # attendance_status 为 0 / 1（0 缺勤，1 出勤）
+                # 0 = absent, 1 = present
                 if int(attendance_status) == 1:
                     info["att_present"] += 1
 
@@ -468,8 +469,7 @@ class CourseService:
             )
 
         return {
-            "courseId": course_id,
-            "courseName": course_name,
+            "programmeId": programme_id,
             "programmes": programmes,
         }
 

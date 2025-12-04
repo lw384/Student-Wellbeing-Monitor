@@ -267,6 +267,17 @@
       <canvas id="lineChartWellbeing"></canvas>
     </div>
   </div>
+  <div class="card-elevated mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">Programme wellbeing & engagement</h6>
+      <span class="text-muted small">
+        Compare average stress, attendance, submissions and grades by programme.
+      </span>
+    </div>
+    <div style="height: 340px;">
+      <canvas id="programmeEngagementChart"></canvas>
+    </div>
+  </div>
   {% endif %}
   {% if role == 'course_leader' %}
   <div class="card-elevated mb-3">
@@ -469,6 +480,15 @@
   const avgSleep = {{ avg_sleep| tojson }};
   const attendanceTrend = {{ attendance_trend| tojson }};
   const scatterPoints = {{ scatter_points | tojson }};
+  const programmes = {{programmes | tojson}}
+
+  
+  const programmeStats = {{ programme_stats | tojson }};
+  const programmeLabels = programmeStats.labels || [];
+  const programmeAvgStress = programmeStats.avgStress || [];
+  const programmeAttendanceRate = programmeStats.attendanceRate || [];
+  const programmeSubmissionRate = programmeStats.submissionRate || [];
+  const programmeAvgGrade = programmeStats.avgGrade || [];
 
   console.log("scatterPoints =", scatterPoints);
   console.log("ROLE =", ROLE);
@@ -523,6 +543,90 @@
     ]);
   }
 
+    // ========= Programme wellbeing & engagement (wellbeing role only) =========
+  if (ROLE === "wellbeing" && programmeLabels.length > 0) {
+    const ctxProg = document.getElementById("programmeEngagementChart");
+    if (ctxProg) {
+      const ctx = ctxProg.getContext("2d");
+
+      // 小工具：安全 map，避免 null 报错
+      const toPercent = (arr) =>
+        (arr || []).map(v => (v == null ? null : v * 100));
+
+      const attendancePercent = toPercent(programmeAttendanceRate);  // 0–1 → 0–100
+      const submissionPercent = toPercent(programmeSubmissionRate);  // 0–1 → 0–100
+      const avgGradeData = (programmeAvgGrade || []).map(
+        v => (v == null ? null : v)
+      );
+      const stressData = (programmeAvgStress || []).map(
+        v => (v == null ? null : v)
+      );
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: programmeLabels,
+          datasets: [
+            {
+              label: "Attendance rate (%)",
+              data: attendancePercent,
+              borderWidth: 1,
+              yAxisID: "y",
+            },
+            {
+              label: "Submission rate (%)",
+              data: submissionPercent,
+              borderWidth: 1,
+              yAxisID: "y",
+            },
+            {
+              label: "Average grade",
+              data: avgGradeData,
+              borderWidth: 1,
+              yAxisID: "y",
+            },
+            {
+              label: "Average stress (1–5)",
+              data: stressData,
+              type: "line",        // 用折线叠加在柱状图上
+              borderWidth: 2,
+              pointRadius: 3,
+              yAxisID: "y1",
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: { display: true, text: "Programme" },
+            },
+            // 左轴：百分比 + 成绩
+            y: {
+              position: "left",
+              beginAtZero: true,
+              title: { display: true, text: "Attendance / Submission / Grade (%)" }
+            },
+            // 右轴：stress 1–5
+            y1: {
+              position: "right",
+              beginAtZero: true,
+              min: 0,
+              max: 5,
+              title: { display: true, text: "Average stress (1–5)" },
+              grid: { drawOnChartArea: false } // 不在中间画第二套网格
+            }
+          },
+          plugins: {
+            legend: { display: true },
+            tooltip: { enabled: true }
+          }
+        }
+      });
+    }
+  }
+
   // ========= course_leader 折线图 =========
   if (ROLE === "course_leader" && weeks.length > 0) {
     renderLineChart("lineChartCourse", weeks, [
@@ -537,60 +641,60 @@
   }
 
   // ========== Attendance vs Grades Scatter (course_leader) ==========
-if (ROLE === "course_leader") {
-  const scatterCanvas = document.getElementById("attendanceGradeScatter");
-  if (scatterCanvas && Array.isArray(scatterPoints) && scatterPoints.length > 0) {
+  if (ROLE === "course_leader") {
+    const scatterCanvas = document.getElementById("attendanceGradeScatter");
+    if (scatterCanvas && Array.isArray(scatterPoints) && scatterPoints.length > 0) {
 
-    // 转成 Chart.js 需要的 {x, y} 格式，x 用百分比
-    const scatterData = scatterPoints
-      .filter(p => p.attendanceRate != null && p.avgGrade != null)
-      .map(p => ({
-        x: p.attendanceRate * 100,   // 0.85 -> 85%
-        y: p.avgGrade,
-        label: p.name || p.studentId
-      }));
+      // 转成 Chart.js 需要的 {x, y} 格式，x 用百分比
+      const scatterData = scatterPoints
+        .filter(p => p.attendanceRate != null && p.avgGrade != null)
+        .map(p => ({
+          x: p.attendanceRate * 100,   // 0.85 -> 85%
+          y: p.avgGrade,
+          label: p.name || p.studentId
+        }));
 
-    new Chart(scatterCanvas.getContext("2d"), {
-      type: "scatter",
-      data: {
-        datasets: [
-          {
-            label: "Students",
-            data: scatterData,
-            pointRadius: 4,
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: {
-            title: { display: true, text: "Attendance rate (%)" },
-            min: 0,
-            max: 100,
-          },
-          y: {
-            title: { display: true, text: "Average grade" },
-            min: 0,
-            max: 100,
-          }
+      new Chart(scatterCanvas.getContext("2d"), {
+        type: "scatter",
+        data: {
+          datasets: [
+            {
+              label: "Students",
+              data: scatterData,
+              pointRadius: 4,
+            }
+          ]
         },
-        plugins: {
-          tooltip: {
-            callbacks: {
-              label: ctx => {
-                const p = ctx.raw;
-                return `${p.label}: ${p.x.toFixed(1)}% attendance, ${p.y.toFixed(1)} grade`;
-              }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: { display: true, text: "Attendance rate (%)" },
+              min: 0,
+              max: 100,
+            },
+            y: {
+              title: { display: true, text: "Average grade" },
+              min: 0,
+              max: 100,
             }
           },
-          legend: { display: false }
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const p = ctx.raw;
+                  return `${p.label}: ${p.x.toFixed(1)}% attendance, ${p.y.toFixed(1)} grade`;
+                }
+              }
+            },
+            legend: { display: false }
+          }
         }
-      }
-    });
+      });
+    }
   }
-}
   // ========== Submission Chart ==========
   const subLabels = {{ submission_labels | default ([], true) | tojson }};
   const subSubmitted = {{ submission_submitted | default ([], true) | tojson }};

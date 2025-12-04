@@ -1196,12 +1196,12 @@ def attendance_and_grades(
 
 
 def programme_wellbeing_engagement(
-    module_id: str,
+    programme_id: Optional[str] = None,
     week_start: Optional[int] = None,
     week_end: Optional[int] = None,
 ) -> List[Tuple]:
     """
-    为 get_programme_wellbeing_engagement 以及其他综合分析提供数据。
+    为 get_programme_wellbeing_engagement 提供“按专业”分析的原始记录。
 
     返回：
       (module_id, module_name,
@@ -1250,10 +1250,16 @@ def programme_wellbeing_engagement(
         LEFT JOIN submission AS sub
           ON sub.student_id = s.student_id
          AND sub.module_id  = sm.module_id
-        WHERE m.module_id = ?
+        WHERE 1 = 1
     """
-    params: List = [module_id]
+    params: List = []
 
+    # filter by programme（真正按专业维度）
+    if programme_id is not None:
+        sql += " AND s.programme_id = ?"
+        params.append(programme_id)
+
+    # filter by week range
     if week_start is not None:
         sql += " AND w.week >= ?"
         params.append(week_start)

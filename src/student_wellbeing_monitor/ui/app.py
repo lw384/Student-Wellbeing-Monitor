@@ -159,6 +159,27 @@ def dashboard(role):
         avg_stress = line.get("stress", [])
         avg_sleep = line.get("sleep", [])
 
+        prog_stats = course_service.get_programme_wellbeing_engagement(
+            programme_id=current_programme if current_programme else None,
+            week_start=start_week,
+            week_end=end_week,
+        )
+
+        programme_bar = prog_stats.get("programmes", [])
+
+        programme_labels = [
+            p.get("programmeName") or p.get("programmeId") or "Unknown"
+            for p in programme_bar
+        ]
+        programme_avg_stress = [p.get("avgStress") for p in programme_bar]
+        programme_attendance_rate = [
+            p.get("attendanceRate") for p in programme_bar
+        ]  # 0–1
+        programme_submission_rate = [
+            p.get("submissionRate") for p in programme_bar
+        ]  # 0–1
+        programme_avg_grade = [p.get("avgGrade") for p in programme_bar]  # 0–100
+
     else:  # course_leader
         trend = attendance_service.get_attendance_trends(
             course_id=current_module,
@@ -172,7 +193,7 @@ def dashboard(role):
         attendance_trend = [p["attendanceRate"] for p in points]
         grade_trend = [p.get("avgGrade") for p in points]
 
-        # 4) attendance vs grade scatter
+    # 4) attendance vs grade scatter
     if role == "course_leader" and current_programme:
         scatter = course_service.get_attendance_vs_grades(
             course_id=current_module,  # 当前选中 module
@@ -304,6 +325,13 @@ def dashboard(role):
         students_to_contact=students_to_contact,
         attendance_risk_students=attendance_risk_students,
         submission_risk_students=submission_risk_students,
+        programme_stats={
+            "labels": programme_labels,
+            "avgStress": programme_avg_stress,
+            "attendanceRate": programme_attendance_rate,  # 0–1
+            "submissionRate": programme_submission_rate,  # 0–1
+            "avgGrade": programme_avg_grade,  # 0–100
+        },
     )
 
 
