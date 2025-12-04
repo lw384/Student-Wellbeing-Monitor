@@ -1,38 +1,38 @@
 """src/wellbeing_system/ui/app.py"""
 
-import os
 import math
-from flask import Flask, render_template, request, redirect, url_for, flash
+import os
+
 from dotenv import load_dotenv
+from flask import Flask, flash, redirect, render_template, request, url_for
+
 from student_wellbeing_monitor.database.read import (
-    get_programmes,
-    get_all_modules,
-    get_all_weeks,
-    get_all_students,
-    get_student_by_id,
-    count_students,
-    count_wellbeing,
     count_attendance,
+    count_students,
     count_submission,
-    get_wellbeing_by_id,
+    count_wellbeing,
+    get_all_modules,
+    get_all_students,
+    get_all_weeks,
     get_attendance_by_id,
-    get_submission_by_id,
-    get_wellbeing_page,
     get_attendance_page,
+    get_programmes,
+    get_student_by_id,
+    get_submission_by_id,
     get_submission_page,
     # get_course_summary,
+    get_wellbeing_by_id,
+    get_wellbeing_page,
 )
 from student_wellbeing_monitor.database.update import (
     update_attendance,
-    update_wellbeing,
     update_submission,
+    update_wellbeing,
 )
-
+from student_wellbeing_monitor.services.attendance_service import attendance_service
+from student_wellbeing_monitor.services.course_service import course_service
 from student_wellbeing_monitor.services.upload_service import import_csv_by_type
 from student_wellbeing_monitor.services.wellbeing_service import wellbeing_service
-from student_wellbeing_monitor.services.course_service import course_service
-from student_wellbeing_monitor.services.attendance_service import attendance_service
-
 
 load_dotenv()
 

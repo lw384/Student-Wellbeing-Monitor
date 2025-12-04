@@ -1,17 +1,18 @@
 # course_service.py
 
-from typing import Optional, Dict, Any, List, Tuple
-from collections import defaultdict
-import os
 import json
+import os
+from typing import Any, Dict, List, Optional, Tuple
+
 from google import genai
+
 from student_wellbeing_monitor.database.read import (
-    submissions_for_course,
-    unsubmissions_for_repeated_issues,
     attendance_and_grades,
-    programme_wellbeing_engagement,
     get_attendance_filtered,
     get_submissions_filtered,
+    programme_wellbeing_engagement,
+    submissions_for_course,
+    unsubmissions_for_repeated_issues,
 )
 
 

@@ -1,11 +1,11 @@
 # attendance_service.py
 
-from typing import Optional, Dict, Any, List
 from collections import defaultdict
+from typing import Any, Dict, List, Optional
 
 from student_wellbeing_monitor.database.read import (
-    attendance_for_course,
     attendance_detail_for_students,
+    attendance_for_course,
 )
 
 

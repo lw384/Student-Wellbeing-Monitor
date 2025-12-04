@@ -1,14 +1,11 @@
-from typing import Optional, Dict, Any, List, Tuple
 from collections import defaultdict
-import sys
-import os
+from typing import Any, Dict, List, Optional, Tuple
+
 from student_wellbeing_monitor.database.read import (
     get_all_students,
     get_students_by_programme,
-    get_student_by_id,
     get_wellbeing_records,
 )
-
 
 # =========================================================
 # Class: WellbeingService

@@ -2,6 +2,7 @@
 
 import argparse
 from pathlib import Path
+
 from student_wellbeing_monitor.services.archive_service import run_archive
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]

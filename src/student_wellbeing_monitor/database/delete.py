@@ -51,4 +51,3 @@ def delete_all_student_modules():
     cur.execute("DELETE FROM student_module")
     conn.commit()
     conn.close()
-

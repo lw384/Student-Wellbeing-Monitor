@@ -1,4 +1,4 @@
-"""
+r"""
 student_wellbeing_monitor.tools.setup_demo
 Generate false data and insert it into the database
     Only insert data related to student\programme\module
@@ -8,11 +8,12 @@ Generate false data and insert it into the database
 """
 
 #
+import argparse
 import csv
 import subprocess
 import sys
-import argparse
 from pathlib import Path
+
 from student_wellbeing_monitor.database import create
 from student_wellbeing_monitor.database.schema import init_db_schema
 from student_wellbeing_monitor.tools.reset_db import reset_database

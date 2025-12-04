@@ -29,3 +29,26 @@ wellbeing-web = "student_wellbeing_monitor.ui.app:run_app"
 setup-demo = "student_wellbeing_monitor.tools.setup_demo:setup_demo"
 start = "student_wellbeing_monitor.tools.start:run"
 archive-data = "student_wellbeing_monitor.tools.archive:main"
+[dependency-groups]
+dev = [
+    "pylint (>=4.0.4,<5.0.0)",
+    "ruff (>=0.14.8,<0.15.0)",
+    "black (>=25.11.0,<26.0.0)"
+]
+
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+ignore = [
+    "E501",  
+]

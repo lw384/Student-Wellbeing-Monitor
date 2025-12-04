@@ -1,7 +1,7 @@
 # tests/test_database.py
+import sqlite3
 import sys
 from pathlib import Path
-import sqlite3
 
 import pytest
 
@@ -202,6 +202,7 @@ def test_update_wellbeing_stress(sample_data):
     week2_after = [r for r in after if r["week"] == 2][0]
     assert week2_after["stress_level"] == 1
 
+
 """
 # ========= Attendance 相关 =========
 def test_get_attendance_by_student_and_rate(sample_data):
@@ -219,7 +220,6 @@ def test_get_attendance_by_student_and_rate(sample_data):
     # 没有记录的学生应返回 None
     assert read.get_attendance_rate("S999") is None
 """
-
 
 
 # ========= Wellbeing 统计函数 =========
@@ -252,6 +252,7 @@ def test_get_at_risk_students(sample_data):
     # S2: 只有 week2 满足条件；S3: 只有 week1
     assert "S2" not in at_risk
     assert "S3" not in at_risk
+
 
 """
 # ========= Attendance & Wellbeing 关联统计 =========
@@ -310,4 +311,3 @@ def test_attendance_trend_and_low_attendance(sample_data):
     # S2 出勤率 1.0，应不在低出勤名单中
     assert "S2" not in low_dict
 """
-

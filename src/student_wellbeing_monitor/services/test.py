@@ -1,6 +1,6 @@
-from pprint import pprint
 import os
 import sys
+from pprint import pprint
 
 # Current file: src/student_wellbeing_monitor/services/test.py
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -13,6 +13,7 @@ if SRC_ROOT not in sys.path:
 from student_wellbeing_monitor.database.db_core import get_conn
 from student_wellbeing_monitor.services.attendance_service import AttendanceService
 from student_wellbeing_monitor.services.course_service import CourseService
+
 
 # -------------------------------------------------------------------
 # Utility: fetch several modules from the database as sample test data
@@ -41,7 +42,9 @@ def main():
     # 1. Print some modules so we know what is being tested
     modules = get_example_modules(limit=3)
     if not modules:
-        print("No module records found in the database, cannot test Course Leader APIs.")
+        print(
+            "No module records found in the database, cannot test Course Leader APIs."
+        )
         return
 
     print_header("Available modules (first 3)")
@@ -70,7 +73,7 @@ def main():
     try:
         result = att_service.get_attendance_trends(
             course_id=test_course_id,
-            programme_id=None,     # Do not filter by programme for now
+            programme_id=None,  # Do not filter by programme for now
             week_start=WEEK_START,
             week_end=WEEK_END,
         )
@@ -102,8 +105,8 @@ def main():
             programme_id=None,
             week_start=WEEK_START,
             week_end=WEEK_END,
-            threshold_rate=0.8,   # Attendance rate below 0.8 is considered problematic
-            min_absences=2,       # Or at least 2 absences
+            threshold_rate=0.8,  # Attendance rate below 0.8 is considered problematic
+            min_absences=2,  # Or at least 2 absences
         )
         pprint(result)
     except Exception as e:
@@ -115,11 +118,11 @@ def main():
     print_header("4. CourseService.get_repeated_missing_students")
     try:
         result = course_service.get_repeated_missing_students(
-            course_id=None,            # None = search across all modules for students with missing submissions
+            course_id=None,  # None = search across all modules for students with missing submissions
             programme_id=None,
             start_week=None,
             end_week=None,
-            min_offending_modules=2,   # At least 2 modules with missing submissions
+            min_offending_modules=2,  # At least 2 modules with missing submissions
         )
         pprint(result)
     except Exception as e:
@@ -188,7 +191,9 @@ def main():
     except Exception as e:
         print("Error in analyze_high_stress_sleep_with_ai:", e)
 
-    print_header("All test calls finished (does not guarantee business correctness, only that functions executed)")
+    print_header(
+        "All test calls finished (does not guarantee business correctness, only that functions executed)"
+    )
 
 
 if __name__ == "__main__":

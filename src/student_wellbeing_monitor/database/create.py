@@ -1,6 +1,5 @@
 # create.py
-from student_wellbeing_monitor.database.db_core import get_conn, _hash_pwd
-
+from student_wellbeing_monitor.database.db_core import _hash_pwd, get_conn
 
 # ================= Programme (Create) ==================
 

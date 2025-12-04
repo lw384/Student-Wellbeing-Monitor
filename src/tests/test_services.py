@@ -1,7 +1,8 @@
 # tests/test_services.py
+import io
 import sys
 from pathlib import Path
-import io
+
 import pytest
 
 # --- 处理跨包导入：把 src 加到 sys.path ---
@@ -10,9 +11,9 @@ if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
 # 现在可以正常导入包
-import student_wellbeing_monitor.services.wellbeing_service as wb_mod
 import student_wellbeing_monitor.services.attendance_service as att_mod
 import student_wellbeing_monitor.services.upload_service as up_mod
+import student_wellbeing_monitor.services.wellbeing_service as wb_mod
 
 
 # =========================================================
@@ -264,11 +265,11 @@ def test_get_attendance_by_module(monkeypatch):
         ]
 
     monkeypatch.setattr(
-    att_mod,
-    "get_attendance_by_module_weeks",
-    fake_get_attendance_by_module_weeks,
-    raising=False,
-)
+        att_mod,
+        "get_attendance_by_module_weeks",
+        fake_get_attendance_by_module_weeks,
+        raising=False,
+    )
     svc = att_mod.AttendanceService()
     res = svc.get_attendance_by_module(1, 3)
     items = {item["moduleCode"]: item for item in res["items"]}
@@ -305,11 +306,7 @@ def test_read_csv_basic():
 
 def test_import_wellbeing_csv(monkeypatch):
     """import_wellbeing_csv 应调用 create.add_wellbeing 且传入 int 参数"""
-    csv_content = (
-        "student_id,week,stress_level,hours_slept\n"
-        "1,1,3,7\n"
-        "2,2,4,6\n"
-    )
+    csv_content = "student_id,week,stress_level,hours_slept\n" "1,1,3,7\n" "2,2,4,6\n"
     fs = DummyFileStorage(csv_content)
 
     calls = []

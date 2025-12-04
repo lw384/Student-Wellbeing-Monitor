@@ -1,23 +1,22 @@
 # src/student_wellbeing_monitor/services/archive_service.py
 
-import os
 import csv
+import os
 from collections import defaultdict
+
+from student_wellbeing_monitor.database.delete import (
+    delete_all_attendance,
+    delete_all_student_modules,
+    delete_all_students,
+    delete_all_submissions,
+    delete_all_wellbeing,
+)
 from student_wellbeing_monitor.database.read import (
-    get_wellbeing_records,
-    get_attendance_page,
-    get_submission_page,
-    count_wellbeing,
     count_attendance,
     count_submission,
-    get_all_students,
-)
-from student_wellbeing_monitor.database.delete import (
-    delete_all_students,
-    delete_all_attendance,
-    delete_all_wellbeing,
-    delete_all_submissions,
-    delete_all_student_modules,
+    get_attendance_page,
+    get_submission_page,
+    get_wellbeing_records,
 )
 
 
@@ -164,10 +163,6 @@ def export_attendance_summary(output_dir: str) -> None:
     write_csv(path, out_rows, header)
 
     print(f"✓ Attendance summary (aggregated) exported → {path}")
-
-
-from collections import defaultdict
-import os
 
 
 def export_submission_summary(output_dir: str) -> None:

@@ -1,0 +1,46 @@
+name: Lint & Style
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-root
+
+      # Ruff
+      - name: Run ruff
+        run: poetry run ruff check src/
+
+      # Black
+      - name: Run black (check only)
+        run: poetry run black --check src/
+
+      # Pylint save report
+      - name: Run pylint
+        run: |
+          mkdir -p reports
+          poetry run pylint src/student_wellbeing_monitor > reports/pylint-report.txt || true
+
+      # upload to  GitHub Actions Artifact
+      - name: Upload pylint report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pylint-report
+          path: reports/pylint-report.txt
