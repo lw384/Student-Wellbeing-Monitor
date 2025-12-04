@@ -1126,15 +1126,15 @@ def unsubmissions_for_repeated_issues(
 
 
 def attendance_and_grades(
-    module_id: str,
+    module_id: Optional[str] = None,  # ✅ 改成可选
     programme_id: Optional[str] = None,
     week_start: Optional[int] = None,
     week_end: Optional[int] = None,
 ) -> List[Tuple]:
     """
-    为 get_attendance_vs_grades 提供数据。
+    Provide data for get_attendance_vs_grades.
 
-    返回：
+    Return each attendance + grade record:
       (module_id, module_name, student_id, student_name, week, status, grade)
     """
     conn = get_conn(row_factory=_sqlite3.Row)
@@ -1160,14 +1160,22 @@ def attendance_and_grades(
         LEFT JOIN submission AS sub
           ON sub.student_id = sm.student_id
          AND sub.module_id  = sm.module_id
-        WHERE m.module_id = ?
+        WHERE 1=1
     """
-    params: List = [module_id]
+    params: List = []
 
-    if programme_id is not None:
+    # ----- 1) optional module filter -----
+    # If module_id is given and not empty, filter by this module only.
+    if module_id:
+        sql += " AND m.module_id = ?"
+        params.append(module_id)
+
+    # ----- 2) optional programme filter -----
+    if programme_id:
         sql += " AND s.programme_id = ?"
         params.append(programme_id)
 
+    # ----- 3) optional week range filter -----
     if week_start is not None:
         sql += " AND a.week >= ?"
         params.append(week_start)
@@ -1177,6 +1185,9 @@ def attendance_and_grades(
         params.append(week_end)
 
     sql += " ORDER BY s.student_id, a.week"
+
+    print("attendance_and_grades SQL =", sql)
+    print("params =", params)
 
     cur.execute(sql, params)
     rows = cur.fetchall()

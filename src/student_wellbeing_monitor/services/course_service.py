@@ -240,7 +240,7 @@ class CourseService:
     # -------------------------------------------------
     def get_attendance_vs_grades(
         self,
-        course_id: str,
+        course_id: Optional[str] = None,
         programme_id: Optional[str] = None,
         week_start: Optional[int] = None,
         week_end: Optional[int] = None,
@@ -269,6 +269,7 @@ class CourseService:
             week_start=week_start,
             week_end=week_end,
         )
+        print("DEBUG rows len =", len(rows))
         # rows: (module_id, module_name, student_id, student_name, week, status, grade)
 
         if not rows:

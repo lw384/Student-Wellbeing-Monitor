@@ -172,6 +172,18 @@ def dashboard(role):
         attendance_trend = [p["attendanceRate"] for p in points]
         grade_trend = [p.get("avgGrade") for p in points]
 
+        # 4) attendance vs grade scatter
+    if role == "course_leader" and current_programme:
+        scatter = course_service.get_attendance_vs_grades(
+            course_id=current_module,  # 当前选中 module
+            programme_id=current_programme,  # 当前 programme
+            week_start=start_week,
+            week_end=end_week,
+        )
+        scatter_points = scatter.get("points", [])
+    else:
+        scatter_points = []
+
     # ---------- 5. 作业提交柱状图 ----------
     submission_labels = []
     submission_submitted = []
@@ -285,6 +297,7 @@ def dashboard(role):
         avg_sleep=avg_sleep,
         attendance_trend=attendance_trend,
         grade_trend=grade_trend,
+        scatter_points=scatter_points,
         submission_labels=submission_labels,
         submission_submitted=submission_submitted,
         submission_unsubmitted=submission_unsubmitted,

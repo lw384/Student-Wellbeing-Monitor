@@ -287,6 +287,18 @@
   </div>
   {% endif %}
 
+  {% if role == 'course_leader' %}
+  <div class="card-elevated mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">Attendance vs Grades</h6>
+      <span class="text-muted small">Each dot represents one student</span>
+    </div>
+    <div style="height: 320px;">
+      <canvas id="attendanceGradeScatter"></canvas>
+    </div>
+  </div>
+  {% endif %}
+
   {# ==== student at risk ==== #}
   <div class="card-elevated mb-3">
     {% if role == "wellbeing" %}
@@ -452,19 +464,18 @@
 {% block scripts %}
 <script>
   const ROLE = {{ role| tojson }};
-
   const weeks = {{ weeks_for_chart| tojson }};
   const avgStress = {{ avg_stress| tojson }};
   const avgSleep = {{ avg_sleep| tojson }};
   const attendanceTrend = {{ attendance_trend| tojson }};
-  const gradeTrend = {{ grade_trend| tojson }};
+  const scatterPoints = {{ scatter_points | tojson }};
 
+  console.log("scatterPoints =", scatterPoints);
   console.log("ROLE =", ROLE);
   console.log("weeks =", weeks);
   console.log("avgStress =", avgStress);
   console.log("avgSleep =", avgSleep);
   console.log("attendanceTrend =", attendanceTrend);
-  console.log("gradeTrend =", gradeTrend);
 
   function renderLineChart(canvasId, labels, datasets) {
     const canvas = document.getElementById(canvasId);
@@ -524,6 +535,62 @@
       }
     ]);
   }
+
+  // ========== Attendance vs Grades Scatter (course_leader) ==========
+if (ROLE === "course_leader") {
+  const scatterCanvas = document.getElementById("attendanceGradeScatter");
+  if (scatterCanvas && Array.isArray(scatterPoints) && scatterPoints.length > 0) {
+
+    // 转成 Chart.js 需要的 {x, y} 格式，x 用百分比
+    const scatterData = scatterPoints
+      .filter(p => p.attendanceRate != null && p.avgGrade != null)
+      .map(p => ({
+        x: p.attendanceRate * 100,   // 0.85 -> 85%
+        y: p.avgGrade,
+        label: p.name || p.studentId
+      }));
+
+    new Chart(scatterCanvas.getContext("2d"), {
+      type: "scatter",
+      data: {
+        datasets: [
+          {
+            label: "Students",
+            data: scatterData,
+            pointRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: { display: true, text: "Attendance rate (%)" },
+            min: 0,
+            max: 100,
+          },
+          y: {
+            title: { display: true, text: "Average grade" },
+            min: 0,
+            max: 100,
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const p = ctx.raw;
+                return `${p.label}: ${p.x.toFixed(1)}% attendance, ${p.y.toFixed(1)} grade`;
+              }
+            }
+          },
+          legend: { display: false }
+        }
+      }
+    });
+  }
+}
   // ========== Submission Chart ==========
   const subLabels = {{ submission_labels | default ([], true) | tojson }};
   const subSubmitted = {{ submission_submitted | default ([], true) | tojson }};
@@ -573,22 +640,22 @@
   }
 </script>
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", () => {
     const startSelect = document.getElementById("start-week-select");
     const endSelect = document.getElementById("end-week-select");
 
     function syncWeeks() {
-        const start = parseInt(startSelect.value);
-        const end = parseInt(endSelect.value);
+      const start = parseInt(startSelect.value);
+      const end = parseInt(endSelect.value);
 
-        if (start > end) {
-            endSelect.value = start;  // 自动纠正
-        }
+      if (start > end) {
+        endSelect.value = start;  // 自动纠正
+      }
     }
 
     startSelect.addEventListener("change", syncWeeks);
     endSelect.addEventListener("change", syncWeeks);
-});
+  });
 </script>
 
 {% if role == 'course_leader' %}
