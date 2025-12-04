@@ -224,6 +224,15 @@ def get_all_modules():
 # ================== Attendance (Read) ==================
 
 
+def count_attendance():
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM attendance")
+    total = cur.fetchone()[0]
+    conn.close()
+    return total
+
+
 def get_attendance_by_student(sid):
     conn = get_conn()
     cur = conn.cursor()
@@ -255,6 +264,23 @@ def get_attendance_rate(sid):
     present = cur.fetchone()[0]
     conn.close()
     return present * 1.0 / total
+
+
+def get_attendance_page(limit=20, offset=0):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT id, student_id, module_id, week, status
+        FROM attendance
+        ORDER BY student_id, week
+        LIMIT ? OFFSET ?
+        """,
+        (limit, offset),
+    )
+    rows = cur.fetchall()
+    conn.close()
+    return rows
 
 
 def get_attendance_filtered(
@@ -296,6 +322,13 @@ def get_attendance_filtered(
 
 
 # ================== Submissions (Read) ==================
+def count_submission():
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM submission")
+    total = cur.fetchone()[0]
+    conn.close()
+    return total
 
 
 def get_submissions_by_student(sid):
@@ -305,6 +338,23 @@ def get_submissions_by_student(sid):
         "SELECT assignment_id, due_date, submit_date, grade "
         "FROM submission WHERE student_id = ? ORDER BY submission_id",
         (sid,),
+    )
+    rows = cur.fetchall()
+    conn.close()
+    return rows
+
+
+def get_submission_page(limit=20, offset=0):
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT id, student_id, module_id, submitted, grade, due_date, submit_date
+        FROM submission
+        ORDER BY student_id
+        LIMIT ? OFFSET ?
+        """,
+        (limit, offset),
     )
     rows = cur.fetchall()
     conn.close()

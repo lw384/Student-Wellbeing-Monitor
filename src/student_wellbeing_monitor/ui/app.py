@@ -9,8 +9,12 @@ from student_wellbeing_monitor.database.read import (
     get_all_students,
     count_students,
     count_wellbeing,
+    count_attendance,
+    count_submission,
     get_wellbeing_by_id,
     get_wellbeing_page,
+    get_attendance_page,
+    get_submission_page,
     # get_course_summary,
 )
 from student_wellbeing_monitor.database.update import update_wellbeing
@@ -269,19 +273,19 @@ def dashboard(role):
             min_offending_modules=2,  # 至少在 2 门课有未交
         )
 
-    submission_risk_students = []
-    for stu in repeated.get("students", []):
-        submission_risk_students.append(
-            {
-                "student_id": stu["studentId"],
-                "name": stu["name"],
-                "email": stu["email"],
-                "offending_module_count": stu["offendingModuleCount"],
-                # details 里是一个列表：每门课具体哪次作业没交
-                # 我们先原样传到前端，Jinja 里再展开
-                "details": stu.get("details", []),
-            }
-        )
+        submission_risk_students = []
+        for stu in repeated.get("students", []):
+            submission_risk_students.append(
+                {
+                    "student_id": stu["studentId"],
+                    "name": stu["name"],
+                    "email": stu["email"],
+                    "offending_module_count": stu["offendingModuleCount"],
+                    # details 里是一个列表：每门课具体哪次作业没交
+                    # 我们先原样传到前端，Jinja 里再展开
+                    "details": stu.get("details", []),
+                }
+            )
 
     return render_template(
         "dashboard.html",
@@ -401,8 +405,8 @@ def view_data(role, data_type):
     elif data_type == "submissions":
         headers = ["Student ID", "Module Code", "Submitted", "Grade"]
 
-        total = count_submissions()  # ✅ 总数
-        rows = get_submissions_page(limit=per_page, offset=offset)  # ✅ 分页
+        total = count_submission()  # ✅ 总数
+        rows = get_submission_page(limit=per_page, offset=offset)  # ✅ 分页
 
     else:
         flash("Unknown data type", "danger")
