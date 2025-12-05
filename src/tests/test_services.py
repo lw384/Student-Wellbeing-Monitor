@@ -55,30 +55,28 @@ def test_read_csv_basic():
 
 
 def test_import_wellbeing_csv(monkeypatch):
-    csv_bytes = (
-        b"student_id,week,stress_level,hours_slept\n"
-        b"1,1,3,7\n"
-        b"2,1,4,6\n"
-    )
+    csv_bytes = b"student_id,week,stress_level,hours_slept\n" b"1,1,3,7\n" b"2,1,4,6\n"
     fs = DummyFileStorage(csv_bytes)
 
     calls: List[Dict[str, Any]] = []
 
-    def fake_add_wellbeing(student_id, week, stress_level, hours_slept):
+    def fake_insert_wellbeing(
+        student_id, week, stress_level, hours_slept, comment=None
+    ):
         calls.append(
             {
                 "student_id": student_id,
                 "week": week,
                 "stress_level": stress_level,
                 "hours_slept": hours_slept,
+                "comment": comment,
             }
         )
 
     monkeypatch.setattr(
         upload_service.create,
-        "add_wellbeing",
-        fake_add_wellbeing,
-        raising=False,
+        "insert_wellbeing",
+        fake_insert_wellbeing,
     )
 
     upload_service.import_wellbeing_csv(fs)
@@ -92,7 +90,7 @@ def test_import_wellbeing_csv(monkeypatch):
 
 def test_import_attendance_csv(monkeypatch):
     csv_bytes = (
-        b"student_id,module_code,week,attendance_status\n"
+        b"student_id,module_id,week,attendance_status\n"
         b"1,CS101,1,1\n"
         b"2,CS101,1,0\n"
     )
@@ -100,11 +98,11 @@ def test_import_attendance_csv(monkeypatch):
 
     calls: List[Dict[str, Any]] = []
 
-    def fake_insert_attendance(student_id, module_code, week, status):
+    def fake_insert_attendance(student_id, module_id, week, status):
         calls.append(
             {
                 "student_id": student_id,
-                "module_code": module_code,
+                "module_id": module_id,
                 "week": week,
                 "status": status,
             }
@@ -117,14 +115,14 @@ def test_import_attendance_csv(monkeypatch):
     upload_service.import_attendance_csv(fs)
 
     assert len(calls) == 2
-    assert calls[0]["module_code"] == "CS101"
+    assert calls[0]["module_id"] == "CS101"
     assert calls[0]["status"] == 1
     assert calls[1]["status"] == 0
 
 
 def test_import_submissions_csv(monkeypatch):
     csv_bytes = (
-        b"student_id,module_code,submitted,grade,due_date,submit_date\n"
+        b"student_id,module_id,submitted,grade,due_date,submit_date\n"
         b"1,CS101,1,70,2024-01-01,2023-12-31\n"
         b"2,CS101,0,,2024-01-01,\n"
     )
@@ -133,12 +131,12 @@ def test_import_submissions_csv(monkeypatch):
     calls: List[Dict[str, Any]] = []
 
     def fake_insert_submission(
-        student_id, module_code, submitted, grade, due_date, submit_date
+        student_id, module_id, submitted, grade, due_date, submit_date
     ):
         calls.append(
             {
                 "student_id": student_id,
-                "module_code": module_code,
+                "module_id": module_id,
                 "submitted": submitted,
                 "grade": grade,
                 "due_date": due_date,
@@ -457,16 +455,26 @@ def test_attendance_get_low_attendance_students(monkeypatch):
 # =============================================================================
 def test_course_leader_summary(monkeypatch):
     # New version of get_course_leader_summary uses status "present"/"absent"
-    def fake_get_attendance_filtered(programme_id, module_code, week_start, week_end):
+    def fake_get_attendance_filtered(programme_id, module_id, week_start, week_end):
         return [
-            {"student_id": 1, "module_code": module_code, "week": 1, "status": "present"},
-            {"student_id": 2, "module_code": module_code, "week": 1, "status": "absent"},
+            {"student_id": 1, "module_id": module_id, "week": 1, "status": 1},
+            {
+                "student_id": 2,
+                "module_id": module_id,
+                "week": 1,
+                "status": 0,
+            },
         ]
 
-    def fake_get_submissions_filtered(programme_id, module_code):
+    def fake_get_submissions_filtered(programme_id, module_id):
         return [
-            {"student_id": 1, "module_code": module_code, "submitted": 1, "grade": 60},
-            {"student_id": 2, "module_code": module_code, "submitted": 0, "grade": None},
+            {"student_id": 1, "module_id": module_id, "submitted": 1, "grade": 60},
+            {
+                "student_id": 2,
+                "module_id": module_id,
+                "submitted": 0,
+                "grade": None,
+            },
         ]
 
     monkeypatch.setattr(
@@ -478,7 +486,7 @@ def test_course_leader_summary(monkeypatch):
 
     service = course_service.CourseService()
     res = service.get_course_leader_summary(
-        programme_id="P1", module_code="CS101", week_start=1, week_end=10
+        programme_id="P1", module_id="CS101", week_start=1, week_end=10
     )
 
     assert pytest.approx(res["avg_attendance_rate"]) == 0.5
@@ -578,9 +586,7 @@ def test_course_attendance_vs_grades(monkeypatch):
     )
 
     service = course_service.CourseService()
-    res = service.get_attendance_vs_grades(
-        course_id="CS101", week_start=1, week_end=3
-    )
+    res = service.get_attendance_vs_grades(course_id="CS101", week_start=1, week_end=3)
 
     assert res["courseId"] == "CS101"
     assert res["courseName"] == "Intro CS"
@@ -692,7 +698,13 @@ def test_course_analyze_high_stress_sleep_with_ai(monkeypatch):
     }
 
     def fake_base_analysis(
-        self, programme_id, week_start, week_end, stress_threshold, sleep_threshold, min_weeks
+        self,
+        programme_id,
+        week_start,
+        week_end,
+        stress_threshold,
+        sleep_threshold,
+        min_weeks,
     ):
         return base_result
 
@@ -719,7 +731,10 @@ def test_course_analyze_high_stress_sleep_with_ai(monkeypatch):
     import types
 
     monkeypatch.setattr(
-        course_service, "genai", types.SimpleNamespace(Client=DummyClient), raising=False
+        course_service,
+        "genai",
+        types.SimpleNamespace(Client=DummyClient),
+        raising=False,
     )
 
     # 3) set environment variable
@@ -744,7 +759,9 @@ def test_archive_export_wellbeing_summary(tmp_path, monkeypatch):
         (3, 2, None, 6, "P1"),
     ]
 
-    def fake_get_wellbeing_records(start_week, end_week, programme_id=None, student_id=None):
+    def fake_get_wellbeing_records(
+        start_week, end_week, programme_id=None, student_id=None
+    ):
         return rows
 
     monkeypatch.setattr(
@@ -785,9 +802,7 @@ def test_archive_export_attendance_summary(tmp_path, monkeypatch):
         assert limit == 4
         return rows
 
-    monkeypatch.setattr(
-        archive_service, "count_attendance", fake_count_attendance
-    )
+    monkeypatch.setattr(archive_service, "count_attendance", fake_count_attendance)
     monkeypatch.setattr(
         archive_service, "get_attendance_page", fake_get_attendance_page
     )
@@ -830,9 +845,7 @@ def test_archive_export_submission_summary(tmp_path, monkeypatch):
         assert limit == 3
         return rows
 
-    monkeypatch.setattr(
-        archive_service, "count_submission", fake_count_submission
-    )
+    monkeypatch.setattr(archive_service, "count_submission", fake_count_submission)
     monkeypatch.setattr(
         archive_service, "get_submission_page", fake_get_submission_page
     )
@@ -901,18 +914,10 @@ def test_archive_run_archive_dry_run(monkeypatch, tmp_path):
     def fake_delete_all_data():
         called_delete["flag"] = True
 
-    monkeypatch.setattr(
-        archive_service, "export_wellbeing_summary", fake_export_w
-    )
-    monkeypatch.setattr(
-        archive_service, "export_attendance_summary", fake_export_a
-    )
-    monkeypatch.setattr(
-        archive_service, "export_submission_summary", fake_export_s
-    )
-    monkeypatch.setattr(
-        archive_service, "delete_all_data", fake_delete_all_data
-    )
+    monkeypatch.setattr(archive_service, "export_wellbeing_summary", fake_export_w)
+    monkeypatch.setattr(archive_service, "export_attendance_summary", fake_export_a)
+    monkeypatch.setattr(archive_service, "export_submission_summary", fake_export_s)
+    monkeypatch.setattr(archive_service, "delete_all_data", fake_delete_all_data)
 
     archive_service.run_archive(str(tmp_path), delete_confirm=False)
 
@@ -929,18 +934,10 @@ def test_archive_run_archive_with_delete(monkeypatch, tmp_path):
     def fake_delete_all_data():
         called_delete["flag"] = True
 
-    monkeypatch.setattr(
-        archive_service, "export_wellbeing_summary", fake_export
-    )
-    monkeypatch.setattr(
-        archive_service, "export_attendance_summary", fake_export
-    )
-    monkeypatch.setattr(
-        archive_service, "export_submission_summary", fake_export
-    )
-    monkeypatch.setattr(
-        archive_service, "delete_all_data", fake_delete_all_data
-    )
+    monkeypatch.setattr(archive_service, "export_wellbeing_summary", fake_export)
+    monkeypatch.setattr(archive_service, "export_attendance_summary", fake_export)
+    monkeypatch.setattr(archive_service, "export_submission_summary", fake_export)
+    monkeypatch.setattr(archive_service, "delete_all_data", fake_delete_all_data)
 
     # Simulate input "DELETE"
     monkeypatch.setattr("builtins.input", lambda prompt="": "DELETE")
