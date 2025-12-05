@@ -8,10 +8,10 @@ from typing import Any, Dict, List
 import pytest
 
 # ------------------------------------------------------------------------
-# 让 pytest 能够 import student_wellbeing_monitor.*
-# 参考你项目里的 services/test.py 写法
+# Let pytest import student_wellbeing_monitor.*
+# Reference the pattern used in your project's services/test.py
 # ------------------------------------------------------------------------
-SRC_DIR = Path(__file__).resolve().parents[2]  # 指向 src 目录
+SRC_DIR = Path(__file__).resolve().parents[2]  # Point to src directory
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
@@ -25,11 +25,11 @@ from student_wellbeing_monitor.services import (
 
 
 # =============================================================================
-# 工具：简单的 FileStorage 替身
+# Utility: a simple stand-in for FileStorage
 # =============================================================================
 class DummyFileStorage:
     """
-    模拟 werkzeug.datastructures.FileStorage，只需要提供 .stream 即可。
+    Simulate werkzeug.datastructures.FileStorage; only .stream is needed.
     """
 
     def __init__(self, data: bytes):
@@ -37,7 +37,7 @@ class DummyFileStorage:
 
 
 # =============================================================================
-# upload_service 测试
+# upload_service tests
 # =============================================================================
 def test_read_csv_basic():
     csv_bytes = b"student_id,week,stress_level,hours_slept\n1,2,3,4\n"
@@ -80,7 +80,6 @@ def test_import_wellbeing_csv(monkeypatch):
         fake_add_wellbeing,
         raising=False,
     )
-
 
     upload_service.import_wellbeing_csv(fs)
 
@@ -156,13 +155,13 @@ def test_import_submissions_csv(monkeypatch):
     assert len(calls) == 2
     assert calls[0]["submitted"] == 1
     assert calls[0]["grade"] == "70"
-    # 空字符串会转成 None
+    # Empty string should be converted to None
     assert calls[1]["submitted"] == 0
     assert calls[1]["grade"] is None
 
 
 def test_import_csv_by_type_and_invalid(monkeypatch):
-    # 只需要验证它能路由到对应函数 / 抛异常即可
+    # Only need to verify correct routing to corresponding functions / raising exceptions
     called = {"wellbeing": False, "attendance": False, "submissions": False}
 
     def fake_wellbeing(fs):
@@ -178,7 +177,7 @@ def test_import_csv_by_type_and_invalid(monkeypatch):
     monkeypatch.setattr(upload_service, "import_attendance_csv", fake_attendance)
     monkeypatch.setattr(upload_service, "import_submissions_csv", fake_submissions)
 
-    dummy_fs = DummyFileStorage(b"")  # 内容无所谓
+    dummy_fs = DummyFileStorage(b"")  # Content irrelevant
 
     upload_service.import_csv_by_type("wellbeing", dummy_fs)
     upload_service.import_csv_by_type("attendance", dummy_fs)
@@ -193,7 +192,7 @@ def test_import_csv_by_type_and_invalid(monkeypatch):
 
 
 # =============================================================================
-# wellbeing_service 测试
+# wellbeing_service tests
 # =============================================================================
 @pytest.fixture
 def wb_students():
@@ -207,7 +206,7 @@ def wb_students():
 
 
 def test_wellbeing_get_student_count(monkeypatch, wb_students):
-    # patch get_all_students / get_students_by_programme
+    # Patch get_all_students / get_students_by_programme
     def fake_get_all_students():
         return wb_students
 
@@ -296,16 +295,16 @@ def test_wellbeing_stress_sleep_trend(monkeypatch):
 
 
 def _setup_wellbeing_risk_data(monkeypatch, wb_students):
-    # 1 高风险：三周连续 stress>=4.5 & sleep<6
-    # 2 潜在风险：某一周满足条件
-    # 3 正常
+    # 1 High risk: three consecutive weeks stress>=4.5 & sleep<6
+    # 2 Potential risk: at least one week meets the condition
+    # 3 Normal
     rows = [
         # sid, week, stress, sleep, programme
         (1, 1, 5, 5, "P1"),
         (1, 2, 5, 5, "P1"),
         (1, 3, 5, 5, "P1"),
         (2, 1, 3, 7, "P1"),
-        (2, 2, 5, 5, "P1"),  # 只这一周触发
+        (2, 2, 5, 5, "P1"),  # Only this week triggers risk
         (3, 1, 3, 7, "P2"),
         (3, 2, 3, 7, "P2"),
     ]
@@ -338,7 +337,7 @@ def test_wellbeing_get_risk_students_all(monkeypatch, wb_students):
     assert "1" in items and "2" in items
     assert items["1"]["riskType"] == "high_risk"
     assert items["2"]["riskType"] == "potential_risk"
-    # 正常学生不会出现在列表里
+    # Normal students should not appear in the list
     assert "3" not in items
 
 
@@ -356,7 +355,7 @@ def test_wellbeing_get_risk_students_no_data(monkeypatch, wb_students):
     _setup_wellbeing_risk_data(monkeypatch, wb_students)
     service = wellbeing_service.WellbeingService()
 
-    # 学生 4 存在但 wellbeing 没有记录
+    # Student 4 exists but has no wellbeing records
     res = service.get_risk_students(1, 4, student_id="4")
     assert res["items"] == []
     assert res["status"] == "no_data"
@@ -372,7 +371,7 @@ def test_wellbeing_get_risk_students_not_found(monkeypatch, wb_students):
 
 
 # =============================================================================
-# attendance_service 测试
+# attendance_service tests
 # =============================================================================
 def test_attendance_get_trends(monkeypatch):
     # rows: (module_id, module_name, student_id, student_name, week, status)
@@ -445,8 +444,8 @@ def test_attendance_get_low_attendance_students(monkeypatch):
 
     assert res["courseId"] == "CS101"
     students = {s["studentId"]: s for s in res["students"]}
-    # Alice：1 present / 2 total => 0.5，absent=1，不满足 min_absences=2，因此不会被选中
-    # Bob：0 present / 2 total => 0.0，absent=2，应该被选中
+    # Alice: 1 present / 2 total => 0.5, absences=1, does not meet min_absences=2, so excluded
+    # Bob: 0 present / 2 total => 0.0, absences=2, should be included
     students = {str(s["studentId"]): s for s in res["students"]}
     assert "2" in students
     assert students["2"]["absentSessions"] == 2
@@ -454,10 +453,10 @@ def test_attendance_get_low_attendance_students(monkeypatch):
 
 
 # =============================================================================
-# course_service 测试
+# course_service tests
 # =============================================================================
 def test_course_leader_summary(monkeypatch):
-    # 新版本 get_course_leader_summary 使用 status 为 "present"/"absent"
+    # New version of get_course_leader_summary uses status "present"/"absent"
     def fake_get_attendance_filtered(programme_id, module_code, week_start, week_end):
         return [
             {"student_id": 1, "module_code": module_code, "week": 1, "status": "present"},
@@ -557,7 +556,7 @@ def test_course_repeated_missing_students(monkeypatch):
     students = {s["studentId"]: s for s in res["students"]}
     assert "1" in students
     assert students["1"]["offendingModuleCount"] == 2
-    # Bob 只在一门课未交，不应出现
+    # Bob only missed in one course, so should not appear
     assert "2" not in students
 
 
@@ -638,7 +637,7 @@ def test_course_programme_wellbeing_engagement(monkeypatch):
 
 
 def test_course_high_stress_sleep_engagement_analysis(monkeypatch):
-    # 一组高压少睡，一组正常
+    # One group high stress & low sleep, one group normal
     rows = [
         # high group student 1
         ("CS101", "Intro CS", "1", "P1", "Prog 1", 1, 5, 5, 1, "submit", 70),
@@ -661,7 +660,12 @@ def test_course_high_stress_sleep_engagement_analysis(monkeypatch):
 
     service = course_service.CourseService()
     res = service.get_high_stress_sleep_engagement_analysis(
-        programme_id="P1", week_start=1, week_end=2, stress_threshold=4.0, sleep_threshold=6.0, min_weeks=1
+        programme_id="P1",
+        week_start=1,
+        week_end=2,
+        stress_threshold=4.0,
+        sleep_threshold=6.0,
+        min_weeks=1,
     )
 
     groups = res["groups"]
@@ -670,17 +674,17 @@ def test_course_high_stress_sleep_engagement_analysis(monkeypatch):
 
     assert high["studentCount"] == 1
     assert others["studentCount"] == 1
-    # 高压组平均成绩应该高于 70
+    # High stress group average grade should be greater than 70
     assert high["avgGrade"] >= 70
-    # 其他组平均成绩在 60~65 之间
+    # Other group average grade should be between 60 and 65
     assert 60 <= others["avgGrade"] <= 65
 
 
 def test_course_analyze_high_stress_sleep_with_ai(monkeypatch):
-    # 不测试复杂逻辑，只测试它能调用外部 AI 并返回 text
+    # Do not test complex logic, just verify it calls external AI and returns text
     service = course_service.CouseService if False else course_service.CourseService()
 
-    # 1) mock 基础统计
+    # 1) mock base statistics
     base_result = {
         "params": {},
         "groups": {},
@@ -718,7 +722,7 @@ def test_course_analyze_high_stress_sleep_with_ai(monkeypatch):
         course_service, "genai", types.SimpleNamespace(Client=DummyClient), raising=False
     )
 
-    # 3) 设置环境变量
+    # 3) set environment variable
     monkeypatch.setenv("GEMINI_API_KEY", "dummy-key")
 
     res = service.analyze_high_stress_sleep_with_ai(
@@ -731,7 +735,7 @@ def test_course_analyze_high_stress_sleep_with_ai(monkeypatch):
 
 
 # =============================================================================
-# archive_service 测试
+# archive_service tests
 # =============================================================================
 def test_archive_export_wellbeing_summary(tmp_path, monkeypatch):
     rows = [
@@ -754,7 +758,7 @@ def test_archive_export_wellbeing_summary(tmp_path, monkeypatch):
     assert csv_path.exists()
 
     content = csv_path.read_text(encoding="utf-8").splitlines()
-    # header + 2 rows
+    # header + 2 data rows
     assert len(content) == 3
     header = content[0].split(",")
     assert header == [
@@ -881,7 +885,7 @@ def test_archive_delete_all_data_order(monkeypatch):
 
 
 def test_archive_run_archive_dry_run(monkeypatch, tmp_path):
-    # 只验证在 delete_confirm=False 时不会调用 delete_all_data
+    # Only verify that delete_all_data is not called when delete_confirm=False
     called_exports = []
     called_delete = {"flag": False}
 
@@ -938,7 +942,7 @@ def test_archive_run_archive_with_delete(monkeypatch, tmp_path):
         archive_service, "delete_all_data", fake_delete_all_data
     )
 
-    # 模拟输入 "DELETE"
+    # Simulate input "DELETE"
     monkeypatch.setattr("builtins.input", lambda prompt="": "DELETE")
 
     archive_service.run_archive(str(tmp_path), delete_confirm=True)
