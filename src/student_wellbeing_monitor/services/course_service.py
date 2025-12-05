@@ -14,6 +14,8 @@ from student_wellbeing_monitor.database.read import (
     submissions_for_course,
     unsubmissions_for_repeated_issues,
 )
+
+
 # =========================================================
 # Class: CourseService
 # =========================================================
@@ -22,12 +24,12 @@ class CourseService:
     The course analysis service from the Course Leader's perspective.
 
     contain the method in API document.md:
-      2️⃣ get_submission_summary                      
-      4️⃣ get_repeated_missing_students               
-      5️⃣ get_attendance_vs_grades                    
-      6️⃣ get_programme_wellbeing_engagement         
-      7️⃣ get_high_stress_sleep_engagement_analysis   
-      8️⃣ further analyze with AI (Gemini)            
+      2️⃣ get_submission_summary
+      4️⃣ get_repeated_missing_students
+      5️⃣ get_attendance_vs_grades
+      6️⃣ get_programme_wellbeing_engagement
+      7️⃣ get_high_stress_sleep_engagement_analysis
+      8️⃣ further analyze with AI (Gemini)
     """
 
     def get_course_leader_summary(
@@ -797,66 +799,66 @@ class CourseService:
                 },
             }
 
-    def get_course_leader_summary(
-        self,
-        programme_id: Optional[str],
-        module_code: Optional[str],
-        week_start: int,
-        week_end: int,
-    ):
-        """
-        return the three key metrics for Course Leader Dashboard:
-        - avg_attendance_rate
-        - avg_submission_rate
-        - avg_grade
-        """
+    # def get_course_leader_summary(
+    #     self,
+    #     programme_id: Optional[str],
+    #     module_id: Optional[str],
+    #     week_start: int,
+    #     week_end: int,
+    # ):
+    #     """
+    #     return the three key metrics for Course Leader Dashboard:
+    #     - avg_attendance_rate
+    #     - avg_submission_rate
+    #     - avg_grade
+    #     """
 
-        # -------------------------------
-        # 1) Attendance
-        # -------------------------------
-        attendance_rows = get_attendance_filtered(
-            programme_id=programme_id,
-            module_code=module_code,
-            week_start=week_start,
-            week_end=week_end,
-        )
-        # rows: (student_id, module_code, week, status)
+    #     # -------------------------------
+    #     # 1) Attendance
+    #     # -------------------------------
+    #     attendance_rows = get_attendance_filtered(
+    #         programme_id=programme_id,
+    #         module_code=module_code,
+    #         week_start=week_start,
+    #         week_end=week_end,
+    #     )
+    #     # rows: (student_id, module_code, week, status)
 
-        present = sum(1 for r in attendance_rows if r["status"] == "present")
-        absent = sum(1 for r in attendance_rows if r["status"] == "absent")
-        total_att_records = present + absent
+    #     present = sum(1 for r in attendance_rows if r["status"] == "present")
+    #     absent = sum(1 for r in attendance_rows if r["status"] == "absent")
+    #     total_att_records = present + absent
 
-        avg_attendance_rate = (
-            present / total_att_records if total_att_records > 0 else None
-        )
+    #     avg_attendance_rate = (
+    #         present / total_att_records if total_att_records > 0 else None
+    #     )
 
-        # -------------------------------
-        # 2) Submissions
-        # -------------------------------
-        submission_rows = get_submissions_filtered(
-            programme_id=programme_id,
-            module_code=module_code,
-        )
-        # rows: (student_id, module_code, submitted, grade)
+    #     # -------------------------------
+    #     # 2) Submissions
+    #     # -------------------------------
+    #     submission_rows = get_submissions_filtered(
+    #         programme_id=programme_id,
+    #         module_code=module_code,
+    #     )
+    #     # rows: (student_id, module_code, submitted, grade)
 
-        submit_count = sum(1 for r in submission_rows if r["submitted"] == 1)
-        total_sub_records = len(submission_rows)
+    #     submit_count = sum(1 for r in submission_rows if r["submitted"] == 1)
+    #     total_sub_records = len(submission_rows)
 
-        avg_submission_rate = (
-            submit_count / total_sub_records if total_sub_records > 0 else None
-        )
+    #     avg_submission_rate = (
+    #         submit_count / total_sub_records if total_sub_records > 0 else None
+    #     )
 
-        # -------------------------------
-        # 3) Grade
-        # -------------------------------
-        grades = [r["grade"] for r in submission_rows if r["grade"] is not None]
-        avg_grade = sum(grades) / len(grades) if grades else None
+    #     # -------------------------------
+    #     # 3) Grade
+    #     # -------------------------------
+    #     grades = [r["grade"] for r in submission_rows if r["grade"] is not None]
+    #     avg_grade = sum(grades) / len(grades) if grades else None
 
-        return {
-            "avg_attendance_rate": avg_attendance_rate,
-            "avg_submission_rate": avg_submission_rate,
-            "avg_grade": avg_grade,
-        }
+    #     return {
+    #         "avg_attendance_rate": avg_attendance_rate,
+    #         "avg_submission_rate": avg_submission_rate,
+    #         "avg_grade": avg_grade,
+    #     }
 
 
 course_service = CourseService()
