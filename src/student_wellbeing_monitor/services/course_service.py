@@ -14,13 +14,14 @@ from student_wellbeing_monitor.database.read import (
     submissions_for_course,
     unsubmissions_for_repeated_issues,
 )
-
-
+# =========================================================
+# Class: CourseService
+# =========================================================
 class CourseService:
     """
     The course analysis service from the Course Leader's perspective.
 
-    contain the function in CourseLeader.md:
+    contain the method in API document.md:
       2️⃣ get_submission_summary                      
       4️⃣ get_repeated_missing_students               
       5️⃣ get_attendance_vs_grades                    

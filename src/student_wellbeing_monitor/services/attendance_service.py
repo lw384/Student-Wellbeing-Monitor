@@ -7,13 +7,14 @@ from student_wellbeing_monitor.database.read import (
     attendance_detail_for_students,
     attendance_for_course,
 )
-
-
+# =========================================================
+# Class: AttendanceService
+# =========================================================
 class AttendanceService:
     """
     Attendance-related services from the Course Leader's perspective.
 
-    CourseLeader.md:
+    contain the method in APIdocuemnt.md:
       1️⃣ get_attendance_trends
       3️⃣ get_low_attendance_students
     """
