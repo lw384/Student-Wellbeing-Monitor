@@ -139,7 +139,7 @@ def export_attendance_summary(output_dir: str) -> None:
         try:
             if status is not None and int(status) == 1:
                 grouped[key]["present"] += 1
-        except:
+        except (KeyError, ValueError, TypeError):
             pass
 
     out_rows = []

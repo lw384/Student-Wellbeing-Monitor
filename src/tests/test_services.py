@@ -1,19 +1,10 @@
 # src/student_wellbeing_monitor/tests/test_services.py
 import io
-import os
 import sys
 from pathlib import Path
 from typing import Any, Dict, List
 
 import pytest
-
-# ------------------------------------------------------------------------
-# Let pytest import student_wellbeing_monitor.*
-# Reference the pattern used in your project's services/test.py
-# ------------------------------------------------------------------------
-SRC_DIR = Path(__file__).resolve().parents[2]  # Point to src directory
-if str(SRC_DIR) not in sys.path:
-    sys.path.insert(0, str(SRC_DIR))
 
 from student_wellbeing_monitor.services import (
     archive_service,
@@ -22,6 +13,14 @@ from student_wellbeing_monitor.services import (
     upload_service,
     wellbeing_service,
 )
+
+# ------------------------------------------------------------------------
+# Let pytest import student_wellbeing_monitor.*
+# Reference the pattern used in your project's services/test.py
+# ------------------------------------------------------------------------
+SRC_DIR = Path(__file__).resolve().parents[2]  # Point to src directory
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
 
 
 # =============================================================================

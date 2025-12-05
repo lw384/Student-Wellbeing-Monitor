@@ -1,4 +1,5 @@
 """src/wellbeing_system/ui/app.py"""
+
 import math
 import os
 
@@ -25,15 +26,15 @@ from student_wellbeing_monitor.database.update import (
     update_submission,
     update_wellbeing,
 )
-from student_wellbeing_monitor.services.upload_service import import_csv_by_type
 from student_wellbeing_monitor.services.dashboard_service import (
-    resolve_week_range,
-    resolve_programme_and_module,
-    load_modules_by_programme,
-    build_summary,
     build_charts,
     build_risks,
+    build_summary,
+    load_modules_by_programme,
+    resolve_programme_and_module,
+    resolve_week_range,
 )
+from student_wellbeing_monitor.services.upload_service import import_csv_by_type
 
 load_dotenv()
 

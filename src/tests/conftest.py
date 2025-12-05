@@ -1,4 +1,5 @@
 import pytest
+
 from student_wellbeing_monitor.ui.app import app as flask_app
 
 

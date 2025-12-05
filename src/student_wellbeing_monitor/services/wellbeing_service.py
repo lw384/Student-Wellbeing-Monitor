@@ -6,19 +6,20 @@ from student_wellbeing_monitor.database.read import (
     get_students_by_programme,
     get_wellbeing_records,
 )
+
+
 # =========================================================
 # Class: WellbeingService
 # =========================================================
 class WellbeingService:
     """
     Service layer for student wellbeing data processing and analysis
-
     contain the method in APIdocuemnt.md:
-    9️⃣ get_dashboard_summary
-    🔟 get_stress_sleep_trend
-    1️⃣1️⃣ get_risk_students
-    
+    - get_dashboard_summary
+    - get_stress_sleep_trend
+    - get_risk_students
     """
+
     def __init__(self):
         pass
 

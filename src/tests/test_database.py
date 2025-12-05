@@ -1,9 +1,9 @@
 # test_database.py
+import sqlite3
 import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
-import sqlite3
 import pytest
 
 # --------- Allow tests to import packages under src ---------
@@ -11,12 +11,12 @@ SRC_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SRC_DIR))
 
 from student_wellbeing_monitor.database import (  # noqa: E402
-    db_core,
-    schema,
     create,
-    read,
-    update,
+    db_core,
     delete,
+    read,
+    schema,
+    update,
 )
 
 
@@ -451,4 +451,3 @@ def test_user_and_auth(sample_data):
     # Create another user
     create.create_user("leader", "pass456", "cd")
     assert read.get_user_role("leader") == "cd"
-    

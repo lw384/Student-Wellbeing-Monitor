@@ -7,6 +7,8 @@ from student_wellbeing_monitor.database.read import (
     attendance_detail_for_students,
     attendance_for_course,
 )
+
+
 # =========================================================
 # Class: AttendanceService
 # =========================================================
