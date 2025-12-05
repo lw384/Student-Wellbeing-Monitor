@@ -24,7 +24,7 @@ wellbeing_service = WellbeingService()
 
 # 1️⃣ Interface: Get Attendance Trends by Week
 
-**Method Name:** `get_attendance_trends`  
+**Method Name:** `get_attendance_trends`
 **Class:** `AttendanceService`
 
 ## Request Parameters (Query)
@@ -71,7 +71,7 @@ wellbeing_service = WellbeingService()
 
 ### Required Database Function(s)
 
-**Function:** `attendance_for_course(course_id, programme_id, week_start, week_end)`  
+**Function:** `attendance_for_course(course_id, programme_id, week_start, week_end)`
 **Expected columns per row:**
 
 - `course_id`
@@ -85,7 +85,7 @@ wellbeing_service = WellbeingService()
 
 # 2️⃣ Interface: Get Submission Summary (Submit / Unsubmit)
 
-**Method Name:** `get_submission_summary`  
+**Method Name:** `get_submission_summary`
 **Class:** `CourseService`
 
 Only two states are considered: **submitted** or **not submitted** (no “late” concept).
@@ -125,7 +125,7 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 
 ### Required Database Function(s)
 
-**Function:** `submissions_for_course(programme_id, course_id, assignment_no)`  
+**Function:** `submissions_for_course(programme_id, course_id, assignment_no)`
 
 **Expected columns per row:**
 
@@ -138,7 +138,7 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 
 # 3️⃣ Interface: Get Low-attendance Students
 
-**Method Name:** `get_low_attendance_students`  
+**Method Name:** `get_low_attendance_students`
 **Class:** `AttendanceService`
 
 ## Request Parameters (Query)
@@ -192,7 +192,7 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 
 ### Required Database Function(s)
 
-**Function:** `attendance_detail_for_students(course_id, programme_id, week_start, week_end)`  
+**Function:** `attendance_detail_for_students(course_id, programme_id, week_start, week_end)`
 
 **Expected columns per row:**
 
@@ -208,7 +208,7 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 
 # 4️⃣ Interface: Get Students with Repeated Missing Submissions
 
-**Method Name:** `get_repeated_missing_students`  
+**Method Name:** `get_repeated_missing_students`
 **Class:** `CourseService`
 
 ## Request Parameters (Query)
@@ -262,7 +262,7 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 
 ### Required Database Function(s)
 
-**Function:** `unsubmissions_for_repeated_issues(programme_id, course_id, start_week, end_week)`  
+**Function:** `unsubmissions_for_repeated_issues(programme_id, course_id, start_week, end_week)`
 
 **Expected columns per row:**
 
@@ -278,7 +278,7 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 
 # 5️⃣ Interface: Attendance vs Grade Analysis
 
-**Method Name:** `get_attendance_vs_grades`  
+**Method Name:** `get_attendance_vs_grades`
 **Class:** `CourseService`
 
 ## Request Parameters (Query)
@@ -327,7 +327,7 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 
 ### Required Database Function(s)
 
-**Function:** `attendance_and_grades(programme_id, course_id)`  
+**Function:** `attendance_and_grades(programme_id, course_id)`
 
 **Expected columns per row:**
 
@@ -342,7 +342,7 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 
 # 6️⃣ Interface: Programme-level Wellbeing & Engagement
 
-**Method Name:** `get_programme_wellbeing_engagement`  
+**Method Name:** `get_programme_wellbeing_engagement`
 **Class:** `CourseService`
 
 ## Request Parameters (Query)
@@ -402,7 +402,7 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 
 ### Required Database Function(s)
 
-**Function:** `programme_wellbeing_engagement(programme_id, week_start, week_end)`  
+**Function:** `programme_wellbeing_engagement(programme_id, week_start, week_end)`
 
 **Expected columns per row (conceptual):**
 
@@ -421,7 +421,7 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 
 # 7️⃣ Interface: High-stress & Low-sleep Engagement Analysis
 
-**Method Name:** `get_high_stress_sleep_engagement_analysis`  
+**Method Name:** `get_high_stress_sleep_engagement_analysis`
 **Class:** `CourseService`
 
 > Note: In the provided code, this method operates at **programme level** using `programme_id`, not `course_id`.
@@ -480,7 +480,7 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 
 ### Required Database Function(s)
 
-**Function:** `programme_wellbeing_engagement(programme_id, week_start, week_end)`  
+**Function:** `programme_wellbeing_engagement(programme_id, week_start, week_end)`
 
 **Expected columns per row:**
 
@@ -498,7 +498,7 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 
 # 8️⃣ Interface: AI-based Narrative Insight
 
-**Method Name:** `analyze_high_stress_sleep_with_ai`  
+**Method Name:** `analyze_high_stress_sleep_with_ai`
 **Class:** `CourseService`
 
 ## Request Parameters (Query)
@@ -553,7 +553,7 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 
 # 9️⃣ Interface: Dashboard Summary (Wellbeing)
 
-**Method Name:** `get_dashboard_summary`  
+**Method Name:** `get_dashboard_summary`
 **Class:** `WellbeingService`
 
 ## Request Parameters (Query)
@@ -592,16 +592,16 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 
 ### Required Database Function(s)
 
-- `get_wellbeing_records(start_week, end_week, programme_id=None)`  
+- `get_wellbeing_records(start_week, end_week, programme_id=None)`
   Returns: `student_id, week, stress_level, hours_slept, programme_id`
-- `get_all_students()` **or** `get_students_by_programme(programme_id)`  
+- `get_all_students()` **or** `get_students_by_programme(programme_id)`
   Returns: basic student information to count total students.
 
 ---
 
 # 🔟 Interface: Stress & Sleep Trend
 
-**Method Name:** `get_stress_sleep_trend`  
+**Method Name:** `get_stress_sleep_trend`
 **Class:** `WellbeingService`
 
 ## Request Parameters (Query)
@@ -637,13 +637,13 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 
 ### Required Database Function(s)
 
-- Reuse `get_wellbeing_records(start_week, end_week, programme_id=None)`  
+- Reuse `get_wellbeing_records(start_week, end_week, programme_id=None)`
 
 ---
 
 # 1️⃣1️⃣ Interface: Get Risk Students / Query Individual Risk
 
-**Method Name:** `get_risk_students`  
+**Method Name:** `get_risk_students`
 **Class:** `WellbeingService`
 
 ## Request Parameters (Query)
@@ -729,7 +729,7 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 5. For each student:
    - Create a sequence of `(week, stress, sleep, programme_id)` records.
    - Check for a run of 3 consecutive weeks where:
-     - `stress >= threshold` and `sleep < sleep_threshold`  
+     - `stress >= threshold` and `sleep < sleep_threshold`
      → mark as `high_risk`.
    - Otherwise, if any week satisfies the condition:
      → mark as `potential_risk`.
@@ -744,8 +744,8 @@ Only two states are considered: **submitted** or **not submitted** (no “late�
 
 ### Required Database Function(s)
 
-- `get_wellbeing_records(start_week, end_week, programme_id)`  
+- `get_wellbeing_records(start_week, end_week, programme_id)`
   Returns: `student_id, week, stress_level, hours_slept, programme_id`
-- `get_all_students()` and/or `get_students_by_programme(programme_id)`  
+- `get_all_students()` and/or `get_students_by_programme(programme_id)`
   Returns: `student_id, name, email, programme_id`
 

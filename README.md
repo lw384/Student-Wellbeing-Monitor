@@ -6,7 +6,7 @@ A prototype system designed to support the Student Wellbeing Office and Course D
 
 ## **Overview**
 
-Student-Wellbeing-Monitor is a small prototype system built in Python 3 with a relational database backend (SQLite).  
+Student-Wellbeing-Monitor is a small prototype system built in Python 3 with a relational database backend (SQLite).
 It aims to demonstrate how a university can:
 
 - Collect and store data such as attendance, coursework submissions, and weekly wellbeing surveys.
@@ -106,7 +106,7 @@ The system is intentionally lightweight and designed for teaching and experiment
     │   │   ├── setup_demo.py            # Load demo/mock data into DB
     │   │   └── start.py                 # Start system with demo data
     │   │
-    │   └── ui/                          # Web UI 
+    │   └── ui/                          # Web UI
     │       ├── app.py                   # Flask entry point
     │       └── templates/               # HTML templates for the UI
     │
@@ -122,7 +122,7 @@ The system is intentionally lightweight and designed for teaching and experiment
 ### **Prerequisites**
 
 - Python 3.x installed
-  
+
 - [Poetry](https://python-poetry.org/) installed
 
 Install Poetry if you don’t have it:
@@ -131,7 +131,7 @@ Install Poetry if you don’t have it:
 pip install poetry
 ```
 
-### **Installation**  
+### **Installation**
 
 From the project root:
 
@@ -140,7 +140,7 @@ From the project root:
 poetry install
 ```
 
-## **Core Commands (Poetry Scripts)**  
+## **Core Commands (Poetry Scripts)**
 
 > All commands below are intended to be run **from the project root** and use Poetry.
 
@@ -178,9 +178,9 @@ poetry run start
 This script will:
 
 1. Prepare mock data and insert it into the local database.
-   
+
 2. Start the web frontend (Flask app).
-   
+
 
 ### **Start Web UI Only**
 
@@ -204,7 +204,7 @@ poetry run pytest
 poetry run pytest --cov #test coverage summary
 ```
 
-### **Archive For Data Privacy** 
+### **Archive For Data Privacy**
 
 Export summaries only (no deletion):
 
@@ -247,10 +247,10 @@ This command generates:
 - Weekly attendance files: attendance_week1.csv, attendance_week2.csv, …
 - Weekly wellbeing files: wellbeing_week1.csv, wellbeing_week2.csv, …
 - Per-module submission files:
-  
+
     - submissions-<module_code>.csv (e.g. submissions-WG1F6.csv)
-      
-    
+
+
 
 All files are placed under mock_data/mock/.
 
@@ -263,11 +263,11 @@ poetry run python mock_data/scripts/generate_all.py --clean
 --clean will:
 
 - Delete **only** .csv files in mock_data/mock/
-  
+
 - Preserve the directory itself and any non-CSV files
-  
+
 - Ensure a clean environment for new mock data generation
-  
+
 
 ### **3. Customisation Options**
 
@@ -365,7 +365,7 @@ attendance_week2.csv
 Binary attendance:
 
 - 0 = absent
-  
+
 - 1 = present
 
 #### **Weekly Wellbeing**
@@ -381,11 +381,11 @@ wellbeing_week2.csv
 Includes:
 
 - Stress levels
-  
+
 - Sleep hours
-  
+
 - Simulated behavioural patterns
-  
+
 
 #### **Coursework Submissions (Per Module)**
 
@@ -398,9 +398,9 @@ submissions-<module_code>.csv
 Binary submission:
 
 - 1 = submitted
-  
+
 - 0 = not submitted
-  
+
 
 with realistic grade distributions where applicable.
 
@@ -410,11 +410,11 @@ This section contains **Service-layer Python function** designs used internally 
 
 You can treat this section as living documentation of the backend capabilities.
 
-- **For more details, see the** **API.md** **file in the root folder.**
+- **For more details, see the** **API Document.md** **file in the root folder.**
 
 ## **Git Commit Guidelines**
 
-### **1. Commit Message Structure**  
+### **1. Commit Message Structure**
 
 Each commit message has two parts:
 
@@ -441,61 +441,61 @@ Use only the following 6 types:
 **Good examples:**
 
 - feat: add attendance generator by week
-  
+
 - fix: correct module_code mapping in submissions
-  
+
 - refactor: split mock_core into 4 modules
-  
+
 - docs: add guide for using generate_all script
-  
+
 - data: regenerate wellbeing mock data for week 1-8
-  
+
 - test: add tests for write_csv helper
-  
+
 
 **Bad examples (avoid):**
 
 - update code
-  
+
 - fix something
-  
+
 - changes
-  
+
 - final version
-  
+
 
 ### **4. One Commit = One Logical Change**
 
 Avoid mixing multiple unrelated changes in one commit. For example, do **not** combine:
 
 - Mock data changes
-  
+
 - UI changes
-  
+
 - Database schema updates
-  
+
 - Test changes
-  
+
 
 into a single commit.
 
 ### **5. Commit Frequency**
 
 - Aim for **2–4 commits per day** (per feature / milestone).
-  
+
 - Commit small, incremental changes frequently rather than one huge commit.
-  
+
 
 ### **6. Branching Strategy (Minimal)**
 
 - main: stable branch
-  
+
 - dev: development branch
-  
+
 - feature/...: feature branches
-  
+
 - fix/...: bug-fix branches
-  
+
 
 ## **Out-of-scope / Not Implemented Yet**
 
