@@ -34,6 +34,12 @@ def parse_args():
         action="store_true",
         help="Import mock wellbeing/attendance/submission data into database",
     )
+    parser.add_argument(
+        "--weeks",
+        type=int,
+        default=12,
+        help="Number of teaching weeks to seed for wellbeing and attendance (default: 12).",
+    )
     return parser.parse_args()
 
 
@@ -118,26 +124,20 @@ def seed_student_module():
     print("✅ student_module inserted.")
 
 
-def seed_wellbeing():
-    csv_path = MOCK_DIR / "student_module.csv"
-    print(f"🌱 Seeding student_module from: {csv_path}")
-
-    with csv_path.open("r", encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            create.insert_wellbeing(
-                student_id=row["student_id"],
-                module_id=row["module_id"],
-            )
-    print("✅ student_module inserted.")
-
-
-def seed_wellbeing():
+def seed_wellbeing(max_week: int | None = None):
+    """
+    Import wellbeing_week*.csv files into the database.
+    If max_week is provided, only rows with week <= max_week will be inserted.
+    """
     files = sorted(MOCK_DIR.glob("wellbeing_week*.csv"))
     if not files:
         print("⚠️ No wellbeing_week*.csv found, skip seeding wellbeing.")
         return
 
-    print("🌱 Seeding wellbeing records from weekly CSVs...")
+    if max_week is not None:
+        print(f"🌱 Seeding wellbeing records up to week {max_week}...")
+    else:
+        print("🌱 Seeding wellbeing records from all weekly CSVs...")
 
     total_rows = 0
     for csv_path in files:
@@ -145,6 +145,10 @@ def seed_wellbeing():
         with csv_path.open("r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
+                week = int(row["week"])
+                if max_week is not None and week > max_week:
+                    continue
+
                 create.insert_wellbeing(
                     student_id=row["student_id"],
                     week=int(row["week"]),
@@ -157,13 +161,20 @@ def seed_wellbeing():
     print(f"✅ Wellbeing records inserted: {total_rows}")
 
 
-def seed_attendance():
+def seed_attendance(max_week: int | None = None):
+    """
+    Import attendance_week*.csv files into the database.
+    If max_week is provided, only rows with week <= max_week will be inserted.
+    """
     files = sorted(MOCK_DIR.glob("attendance_week*.csv"))
     if not files:
         print("⚠️ No attendance_week*.csv found, skip seeding wellbeing.")
         return
 
-    print("🌱 Seeding attendance records from weekly CSVs...")
+    if max_week is not None:
+        print(f"🌱 Seeding attendance records up to week {max_week}...")
+    else:
+        print("🌱 Seeding attendance records from all weekly CSVs...")
 
     total_rows = 0
     for csv_path in files:
@@ -171,6 +182,10 @@ def seed_attendance():
         with csv_path.open("r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
+                week = int(row["week"])
+                if max_week is not None and week > max_week:
+                    continue
+
                 create.insert_attendance(
                     student_id=row["student_id"],
                     module_id=int(row["module_id"]),
@@ -183,6 +198,9 @@ def seed_attendance():
 
 
 def seed_submission():
+    """
+    Import submissions_*.csv into the database.
+    """
     files = sorted(MOCK_DIR.glob("submissions_*.csv"))
     if not files:
         print("⚠️ No submissions_*.csv found, skip seeding wellbeing.")
@@ -234,8 +252,8 @@ def setup_demo():
     if args.with_mock:
         run_generate_mock()
         print(" Importing mock wellbeing / attendance / submission.")
-        seed_wellbeing()
-        seed_attendance()
+        seed_wellbeing(max_week=args.weeks)
+        seed_attendance(max_week=args.weeks)
         seed_submission()
         print("🎉 Mock dynamic data inserted.")
 

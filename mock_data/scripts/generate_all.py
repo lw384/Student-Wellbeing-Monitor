@@ -50,8 +50,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--weeks",
         type=int,
-        default=8,
-        help="Number of weeks for behaviour mock (default: 8)",
+        default=12,
+        help="Number of weeks for behaviour mock (default: 12)",
     )
     parser.add_argument(
         "--modules",
