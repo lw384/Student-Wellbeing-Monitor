@@ -1,30 +1,30 @@
-from typing import Optional, Dict, Any, List, Tuple
 from collections import defaultdict
-import sys
-import os
+from typing import Any, Dict, List, Optional, Tuple
+
 from student_wellbeing_monitor.database.read import (
     get_all_students,
     get_students_by_programme,
-    get_student_by_id,
     get_wellbeing_records,
 )
-
-
 # =========================================================
 # Class: WellbeingService
 # =========================================================
-
-
 class WellbeingService:
     """
     Service layer for student wellbeing data processing and analysis
+
+    contain the method in APIdocuemnt.md:
+    9️⃣ get_dashboard_summary
+    🔟 get_stress_sleep_trend
+    1️⃣1️⃣ get_risk_students
+    
     """
     def __init__(self):
         pass
 
-    # =========================================================
-    # private tool function
-    # =========================================================
+    # --------------------------------------------------------
+    # count student
+    # --------------------------------------------------------
     def _get_student_count(self, programme_id: Optional[str]) -> int:
         """
         statistics student count
@@ -38,10 +38,9 @@ class WellbeingService:
             rows = get_students_by_programme(programme_id)
             return len(rows)
 
-    # =========================================================
-    # dashboard
-    # get card: summary data
-    # =========================================================
+    # -------------------------------------------------
+    # 9️⃣ get_dashboard_summary
+    # -------------------------------------------------
     def get_dashboard_summary(
         self,
         start_week: int,
@@ -53,7 +52,7 @@ class WellbeingService:
 
         input:
             - start_week:
-            - end_week: 
+            - end_week:
             - programme_id: if None, means all programmes
 
         output structure:
@@ -114,10 +113,9 @@ class WellbeingService:
             },
         }
 
-    # =========================================================
-    # getStressSleepTrend
-    # calculate average stress level and average sleep hours by week
-    # =========================================================
+    # -------------------------------------------------
+    # 🔟 get_stress_sleep_trend
+    # -------------------------------------------------
     def get_stress_sleep_trend(
         self,
         start_week: int,
@@ -165,7 +163,7 @@ class WellbeingService:
                     pass
 
         all_weeks = sorted(set(list(stress_sum.keys()) + list(sleep_sum.keys())))
-        
+
         weeks: List[int] = []
         stress: List[float] = []
         sleep: List[float] = []
@@ -181,15 +179,11 @@ class WellbeingService:
             stress.append(avg_stress)
             sleep.append(avg_sleep)
 
-        return {
-            "weeks": weeks,      
-            "stress": stress, 
-            "sleep": sleep 
-        }
+        return {"weeks": weeks, "stress": stress, "sleep": sleep}
 
-    # =========================================================
-    # getRiskStudents: identify risk students and their risk types
-    # =========================================================
+    # -------------------------------------------------
+    # 1️⃣1️⃣ get_risk_students
+    # -------------------------------------------------=
     def get_risk_students(
         self,
         start_week: int,
@@ -221,6 +215,7 @@ class WellbeingService:
                   "studentId": "5000001",
                   "name": "Alice",
                   "riskType": "high_risk" or "potential_risk" or "normal",
+                  "email": "alice@warwick.ac.uk",
                   "reason": "...",
                   "details": "...",
                   "modules": ["WM9QF"]
@@ -253,6 +248,11 @@ class WellbeingService:
 
         student_name_map: Dict[str, str] = {
             str(row[0]): row[1]  # 0 = student_id, 1 = name
+            for row in student_rows
+            if row[0] is not None
+        }
+        student_email_map: Dict[str, str] = {
+            str(row[0]): row[2]  # 0 = student_id, 1 = name
             for row in student_rows
             if row[0] is not None
         }
@@ -367,6 +367,7 @@ class WellbeingService:
                         {
                             "studentId": sid,
                             "name": student_name_map.get(sid),
+                            "email": student_email_map.get(sid),
                             "riskType": risk_type,
                             "reason": reason,
                             "details": details,
@@ -388,6 +389,7 @@ class WellbeingService:
                 {
                     "studentId": sid,
                     "name": student_name_map.get(sid),
+                    "email": student_email_map.get(sid),
                     "riskType": risk_type,
                     "reason": reason,
                     "details": details,
