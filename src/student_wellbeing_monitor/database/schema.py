@@ -114,15 +114,15 @@ def init_db_schema():
             student_id   TEXT NOT NULL,
             module_id    TEXT NOT NULL,
             submitted    INTEGER NOT NULL CHECK(submitted IN (0, 1)),   -- 1 submitted; 0 no
-            grade        REAL CHECK(grade BETWEEN 0 AND 100), 
-            assignment_no  INTEGER NOT NULL DEFAULT 1, 
+            grade        REAL CHECK(grade BETWEEN 0 AND 100),
+            assignment_no  INTEGER NOT NULL DEFAULT 1,
             due_date     TEXT NOT NULL,                -- YYYY-MM-DD
             submit_date  TEXT,                         -- NULL if not submitted
             FOREIGN KEY(student_id) REFERENCES student(student_id),
-            FOREIGN KEY(module_id)  REFERENCES module(module_id),  
-            UNIQUE(student_id, module_id, assignment_no)       
+            FOREIGN KEY(module_id)  REFERENCES module(module_id),
+            UNIQUE(student_id, module_id, assignment_no)
         )
-    """
+        """
     )
 
     # --------------------

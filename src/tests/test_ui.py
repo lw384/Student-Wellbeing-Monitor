@@ -1,5 +1,6 @@
 from io import BytesIO
 from unittest.mock import patch
+
 import pytest
 
 

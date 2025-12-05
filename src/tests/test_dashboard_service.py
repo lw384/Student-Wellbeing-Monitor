@@ -1,7 +1,4 @@
 # tests/test_dashboard_service.py
-import types
-import builtins
-import pytest
 
 from student_wellbeing_monitor.services import dashboard_service
 
