@@ -11,15 +11,15 @@ from student_wellbeing_monitor.database.read import (
 
 class AttendanceService:
     """
-    Course Leader 视角的出勤相关服务。
+    Attendance-related services from the Course Leader's perspective.
 
-    对应 CourseLeader.md 中的：
+    CourseLeader.md:
       1️⃣ get_attendance_trends
       3️⃣ get_low_attendance_students
     """
 
     # -------------------------------------------------
-    # 1️⃣ 按周查看课程出勤趋势
+    # 1️⃣ check attendance trends by week
     # -------------------------------------------------
     def get_attendance_trends(
         self,
@@ -31,7 +31,7 @@ class AttendanceService:
         """
         get_attendance_trends(course_id, programme_id=None, week_start=None, week_end=None)
 
-        返回：
+        return:
         {
           "courseId": "...",
           "courseName": "...",
@@ -94,7 +94,7 @@ class AttendanceService:
         }
 
     # -------------------------------------------------
-    # 3️⃣ 低出勤学生列表
+    # 3️⃣ list of students with low attendance
     # -------------------------------------------------
     def get_low_attendance_students(
         self,
@@ -115,7 +115,7 @@ class AttendanceService:
             min_absences=2,
         )
 
-        返回：
+        return:
         {
           "courseId": "...",
           "courseName": "...",
@@ -148,7 +148,7 @@ class AttendanceService:
 
         course_name = rows[0][1]
 
-        # 按学生聚合 present / absent / total
+        # statistics per student's attendance
         stats: Dict[str, Dict[str, Any]] = {}
         for _mid, _mname, sid, sname, email, _week, status in rows:
             if sid not in stats:
@@ -160,11 +160,10 @@ class AttendanceService:
                     "total": 0,
                 }
             stats[sid]["total"] += 1
-            # status 为 0 / 1（0 缺勤，1 出勤）
+            # status: 0 / 1（0 absent，1 present）
             if status is not None and int(status) == 1:
                 stats[sid]["present"] += 1
             else:
-                # 只要不是“出勤”，都当成缺勤
                 stats[sid]["absent"] += 1
 
         students: List[Dict[str, Any]] = []

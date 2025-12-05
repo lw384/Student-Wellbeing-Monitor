@@ -18,13 +18,15 @@ from student_wellbeing_monitor.database.read import (
 
 class CourseService:
     """
-    Course Leader 视角的课程综合分析服务。
+    The course analysis service from the Course Leader's perspective.
 
-    对应 CourseLeader.md 中的：
-      2️⃣ get_submission_summary        （作业提交情况统计：已交 / 未交）
-      4️⃣ get_repeated_missing_students （多门课作业问题学生：多门课未交）
-      5️⃣ get_attendance_vs_grades      （出勤率 vs 成绩）
-      6️⃣ get_programme_wellbeing_engagement （按专业的 wellbeing + engagement 汇总）
+    contain the function in CourseLeader.md:
+      2️⃣ get_submission_summary                      
+      4️⃣ get_repeated_missing_students               
+      5️⃣ get_attendance_vs_grades                    
+      6️⃣ get_programme_wellbeing_engagement         
+      7️⃣ get_high_stress_sleep_engagement_analysis   
+      8️⃣ further analyze with AI (Gemini)            
     """
 
     def get_course_leader_summary(
@@ -35,7 +37,7 @@ class CourseService:
         week_end: int,
     ):
         """
-         返回课程负责人 Dashboard 的三项核心指标：
+         return the three key metrics for Course Leader Dashboard:
          - avg_attendance_rate
          - avg_submission_rate
         - avg_grade
@@ -88,7 +90,7 @@ class CourseService:
         }
 
     # -------------------------------------------------
-    # 2️⃣ 课程作业提交情况统计（已交 / 未交）
+    # 2️⃣ submission summary: submitted / unsubmitted
     # -------------------------------------------------
     def get_submission_summary(
         self,
@@ -97,9 +99,9 @@ class CourseService:
         assignment_no: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
-        返回某课程在指定作业上的“已交 / 未交”统计。
+        return the submission statistic for a specific assignment in a course.
 
-        返回：
+        return:
         {
           "courseId": "WM9AA0",
           "courseName": "Applied AI",
@@ -149,7 +151,7 @@ class CourseService:
         }
 
     # -------------------------------------------------
-    # 4️⃣ 多门课作业问题学生（多门课未交）
+    # 4️⃣ get the students with repeated missing submissions
     # -------------------------------------------------
     def get_repeated_missing_students(
         self,
@@ -160,10 +162,9 @@ class CourseService:
         min_offending_modules: int = 2,
     ) -> Dict[str, Any]:
         """
-        找出在多门课里“作业有问题”的学生。
-        在当前约束下：只有“未交(unsubmit)”这一种问题（没有迟交的概念）。
+        get the students with repeated missing submissions across multiple courses.
 
-        返回：
+        return:
         {
           "students": [
             {
@@ -192,10 +193,8 @@ class CourseService:
             week_end=end_week,
         )
         # rows: (module_id, module_name, assignment_no, student_id, student_name, email, submitted)
-
         problem_records: List[Tuple[str, str, int, str, str, str]] = []
         for module_id, module_name, assignment_no, sid, sname, email, submitted in rows:
-            # 只关心未交（submitted 为 0 或 False）
             if not submitted:
                 problem_records.append(
                     (module_id, module_name, assignment_no, sid, sname, email)
@@ -238,7 +237,7 @@ class CourseService:
         return {"students": result_students}
 
     # -------------------------------------------------
-    # 5️⃣ 出勤 vs 成绩：简单相关性（散点图数据）
+    # 5️⃣ attendance vs grades and scatter plot data
     # -------------------------------------------------
     def get_attendance_vs_grades(
         self,
@@ -248,9 +247,9 @@ class CourseService:
         week_end: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
-        返回 UI 画散点图所需的基础数据：每个学生的出勤率和平均成绩。
+        return the data for scatter plot of attendance vs grades.
 
-        返回：
+        return:
         {
           "courseId": "...",
           "courseName": "...",
@@ -258,8 +257,8 @@ class CourseService:
             {
               "studentId": "...",
               "name": "...",
-              "attendanceRate": 0.85,   # x 轴
-              "avgGrade": 68.0          # y 轴
+              "attendanceRate": 0.85,   # x axis
+              "avgGrade": 68.0          # y axis
             },
             ...
           ]
@@ -294,7 +293,7 @@ class CourseService:
                     "grade_cnt": 0,
                 }
             tmp[sid]["total"] += 1
-            # attendance.status 在数据库中为 0 / 1（0 缺勤，1 出勤）
+            # attendance.status : 0 = absent, 1 = present
             if status is not None and int(status) == 1:
                 tmp[sid]["present"] += 1
             if grade is not None:
@@ -327,7 +326,7 @@ class CourseService:
         }
 
     # -------------------------------------------------
-    # 6️⃣ 按专业的 wellbeing + engagement 汇总
+    # 6️⃣ summary of wellbeing + engagement by programme
     # -------------------------------------------------
     def get_programme_wellbeing_engagement(
         self,
@@ -336,12 +335,12 @@ class CourseService:
         week_end: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
-        按“专业 (programme)”维度，对 wellbeing + engagement 做汇总。
+        summary of wellbeing and engagement by programme.
 
-        - programme_id 为 None：返回所有专业的汇总列表（适合做对比图表）
-        - programme_id 有值：只返回该专业的汇总（列表里通常只有 1 条）
+        - programme_id = None: return all programmes' summary
+        - programme_id != None: only return that programme's summary
 
-        返回示例：
+        return example:
         {
           "programmeId": "12345" 或 None,
           "programmes": [
@@ -476,7 +475,7 @@ class CourseService:
         }
 
     # -------------------------------------------------
-    # 7️⃣ 高压少睡学生 vs 其他学生：出勤 / 提交 / 成绩对比
+    # 7️⃣ the status of students with high stress and low sleep vs others'
     # -------------------------------------------------
     def get_high_stress_sleep_engagement_analysis(
         self,
@@ -489,11 +488,12 @@ class CourseService:
     ) -> Dict[str, Any]:
         """
         针对单门课程，在指定周范围内：
-        - 找出“stress 高 AND sleep 少”的学生（满足条件的周数 >= min_weeks）
-        - 对比这类学生和其他学生在：
-            * 出勤率（缺课更多？）
-            * 作业提交率（提交率更低？）
-            * 平均成绩（成绩更差？）
+        foucs on specific course, within specified weeks:
+        get the status of students with high stress and low sleep
+        and compare with other students on:
+            * attendance rate ( lower? )
+            * submission rate ( lower? )
+            * average grade ( worse?)
         """
         rows = programme_wellbeing_engagement(
             programme_id=programme_id,
@@ -540,7 +540,7 @@ class CourseService:
 
         course_name = rows[0][1]
 
-        # 1) 按学生聚合
+        # grouping by student
         per_student: Dict[str, Dict[str, Any]] = {}
 
         for (
@@ -581,7 +581,7 @@ class CourseService:
                     else:
                         info["sleeps"].append(None)
                 except (TypeError, ValueError):
-                    # 跳过异常数据
+                    # skip invalid data
                     pass
 
             # attendance
@@ -607,7 +607,7 @@ class CourseService:
                 except (TypeError, ValueError):
                     pass
 
-        # 2) 划分高压少睡组 vs 其它学生
+        # divide students into two groups
         high_group: List[Dict[str, Any]] = []
         other_group: List[Dict[str, Any]] = []
 
@@ -615,7 +615,7 @@ class CourseService:
             stresses: List[float] = info["stresses"]
             sleeps: List[Optional[float]] = info["sleeps"]
 
-            # 有多少周满足 “stress >= stress_threshold AND sleep < sleep_threshold”
+            # how many weeks: “stress >= stress_threshold AND sleep < sleep_threshold”
             high_weeks = 0
             for s, sl in zip(stresses, sleeps):
                 if s is None or sl is None:
@@ -625,7 +625,7 @@ class CourseService:
 
             is_high = high_weeks >= min_weeks
 
-            # 学生级别指标
+            # the indicators per student
             att_rate = (
                 info["att_present"] / info["att_total"]
                 if info["att_total"] > 0
@@ -652,7 +652,7 @@ class CourseService:
             else:
                 other_group.append(record)
 
-        # 3) 计算两组平均值
+        # 3) calculate the mean of each group
         def _group_stats(group: List[Dict[str, Any]]) -> Dict[str, Any]:
             if not group:
                 return {
@@ -698,7 +698,7 @@ class CourseService:
         }
 
     # -------------------------------------------------
-    # 8️⃣ 调用外部 AI API，对上述结果做进一步分析
+    # 8️⃣ further analyze with AI (Gemini)
     # -------------------------------------------------
     def analyze_high_stress_sleep_with_ai(
         self,
@@ -710,13 +710,13 @@ class CourseService:
         min_weeks: int = 1,
     ) -> Dict[str, Any]:
         """
-        在 get_high_stress_sleep_engagement_analysis 的基础上，
-        使用 Gemini 模型生成自然语言分析。
+        On basis of get_high_stress_sleep_engagement_analysis,
+        use Gemini model to generate natural language analysis.
 
-        需要在环境变量中配置：
+        Environment Variables:
         - GEMINI_API_KEY: Gemini API key
         """
-        # 1) 先拿到基础统计结果（不变）
+        # get the base data
         base_result = self.get_high_stress_sleep_engagement_analysis(
             programme_id=programme_id,
             week_start=week_start,
@@ -725,8 +725,7 @@ class CourseService:
             sleep_threshold=sleep_threshold,
             min_weeks=min_weeks,
         )
-
-        # 2) 读取 API key
+        # read API key
         api_key = os.environ.get("GEMINI_API_KEY")
         if not api_key:
             return {
@@ -737,10 +736,10 @@ class CourseService:
                 },
             }
 
-        # 3) 创建 Gemini client
+        # create Gemini client
         client = genai.Client(api_key=api_key)
         print(api_key)
-        # 4) 构造 prompt + 数据（只给需要的部分，避免太长）
+        # construct the prompt + data
         analysis_data = {
             "params": base_result.get("params", {}),
             "groups": base_result.get("groups", {}),
@@ -774,7 +773,7 @@ class CourseService:
         )
 
         try:
-            # 5) 调用 Gemini
+            # 5) call Gemini API
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=prompt,
@@ -788,7 +787,7 @@ class CourseService:
                 },
             }
         except Exception as e:
-            # 容错，避免前端崩溃
+            # API call failed
             return {
                 "baseStats": base_result,
                 "aiAnalysis": {
@@ -805,7 +804,7 @@ class CourseService:
         week_end: int,
     ):
         """
-        返回课程负责人 Dashboard 的三项核心指标：
+        return the three key metrics for Course Leader Dashboard:
         - avg_attendance_rate
         - avg_submission_rate
         - avg_grade

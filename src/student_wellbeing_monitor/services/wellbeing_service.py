@@ -6,23 +6,25 @@ from student_wellbeing_monitor.database.read import (
     get_students_by_programme,
     get_wellbeing_records,
 )
-
 # =========================================================
 # Class: WellbeingService
 # =========================================================
-
-
 class WellbeingService:
     """
     Service layer for student wellbeing data processing and analysis
-    """
 
+    contain the method in APIdocuemnt.md:
+    9️⃣ get_dashboard_summary
+    🔟 get_stress_sleep_trend
+    1️⃣1️⃣ get_risk_students
+    
+    """
     def __init__(self):
         pass
 
-    # =========================================================
-    # private tool function
-    # =========================================================
+    # --------------------------------------------------------
+    # count student
+    # --------------------------------------------------------
     def _get_student_count(self, programme_id: Optional[str]) -> int:
         """
         statistics student count
@@ -36,10 +38,9 @@ class WellbeingService:
             rows = get_students_by_programme(programme_id)
             return len(rows)
 
-    # =========================================================
-    # dashboard
-    # get card: summary data
-    # =========================================================
+    # -------------------------------------------------
+    # 9️⃣ get_dashboard_summary
+    # -------------------------------------------------
     def get_dashboard_summary(
         self,
         start_week: int,
@@ -112,10 +113,9 @@ class WellbeingService:
             },
         }
 
-    # =========================================================
-    # getStressSleepTrend
-    # calculate average stress level and average sleep hours by week
-    # =========================================================
+    # -------------------------------------------------
+    # 🔟 get_stress_sleep_trend
+    # -------------------------------------------------
     def get_stress_sleep_trend(
         self,
         start_week: int,
@@ -181,9 +181,9 @@ class WellbeingService:
 
         return {"weeks": weeks, "stress": stress, "sleep": sleep}
 
-    # =========================================================
-    # getRiskStudents: identify risk students and their risk types
-    # =========================================================
+    # -------------------------------------------------
+    # 1️⃣1️⃣ get_risk_students
+    # -------------------------------------------------=
     def get_risk_students(
         self,
         start_week: int,
@@ -401,14 +401,3 @@ class WellbeingService:
 
 
 wellbeing_service = WellbeingService()
-
-
-# test function
-def get_dashboard_summary(start_week, end_week, programme_id=None):
-    return wellbeing_service.get_dashboard_summary(start_week, end_week, programme_id)
-
-def get_stress_sleep_trend(start_week, end_week, programme_id=None):
-    return wellbeing_service.get_stress_sleep_trend(start_week, end_week, programme_id)
-
-def get_risk_students(start_week, end_week, programme_id=None, student_id=None):
-    return wellbeing_service.get_risk_students(start_week, end_week, programme_id, student_id)
