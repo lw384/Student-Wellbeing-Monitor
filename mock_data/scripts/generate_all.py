@@ -44,14 +44,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--students",
         type=int,
-        default=30,
-        help="Number of students to generate (entities step, default: 30)",
+        default=50,
+        help="Number of students to generate (entities step, default: 50)",
     )
     parser.add_argument(
         "--weeks",
         type=int,
-        default=8,
-        help="Number of weeks for behaviour mock (default: 8)",
+        default=12,
+        help="Number of weeks for behaviour mock (default: 12)",
     )
     parser.add_argument(
         "--modules",

@@ -1,9 +1,7 @@
 # db_core.py
-import os
-from pathlib import Path
-import sqlite3
 import hashlib
-
+import sqlite3
+from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 

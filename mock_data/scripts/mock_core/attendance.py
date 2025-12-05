@@ -22,10 +22,10 @@ def generate_attendance_by_week(
         m["module_id"]: m["module_code"] for m in modules
     }
 
-    # 按周分组的结果容器
+    # Result containers grouped by week
     result: dict[int, list[dict]] = {w: [] for w in range(1, weeks + 1)}
 
-    # 为每个 student-module 对分配一个出勤概率
+    # Assign an attendance probability to each student-module pair
     attendance_profile: dict[tuple[int, int], float] = {}
 
     for rel in student_modules:

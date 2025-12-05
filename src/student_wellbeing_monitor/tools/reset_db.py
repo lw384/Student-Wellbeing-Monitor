@@ -1,4 +1,5 @@
 import os
+
 from student_wellbeing_monitor.database.db_core import DB_PATH
 from student_wellbeing_monitor.database.schema import init_db_schema
 

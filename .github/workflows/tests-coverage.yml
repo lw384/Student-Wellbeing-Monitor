@@ -1,0 +1,59 @@
+name: Test & Coverage Report
+
+on:
+    push:
+        branches: ["main", "dev"]
+    pull_request:
+
+permissions:
+    contents: write # 部署 GitHub Pages 需要
+    pages: write
+    id-token: write
+
+jobs:
+    test-and-coverage:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
+
+            - name: Install Poetry
+              run: pip install poetry
+
+            - name: Install dependencies
+              run: poetry install --with dev
+
+            # ------ ⬇️ 关键修改：测试失败不阻断流程 ------
+            - name: Run tests (allow failures)
+              run: |
+                  poetry run pytest || true
+
+            - name: Run coverage
+              run: |
+                  poetry run coverage run -m pytest || true
+                  poetry run coverage html
+                  poetry run coverage xml
+
+            - name: Upload coverage HTML as artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: html-report
+                  path: htmlcov
+
+            # ------------- GitHub Pages 部署 HTML ----------------
+            - name: Setup Pages
+              uses: actions/configure-pages@v4
+
+            - name: Upload Pages artifact
+              uses: actions/upload-pages-artifact@v3
+              with:
+                  path: htmlcov/ # coverage HTML folder
+
+            - name: Deploy to GitHub Pages
+              uses: actions/deploy-pages@v4

@@ -1,22 +1,26 @@
 {% extends "layout.html" %}
 {% set active_page = 'dashboard' %}
 {% set simple_layout = False %}
-
 {% block content %}
 <div class="main-content">
 
-  {# ==== 头部标题区 ==== #}
+  {# ==== title ==== #}
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
       <h1 class="page-title mb-1">
         {% if role == "wellbeing" %}
-          Wellbeing Officer Dashboard
+        Wellbeing Officer Dashboard
         {% else %}
-          Course Director Dashboard
+        Course Director Dashboard
         {% endif %}
       </h1>
       <p class="page-subtitle mb-0">
+        {% if role == "wellbeing" %}
         Monitor trends in stress, sleep and engagement over recent weeks.
+        {% else %}
+        Course Director Dashboard
+        {% endif %}
+
       </p>
     </div>
 
@@ -26,66 +30,111 @@
       </a>
     </div>
   </div>
-
-  {# ==== filter: Week + Programme ==== #}
+  {# ==== filter: Week + Programme (+ Module for course_leader) ==== #}
   <div class="card-elevated mb-3">
-    <form class="row g-3 align-items-end" method="get"
-          action="{{ url_for('dashboard', role=role) }}">
-     <div class="col-12 col-md-3">
+    <form class="d-flex flex-wrap align-items-end gap-3" method="get" action="{{ url_for('dashboard', role=role) }}">
+
+      <style>
+        .filter-field {
+          width: 180px;
+        }
+      </style>
+
+      {# ---- Start Week ---- #}
+      <div class="filter-field">
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
           Start Week
         </label>
-        <select name="week" class="form-select form-select-sm">
-          {# weeks 是后端传入的列表，例如 [1,2,...,12]；current_week 当前选中值 #}
-          {% for w in weeks|default([1,2,3,4,5,6,7,8]) %}
-            <option value="{{ w }}"
-                    {% if w == current_week|default(1) %}selected{% endif %}>
-              Week {{ w }}
-             </option>
+        <select id="start-week-select" name="start_week" class="form-select form-select-sm">
+          {% for w in weeks %}
+          <option value="{{ w }}" {% if w==current_start_week %}selected{% endif %}>
+            Week {{ w }}
+          </option>
           {% endfor %}
         </select>
       </div>
 
-      <div class="col-12 col-md-3">
+      {# ---- End Week ---- #}
+      <div class="filter-field">
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
           End Week
         </label>
-        <select name="week" class="form-select form-select-sm">
-          {# weeks 是后端传入的列表，例如 [1,2,...,12]；current_week 当前选中值 #}
-          {% for w in weeks|default([1,2,3,4,5,6,7,8]) %}
-            <option value="{{ w }}"
-                    {% if w == current_week|default(1) %}selected{% endif %}>
-              Week {{ w }}
-             </option>
+        <select id="end-week-select" name="end_week" class="form-select form-select-sm">
+          {% for w in weeks %}
+          <option value="{{ w }}" {% if w==current_end_week %}selected{% endif %}>
+            Week {{ w }}
+          </option>
           {% endfor %}
         </select>
       </div>
 
-      <div class="col-12 col-md-3">
+      {# ---- Programme ---- #}
+      <div class="filter-field">
+        <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
+          Programme
+        </label>
+        <select id="programme-select" name="programme_id" class="form-select form-select-sm" {% if role=='course_leader'
+          %}required{% endif %}>
+
+          {# wellbeing can choose all #}
+          {% if role == 'wellbeing' %}
+          <option value="">All programmes</option>
+
+          {% endif %}
+
+          {% for p in programmes %}
+          <option value="{{ p.id }}" {% if p.id==current_programme %}selected{% endif %}>
+            {{ p.code }} – {{ p.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {# ---- Module only show role = course_leader  ---- #}
+      {% if role == 'course_leader' %}
+      <div class="filter-field">
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
           Module
         </label>
-        <select name="module_code" class="form-select form-select-sm">
-          <option value="">All programmes</option>
-          {# modules 是后端传入的 [{code, name}] 列表 #}
-          {% for m in modules|default([]) %}
-            <option value="{{ m.code }}"
-                    {% if m.code == current_module|default('') %}selected{% endif %}>
-              {{ m.code }} – {{ m.name }}
-            </option>
+
+        {# ======== Disable until programme selected ======== #}
+        <select id="module-select" name="module_id" class="form-select form-select-sm" {% if not current_programme
+          %}disabled{% endif %}>
+
+          {% if current_programme %}
+          {# ------ programme selected → show All modules ------ #}
+          <option value="" {% if not current_module %}selected{% endif %}>
+            All modules
+          </option>
+
+          {% for m in modules %}
+          <option value="{{ m.id }}" {% if m.id==current_module %}selected{% endif %}>
+            {{ m.code }} – {{ m.name }}
+          </option>
           {% endfor %}
+
+          {% else %}
+          {# ------ programme NOT selected → show placeholder ------ #}
+          <option value="">Select programme first</option>
+          {% endif %}
+
         </select>
       </div>
+      {% endif %}
 
-      <div class="col-12 col-md-3 text-md-end">
+      {# ---- Apply button ---- #}
+      <div class="ms-auto">
         <button type="submit" class="btn btn-primary btn-sm px-4">
           Apply
         </button>
       </div>
+
     </form>
   </div>
+  {# ==== index card: based on roles ==== #}
+  {% if role == 'wellbeing' %}
 
-  {# ==== 指标卡片区：总体睡眠 / 压力 / 样本数 等 ==== #}
+  {# ------- Student Wellbeing Officer ------- #}
   <div class="row g-3 mb-3">
     <div class="col-12 col-md-4">
       <div class="card-elevated h-100">
@@ -101,7 +150,7 @@
           <span class="text-muted small">hrs / night</span>
         </div>
         <p class="text-muted small mb-0 mt-1">
-          Based on selected week & module.
+          Based on selected week & programme.
         </p>
       </div>
     </div>
@@ -145,168 +194,661 @@
     </div>
   </div>
 
-  {# ==== 折线图区域：多周趋势（压力 / 睡眠） ==== #}
-   <div class="card-elevated mb-3">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="mb-0">Stress & Sleep over weeks</h6>
-      <span class="text-muted small">Average values per week</span>
+  {% elif role == 'course_leader' %}
+
+  {# ------- Course Leader ------- #}
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-md-4">
+      <div class="card-elevated h-100">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="small text-uppercase text-muted fw-semibold">
+            Avg Attendance Rate
+          </span>
+        </div>
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="fs-3 fw-semibold">
+            {{ ((summary.avg_attendance_rate or 0) * 100)|round(1) }}
+          </span>
+          <span class="text-muted small">%</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">
+          Across selected weeks & modules.
+        </p>
+      </div>
     </div>
-    <div style="height: 320px;">
-      <canvas id="lineChart"></canvas>
+
+    <div class="col-12 col-md-4">
+      <div class="card-elevated h-100">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="small text-uppercase text-muted fw-semibold">
+            Avg Submission Rate
+          </span>
+        </div>
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="fs-3 fw-semibold">
+            {{ ((summary.avg_submission_rate or 0) * 100) | round(1) }}
+          </span>
+          <span class="text-muted small">%</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">
+          Proportion of submitted assignments.
+        </p>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card-elevated h-100">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="small text-uppercase text-muted fw-semibold">
+            Avg Grade
+          </span>
+        </div>
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="fs-3 fw-semibold">
+            {{ (summary.avg_grade or 0) | round(1) }}
+          </span>
+          <span class="text-muted small">/ 100</span>
+        </div>
+        <p class="text-muted small mb-0 mt-1">
+          Based on submitted assignments only.
+        </p>
+      </div>
     </div>
   </div>
 
-  {# ==== 柱状图：按课程的出勤率 / 成绩 ==== #}
-  <!-- <div class="card-elevated mb-3">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="mb-0">Attendance Rate by Module</h6>
-      <span class="text-muted small">0–100% attendance</span>
-    </div>
-    <div style="height: 320px;">
-      <canvas id="barChart"></canvas>
-    </div>
-  </div> -->
+  {% endif %}
 
-    {# ==== 需要联系的学生列表 ==== #}
+  {# ==== line chart: trend across week(stress/sleep/response) ==== #}
+  {% if role == 'wellbeing' %}
+  <div class="card-elevated mb-3">
+    <h6 class="mb-0">Stress & Sleep over weeks</h6>
+    <div style="height: 320px;">
+      <canvas id="lineChartWellbeing"></canvas>
+    </div>
+  </div>
   <div class="card-elevated mb-3">
     <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">Programme wellbeing & engagement</h6>
+      <span class="text-muted small">
+        Compare average stress, attendance, submissions and grades by programme.
+      </span>
+    </div>
+    <div style="height: 340px;">
+      <canvas id="programmeEngagementChart"></canvas>
+    </div>
+  </div>
+  {% endif %}
+  {% if role == 'course_leader' %}
+  <div class="card-elevated mb-3">
+    <h6 class="mb-0">Attendance Trend over Weeks</h6>
+    <div style="height: 320px;">
+      <canvas id="lineChartCourse"></canvas>
+    </div>
+  </div>
+
+  <div class="card-elevated mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">Submissions by Module</h6>
+      <span class="text-muted small">Submitted vs Unsubmitted</span>
+    </div>
+    <div style="height: 320px;">
+      <canvas id="submissionBarChart"></canvas>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if role == 'course_leader' %}
+  <div class="card-elevated mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">Attendance vs Grades</h6>
+      <span class="text-muted small">Each dot represents one student</span>
+    </div>
+    <div style="height: 320px;">
+      <canvas id="attendanceGradeScatter"></canvas>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ==== student at risk ==== #}
+  <div class="card-elevated mb-3">
+    {% if role == "wellbeing" %}
+    <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="mb-0">
-        {% if role == "wellbeing" %}
-          Students to contact (wellbeing risk)
-        {% else %}
-          Students to contact (engagement risk)
-        {% endif %}
+        Students to contact (wellbeing risk)
       </h6>
       <span class="text-muted small">
         Auto-flagged based on recent stress / attendance / submissions.
       </span>
     </div>
-
     {% if students_to_contact %}
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Student ID</th>
-              <th>Name</th>
-              <th>Reason</th>
-              <th>Details</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for s in students_to_contact %}
-              <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ s.student_id }}</td>
-                <td>{{ s.name }}</td>
-                <td>{{ s.reason }}</td>
-                <td>{{ s.detail }}</td>
-                <td>
-                  <!-- <a class="btn btn-sm btn-outline-primary"
-                     href="{{ url_for('view_data', role=role, data_type='wellbeing') }}">
-                    View record
-                  </a> -->
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Reason</th>
+            <th>Details</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students_to_contact %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ s.student_id }}</td>
+            <td>{{ s.name }}</td>
+            <td>{{ s.email }}</td>
+            <td>{{ s.reason }}</td>
+            <td>{{ s.detail }}</td>
+            <td>
+              <a class="btn btn-sm btn-outline-primary"
+                href="{{ url_for('view_data', role=role, data_type='wellbeing',student_id=s.student_id)}}">
+                View record
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
     {% else %}
-      <p class="text-muted small mb-0">
-        No students currently flagged for follow-up in the selected period.
-      </p>
+    <p class="text-muted small mb-0">
+      No students currently flagged for follow-up in the selected period.
+    </p>
+    {% endif %}
+
+    {% elif role == "course_leader" %}
+    {# --- Attendance risk --- #}
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">Students to contact (attendance risk)</h6>
+      <span class="text-muted small">
+        Low attendance over selected weeks.
+      </span>
+    </div>
+    {% if attendance_risk_students %}
+    <div class="table-responsive mb-3">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Module</th>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Attendance rate</th>
+            <th>Absent sessions</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in attendance_risk_students %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ s.module_code }}</td>
+            <td>{{ s.student_id }}</td>
+            <td>{{ s.name }}</td>
+            <td>{{ s.email }}</td>
+            <td>{{ (s.attendance_rate * 100)|round(1) }}%</td>
+            <td>{{ s.absent_sessions }}</td>
+            <td>
+              <a class="btn btn-sm btn-outline-primary"
+                href="{{ url_for('view_data', role=role, data_type='attendance',student_id=s.student_id)}}">
+                View record
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted small">
+      No students with low attendance in the selected range.
+    </p>
+    {% endif %}
+    {# --- submission risk --- #}
+    <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+      <h6 class="mb-0">Students to contact (submission risk)</h6>
+      <span class="text-muted small">
+        Missing or late submissions.
+      </span>
+    </div>
+
+    {% if submission_risk_students %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Missing submissions</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in submission_risk_students %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ s.student_id }}</td>
+            <td>{{ s.name }}</td>
+            <td>{{ s.email }}</td>
+            <td>{{ s.offending_module_count }}</td>
+            <td>
+             {# Expand details: What's Missing in Each Course #}
+              <ul class="mb-0 ps-3">
+                {% for d in s.details %}
+                <li>
+                  {{ d.courseId }} – {{ d.courseName }}
+                  (Assignment {{ d.assignmentNo }}, {{ d.status }})
+                </li>
+                {% endfor %}
+              </ul>
+            </td>
+            <td>
+              <a class="btn btn-sm btn-outline-primary"
+                href="{{ url_for('view_data', role=role, data_type='submissions',student_id=s.student_id)}}">
+                View record
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-muted small mb-0">
+      No students with submission issues in the selected range.
+    </p>
+    {% endif %}
     {% endif %}
   </div>
+  {# --- AI insight: high stress & low sleep vs engagement --- #}
+    <div class="mt-3 pt-3 border-top">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="mb-0">AI insight: high stress & low sleep group</h6>
+
+        <form method="get" action="{{ url_for('dashboard', role=role) }}" class="d-inline">
+           {# Keep the current filter conditions #}
+          <input type="hidden" name="start_week" value="{{ current_start_week }}">
+          <input type="hidden" name="end_week" value="{{ current_end_week }}">
+          <input type="hidden" name="programme_id" value="{{ current_programme }}">
+          <input type="hidden" name="run_ai" value="1">
+          <button type="submit" class="btn btn-sm btn-outline-primary">
+            Run AI analysis
+          </button>
+        </form>
+      </div>
+  {% if ai_result %}
+  {% if ai_result.aiAnalysis.status == 'ok' %}
+  <div class="small p-2 rounded bg-light" style="white-space: pre-line;">
+    {{ ai_result.aiAnalysis.text }}
+  </div>
+  {% else %}
+  <div class="small text-danger">
+    AI analysis error: {{ ai_result.aiAnalysis.message }}
+  </div>
+  {% endif %}
+  {% else %}
+  <p class="small text-muted mb-0">
+    Click "Run AI analysis" to generate a short summary comparing high stress & low sleep students with others.
+  </p>
+  {% endif %}
+</div>
 </div>
 
 {% endblock %}
 
 {% block scripts %}
 <script>
-  // 从后端传来的数据（Python list -> JS array）
-  const weeks       = {{ weeks_for_chart|tojson }};
-  const avgStress   = {{ avg_stress|tojson }};
-  const avgSleep    = {{ avg_sleep|tojson }};
-  const modules     = {{ modules_for_chart|tojson }};
-  const attRate     = {{ attendance_rate|tojson }};
+  const ROLE = {{ role| tojson }};
+  const weeks = {{ weeks_for_chart| tojson }};
+  const avgStress = {{ avg_stress| tojson }};
+  const avgSleep = {{ avg_sleep| tojson }};
+  const attendanceTrend = {{ attendance_trend| tojson }};
+  const scatterPoints = {{ scatter_points | tojson }};
+  const programmes = {{ programmes | tojson}}
 
+
+  const programmeStats = {{ programme_stats | tojson }};
+  const programmeLabels = programmeStats.labels || [];
+  const programmeAvgStress = programmeStats.avgStress || [];
+  const programmeAttendanceRate = programmeStats.attendanceRate || [];
+  const programmeSubmissionRate = programmeStats.submissionRate || [];
+  const programmeAvgGrade = programmeStats.avgGrade || [];
+
+  console.log("scatterPoints =", scatterPoints);
+  console.log("ROLE =", ROLE);
   console.log("weeks =", weeks);
   console.log("avgStress =", avgStress);
   console.log("avgSleep =", avgSleep);
-  console.log("modules =", modules);
-  console.log("attRate =", attRate);
-  // ========= 折线图 =========
-  const lineCtx = document.getElementById('lineChart').getContext('2d');
-  new Chart(lineCtx, {
-    type: 'line',
-    data: {
-      labels: weeks,
-      datasets: [
-        {
-          label: 'Avg Stress (1–5)',
-          data: avgStress,
-          tension: 0.3,
-          borderWidth: 2,
-          pointRadius: 3,
-        },
-        {
-          label: 'Avg Sleep (hours)',
-          data: avgSleep,
-          tension: 0.3,
-          borderWidth: 2,
-          pointRadius: 3,
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { title: { display: true, text: 'Week' } },
-        y: { title: { display: true, text: 'Value' } }
-      },
-      plugins: {
-        legend: { display: true },
-        tooltip: { enabled: true }
-      }
-    }
-  });
+  console.log("attendanceTrend =", attendanceTrend);
 
-  // ========= 柱状图 =========
-  const barCtx = document.getElementById('barChart').getContext('2d');
-  new Chart(barCtx, {
-    type: 'bar',
-    data: {
-      labels: modules,
-      datasets: [
-        {
-          label: 'Attendance rate (%)',
-          data: attRate.map(x => x * 100),  // 0.85 -> 85
-          borderWidth: 1,
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          beginAtZero: true,
-          max: 100,
-          title: { display: true, text: 'Attendance %' }
-        }
+  function renderLineChart(canvasId, labels, datasets) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: datasets
       },
-      plugins: {
-        tooltip: {
-          callbacks: {
-            label: ctx => ctx.parsed.y.toFixed(1) + '%'
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { title: { display: true, text: 'Week' } },
+          y: { title: { display: true, text: 'Value' } }
+        },
+        plugins: {
+          legend: { display: true },
+          tooltip: { enabled: true }
+        }
+      }
+    });
+  }
+
+  // ========= wellbeing line chart=========
+  if (ROLE === "wellbeing" && weeks.length > 0) {
+    renderLineChart("lineChartWellbeing", weeks, [
+      {
+        label: "Avg Stress (1–5)",
+        data: avgStress,
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 3,
+      },
+      {
+        label: "Avg Sleep (hours)",
+        data: avgSleep,
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 3,
+      }
+    ]);
+  }
+
+  // ========= Programme wellbeing & engagement (wellbeing role only) =========
+  if (ROLE === "wellbeing" && programmeLabels.length > 0) {
+    const ctxProg = document.getElementById("programmeEngagementChart");
+    if (ctxProg) {
+      const ctx = ctxProg.getContext("2d");
+      
+      const toPercent = (arr) =>
+        (arr || []).map(v => (v == null ? null : v * 100));
+
+      const attendancePercent = toPercent(programmeAttendanceRate);  // 0–1 → 0–100
+      const submissionPercent = toPercent(programmeSubmissionRate);  // 0–1 → 0–100
+      const avgGradeData = (programmeAvgGrade || []).map(
+        v => (v == null ? null : v)
+      );
+      const stressData = (programmeAvgStress || []).map(
+        v => (v == null ? null : v)
+      );
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: programmeLabels,
+          datasets: [
+            {
+              label: "Attendance rate (%)",
+              data: attendancePercent,
+              borderWidth: 1,
+              yAxisID: "y",
+            },
+            {
+              label: "Submission rate (%)",
+              data: submissionPercent,
+              borderWidth: 1,
+              yAxisID: "y",
+            },
+            {
+              label: "Average grade",
+              data: avgGradeData,
+              borderWidth: 1,
+              yAxisID: "y",
+            },
+            {
+              label: "Average stress (1–5)",
+              data: stressData,
+              type: "line",        // line on bar
+              borderWidth: 2,
+              pointRadius: 3,
+              yAxisID: "y1",
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: { display: true, text: "Programme" },
+            },
+             // Left axis: Percentage + grade
+            y: {
+              position: "left",
+              beginAtZero: true,
+              title: { display: true, text: "Attendance / Submission / Grade (%)" }
+            },
+            // right：stress 1–5
+            y1: {
+              position: "right",
+              beginAtZero: true,
+              min: 0,
+              max: 5,
+              title: { display: true, text: "Average stress (1–5)" },
+              grid: { drawOnChartArea: false } 
+            }
+          },
+          plugins: {
+            legend: { display: true },
+            tooltip: { enabled: true }
           }
         }
+      });
+    }
+  }
+
+  // ========= course_leader line =========
+  if (ROLE === "course_leader" && weeks.length > 0) {
+    renderLineChart("lineChartCourse", weeks, [
+      {
+        label: "Attendance Rate (%)",
+        data: attendanceTrend.map(x => x * 100),  // 0.8 -> 80
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 3,
+      }
+    ]);
+  }
+
+  // ========== Attendance vs Grades Scatter (course_leader) ==========
+  if (ROLE === "course_leader") {
+    const scatterCanvas = document.getElementById("attendanceGradeScatter");
+    if (scatterCanvas && Array.isArray(scatterPoints) && scatterPoints.length > 0) {
+
+      //  Chart.js need {x, y} 
+      const scatterData = scatterPoints
+        .filter(p => p.attendanceRate != null && p.avgGrade != null)
+        .map(p => ({
+          x: p.attendanceRate * 100,   // 0.85 -> 85%
+          y: p.avgGrade,
+          label: p.name || p.studentId
+        }));
+
+      new Chart(scatterCanvas.getContext("2d"), {
+        type: "scatter",
+        data: {
+          datasets: [
+            {
+              label: "Students",
+              data: scatterData,
+              pointRadius: 4,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: { display: true, text: "Attendance rate (%)" },
+              min: 0,
+              max: 100,
+            },
+            y: {
+              title: { display: true, text: "Average grade" },
+              min: 0,
+              max: 100,
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const p = ctx.raw;
+                  return `${p.label}: ${p.x.toFixed(1)}% attendance, ${p.y.toFixed(1)} grade`;
+                }
+              }
+            },
+            legend: { display: false }
+          }
+        }
+      });
+    }
+  }
+  // ========== Submission Chart ==========
+  const subLabels = {{ submission_labels | default ([], true) | tojson }};
+  const subSubmitted = {{ submission_submitted | default ([], true) | tojson }};
+  const subUnsubmitted = {{ submission_unsubmitted | default ([], true) | tojson }};
+
+  console.log("subLabels =", subLabels);
+  console.log("subSubmitted =", subSubmitted);
+  console.log("subUnsubmitted =", subUnsubmitted);
+
+  const subCtx = document.getElementById('submissionBarChart');
+  if (subCtx) {
+    new Chart(subCtx.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: subLabels,   // X ：every module
+        datasets: [
+          {
+            label: 'Submitted',
+            data: subSubmitted,
+            borderWidth: 1,
+          },
+          {
+            label: 'Unsubmitted',
+            data: subUnsubmitted,
+            borderWidth: 1,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            stacked: false
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'Number of students' }
+          }
+        },
+        plugins: {
+          tooltip: { enabled: true },
+          legend: { display: true }
+        }
+      }
+    });
+  }
+</script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const startSelect = document.getElementById("start-week-select");
+    const endSelect = document.getElementById("end-week-select");
+
+    function syncWeeks() {
+      const start = parseInt(startSelect.value);
+      const end = parseInt(endSelect.value);
+
+      if (start > end) {
+        endSelect.value = start;
       }
     }
+
+    startSelect.addEventListener("change", syncWeeks);
+    endSelect.addEventListener("change", syncWeeks);
   });
 </script>
+
+{% if role == 'course_leader' %}
+<script>  
+  const MODULES_BY_PROGRAMME = {{ modules_by_programme | tojson }};
+  const CURRENT_PROGRAMME = {{ current_programme | tojson }};
+  let CURRENT_MODULE = {{ current_module | tojson }};
+
+  console.log("MODULES_BY_PROGRAMME =", MODULES_BY_PROGRAMME);
+
+  function updateModuleOptions(programmeId) {
+    const moduleSelect = document.getElementById("module-select");
+    if (!moduleSelect) return;
+
+   // programme Not selected → Disabled
+    if (!programmeId || !MODULES_BY_PROGRAMME[programmeId]) {
+      moduleSelect.innerHTML = "<option value=''>Select programme first</option>";
+      moduleSelect.disabled = true;
+      return;
+    }
+
+    // programme selected → Fill module
+    const moduleList = MODULES_BY_PROGRAMME[programmeId] || [];
+    moduleSelect.disabled = false;
+
+    moduleSelect.innerHTML = "";
+
+    // ALL modules
+    const allOpt = document.createElement("option");
+    allOpt.value = "";
+    allOpt.textContent = "All modules";
+    if (!CURRENT_MODULE) allOpt.selected = true;
+    moduleSelect.appendChild(allOpt);
+
+    // append modules
+    moduleList.forEach(m => {
+      const opt = document.createElement("option");
+      opt.value = m.id;
+      opt.textContent = `${m.code} – ${m.name}`;
+      if (m.id === CURRENT_MODULE) {
+        opt.selected = true;
+      }
+      moduleSelect.appendChild(opt);
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const programmeSelect = document.getElementById("programme-select");
+    if (!programmeSelect) return;
+
+    // first loading
+    updateModuleOptions(CURRENT_PROGRAMME || programmeSelect.value);
+    
+    // When the programme changes, link with the module
+    programmeSelect.addEventListener("change", (e) => {
+      CURRENT_MODULE = "";   // clear old module
+      updateModuleOptions(e.target.value);
+    });
+  });
+</script>
+{% endif %}
 {% endblock %}

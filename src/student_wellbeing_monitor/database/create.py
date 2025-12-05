@@ -1,6 +1,5 @@
 # create.py
-from student_wellbeing_monitor.database.db_core import get_conn, _hash_pwd
-
+from student_wellbeing_monitor.database.db_core import _hash_pwd, get_conn
 
 # ================= Programme (Create) ==================
 
@@ -151,7 +150,7 @@ def insert_submission(
 
 
 # ================== User & Roles (Create) ==================
-# TODO： 角色权限控制待后期补充
+# TODO： Authority Control
 
 
 def create_user(username, password, role):

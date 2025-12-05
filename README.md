@@ -1,203 +1,228 @@
 # Student-Wellbeing-Monitor
 
-A prototype system designed to support the Student Wellbeing Office and Course Directors by collecting, analysing and visualising student wellbeing and engagement data.
+A prototype system designed to support the Student Wellbeing Office and Course Directors by collecting, analysing, and visualising student wellbeing and engagement data (attendance, submissions, survey responses, etc.).
 
-## 项目命令说明
+[TOC]
 
-请使用poetry
+## **Overview**
 
- 以下所有命令都在项目根目录下运行
+Student-Wellbeing-Monitor is a small prototype system built in Python 3 with a relational database backend (SQLite).
+It aims to demonstrate how a university can:
 
-**生成假数据**
+- Collect and store data such as attendance, coursework submissions, and weekly wellbeing surveys.
+- Provide simple analytics (averages, trends, comparisons).
+- Support basic CRUD operations for authorised users.
+- Visualise key indicators for programmes and modules (courses).
 
+The system is intentionally lightweight and designed for teaching and experimentation, not for production use.
+
+## **Screenshots**
+
+![](https://github.com/lw384/picx-images-hosting/raw/master/Screenshot-2025-12-05-at-17.15.49.8l0jahy89s.webp)
+
+![](https://github.com/lw384/picx-images-hosting/raw/master/Screenshot-2025-12-05-at-17.18.38.464qum773.webp)
+
+## **Features**
+
+- **Data collection & storage**
+  - Students, modules, and relationships.
+  - Weekly attendance, wellbeing surveys, and submissions.
+- **Analytics**
+  - Attendance trends by module or programme.
+  - Submission summaries (submitted / not submitted).
+  - Low-attendance student lists.
+  - Cross-feature analytics (attendance vs grades, wellbeing vs engagement).
+- **Visualisation**
+  - Charts such as bar charts, line charts, scatter plots.
+  - Programme-level wellbeing and engagement overview.
+- **Mock data generation**
+  - Fully configurable CSV generator matching the final DB schema.
+  - Easy setup of local demo data for experimentation.
+- **Clean architecture**
+  - Separation between UI, services, database access, and models.
+- **Testing**
+  - Pytest-based unit tests.
+
+## **Tech Stack**
+
+**Language:** Python 3
+
+- **Package / Environment Management:** Poetry
+- **Database:** SQLite (local file)
+- **Web UI:** Flask, Chart.js
+- **CLI:** Python CLI entrypoint via Poetry scripts
+- **Testing:** pytest
+
+## **Project Structure**
+
+```bash
+├── API.md                               # Draft API
+├── README.md                            # Project documentation and usage guide
+│
+├── archive/                             # Exported analytics (CSV summaries)
+│   ├── attendance_summary.csv
+│   ├── submission_summary.csv
+│   └── wellbeing_summary.csv
+│
+├── database/
+│   └── student.db                       # SQLite database used by the application
+│
+├── mock_data/
+│   ├── mock/                            # Generated mock CSV files (students, modules, etc.)
+│   └── scripts/                         # Mock data generation utilities
+│       ├── generate_all.py              # Generate full dataset (entities + behaviour)
+│       ├── generate_behaviour.py        # Create wellbeing, attendance, submission data
+│       ├── generate_entities.py         # Create students, programmes, modules
+│       └── mock_core/                   # Core logic for mock data generation
+│           ├── attendance.py
+│           ├── base.py
+│           ├── entities.py
+│           ├── submission.py
+│           └── wellbeing.py
+│
+├── poetry.lock                          # Poetry lockfile (dependency versions)
+├── pyproject.toml                       # Poetry configuration (deps, scripts, metadata)
+│
+└── src/
+    ├── student_wellbeing_monitor/
+    │   ├── database/                    # Data access layer (CRUD + schema)
+    │   │   ├── create.py
+    │   │   ├── db_core.py
+    │   │   ├── delete.py
+    │   │   ├── read.py
+    │   │   ├── schema.py
+    │   │   └── update.py
+    │   │
+    │   ├── services/                    # Business logic and analytics layer
+    │   │   ├── archive_service.py
+    │   │   ├── attendance_service.py
+    │   │   ├── course_service.py
+    │   │   ├── upload_service.py
+    │   │   └── wellbeing_service.py
+    │   │
+    │   ├── tools/                       # CLI tools and setup utilities
+    │   │   ├── archive.py               # Export summaries to CSV
+    │   │   ├── reset_db.py              # Reset database
+    │   │   ├── setup_demo.py            # Load demo/mock data into DB
+    │   │   └── start.py                 # Start system with demo data
+    │   │
+    │   └── ui/                          # Web UI
+    │       ├── app.py                   # Flask entry point
+    │       └── templates/               # HTML templates for the UI
+    │
+    └── tests/                           # Automated tests (pytest)
+        ├── conftest.py                  # Shared fixtures
+        ├── test_app.py                  # UI / API tests
+        ├── test_database.py             # Database-layer tests
+        └── test_services.py             # Service-layer tests
 ```
-# 只在 mock-data/mock下生成 表 student programme module 的数据
-poetry run python mock_data/scripts/generate_entities.py
-# 只在 mock-data/mock下根据已有的 student programme module 的数据 生成wellbeing attendance submission 数据
-poetry run python mock_data/scripts/generate_behaviour.py
-# 在 mock-data/mock 下生成全部假数据
-poetry run python mock_data/scripts/generate_all.py
-```
 
-**生成假数据 + 写入本地库中**
+## **Getting Started**
 
-```
-# 只生成 student programme module 的数据 并写入
-poetry run setup-demo
-# 生成全部假数据并全部写入
-poetry run setup-demo --with-mock
-```
+### **Prerequisites**
 
-**生成假数据 + 写入本地库 + 启动前端**
+- Python 3.x installed
 
-```
-poetry run start
-```
+- [Poetry](https://python-poetry.org/) installed
 
-**只启动前端**
-
-```
-poetry run wellbeing-web
-```
-
-**启动测试**
-
-```
-# 全量测试
-poetry run pytest
-```
-
-
-
-## Project Setup – Poetry Environment
-
-This project uses Poetry to manage dependencies, virtual environments and scripts.
-Before starting, ensure **Poetry** is installed:
+Install Poetry if you don’t have it:
 
 ```
 pip install poetry
 ```
-Install project dependencies
+
+### **Installation**
 
 From the project root:
+
 ```
+# Install dependencies
 poetry install
 ```
-setup with mock data
+
+## **Core Commands (Poetry Scripts)**
+
+> All commands below are intended to be run **from the project root** and use Poetry.
+
+### **Generate Mock Data (CSV only)**
+
+Generate data into mock_data/mock/ without inserting into the local database:
+
+```
+# Generate only student, programme, and module data (CSV)
+poetry run python mock_data/scripts/generate_entities.py
+
+# Based on existing student/programme/module CSVs, generate wellbeing/attendance/submission data
+poetry run python mock_data/scripts/generate_behaviour.py
+
+# Generate all mock CSV data (students, modules, attendance, wellbeing, submissions)
+poetry run python mock_data/scripts/generate_all.py
+```
+
+### **Generate Mock Data and Insert into Local DB**
+
+```
+# Generate only student/programme/module data and insert into the local DB
+poetry run setup-demo
+
+# Generate full mock dataset (entities + behaviour) and insert everything into the local DB
+poetry run setup-demo --with-mock
+```
+
+### **Generate Mock Data, Insert into DB, and Start Web UI**
 
 ```
 poetry run start
 ```
 
-Insert mock data to database
+This script will:
 
-``````
-poetry run setup-demo
-``````
+1. Prepare mock data and insert it into the local database.
 
-Setup project without mock 
+2. Start the web frontend (Flask app).
 
-``````
+
+### **Start Web UI Only**
+
+```
 poetry run wellbeing-web
+```
+
+The web UI entry file is located at:
+
+```
+src/wellbeing_system/ui/app.py
+```
+
+Then open your browser at: http://127.0.0.1:5000
+
+### **Run Tests**
+
+```
+# Run the full test suite
+poetry run pytest
+poetry run pytest --cov #test coverage summary
+```
+
+### **Archive For Data Privacy**
+
+Export summaries only (no deletion):
+
+``````
+poetry run archive-data
 ``````
 
+Archive & **delete** data from database (requires explicit confirmation):
 
+``````
+poetry run archive-data --confirm
+``````
 
-## Project Structure
-
-```
-student-wellbeing-monitor/
-│
-├── pyproject.toml                  # Poetry config (dependencies + scripts)
-├── README.md                       # Documentation (this file)
-│
-├── data/                           # SQLite DB, runtime data (ignored by Git)
-│   └── wellbeing.db
-│
-├── src/
-│   └── wellbeing_system/           # Main Python package
-│       ├── __init__.py
-│       │
-│       ├── ui/                     # ui
-│       │   ├── __init__.py
-│       │   ├── cli_main.py         # CLI entry point
-│       │   ├── menu.py             # Menu navigation
-│       │   └── app.py              # Flask Web Demo 
-│       │
-│       ├── services/               # Business logic layer
-│       │   ├── wellbeing_service.py
-│       │   ├── engagement_service.py
-│       │   └── analytics_service.py
-│       │
-│       ├── database/           # Data access layer (SQLite)
-│       │   ├── db_init.py
-│       │   ├── student_repository.py
-│       │   ├── attendance_repository.py
-│       │   └── wellbeing_repository.py
-│       │
-│       └── models/                 # Optional data models (dataclasses)
-│
-└── tests/                          # Unit tests (TDD)
-```
-
-## Running the Application
-Start Flask web 
-
-```
-poetry run wellbeing
-```
-Then open:
-http://127.0.0.1:5000
-
-## Running Tests
-
- ```
- poetry run pytest
- ```
-
-## Git Commit
-
-1. Commit 由两部分组成
-
-```
-<type>: <short summary>
-(optional detailed description...)
-```
-
-2. 使用以下 6 个固定 type
-
-- type	用途说明
-- feat	新功能（新增模块、新接口、新脚本）
-- fix	修复 bug、修复逻辑错误
-- data	mock 数据相关（generate scripts、CSV、数据结构等）
-- refactor	代码重构，不改变功能（重命名、拆分文件）
-- docs	文档更新（README、架构文档、注释）
-- test	添加或修改测试（pytest/unittest）
-
-3. commit message 要简短、具体
-
-好例子：
-
-- feat: add attendance generator by week
-
-- fix: correct module_code mapping in submissions
-- refactor: split mock_core into 4 modules
-- docs: add guide for using generate_all script
-- data: regenerate wellbeing mock data for week 1-8
-- test: add tests for write_csv helper
-
-坏例子（不要这样）：
-
-- update code
-- fix something
-- changes
-- final version
-
-4. 每次 commit 做“一件事”
-
-不要把：
-	•	mock 数据
-	•	UI 修改
-	•	database schema
-	•	test
-
-一次 commit 全混在一起。
-
-5. commit 频率建议
-   - 一天至少 2–4 次（功能点 / 阶段点）
-   - 每次小改动都要 commit，不要积压到一个大 commit
-6. 分支建议（极简）
-
-- main: 稳定版
-- dev：开发版
-- feature/... ： 功能开发
-  fix/...: 修 bug
-
-## Mock
+## **Mock Data Generator**
 
 To support development and testing, this project includes a flexible mock data generator.
 
-All mock data (students, modules, attendance, submissions, wellbeing) can be produced using a single command-driven script powered by **Poetry + Python**
+All mock data (students, modules, attendance, submissions, wellbeing) can be produced using a single script, driven via Poetry.
 
 Mock data is generated into:
 
@@ -205,95 +230,100 @@ Mock data is generated into:
 mock_data/mock/
 ```
 
-and follows the final database schema and data model used in the application
+and follows the final database schema and data model used in the application.
 
-### 1.Basic Usage — Generate All Mock Data
-
-Run the following command:
+### **1. Basic Usage — Generate All Mock Data**
 
 ```
 poetry run python mock_data/scripts/generate_all.py
 ```
 
-This will generate:
+This command generates:
 
+- programme.csv
 - students.csv
-
 - modules.csv
-
 - student_modules.csv
-
-- Weekly attendance files: attendance_week1.csv, …
-
-- Weekly wellbeing files: wellbeing_week1.csv, …
-
+- Weekly attendance files: attendance_week1.csv, attendance_week2.csv, …
+- Weekly wellbeing files: wellbeing_week1.csv, wellbeing_week2.csv, …
 - Per-module submission files:
 
-  submissions-<module_code>.csv (e.g., submissions-WG1F6.csv)
+    - submissions-<module_code>.csv (e.g. submissions-WG1F6.csv)
 
-All files will be placed in data/mock/.
 
-### 2. Clean Existing Mock Data Before Generating
 
-If you want to clear old generated files:
+All files are placed under mock_data/mock/.
+
+### **2. Clean Existing Mock Data Before Generating**
 
 ```
 poetry run python mock_data/scripts/generate_all.py --clean
 ```
 
-What --clean does:
+--clean will:
 
-- Deletes **only** .csv files in data/mock/
+- Delete **only** .csv files in mock_data/mock/
 
-- Keeps the directory and any non-CSV files safe
+- Preserve the directory itself and any non-CSV files
 
-- Ensures a clean environment for new mock data
+- Ensure a clean environment for new mock data generation
 
-### 3. Customisation Options
 
-The script supports configurable parameters.
+### **3. Customisation Options**
 
-**Change number of students**
+**Change the number of students**
 
 ```
 poetry run python mock_data/scripts/generate_all.py --students 50
 ```
 
-**Change number of modules**
+**Change the number of modules**
 
 ```
 poetry run python mock_data/scripts/generate_all.py --modules 8
 ```
 
-**Change number of weeks (for attendance & wellbeing)**
+**Change the number of weeks (for attendance & wellbeing)**
 
 ```
 poetry run python mock_data/scripts/generate_all.py --weeks 12
 ```
 
-**Change output directory**
+**Change the output directory**
 
 ```
 poetry run python mock_data/scripts/generate_all.py --out my_output_dir/
 ```
 
-**Generate full dataset with custom size:**
+**Generate a full dataset with custom sizes**
 
 ```
 poetry run python mock_data/scripts/generate_all.py --students 40 --modules 6 --weeks 10
 ```
 
-**Clean then regenerate:**
+**Clean and then regenerate**
 
 ```
 poetry run python mock_data/scripts/generate_all.py --clean --students 20 --weeks 6
 ```
 
-5. Generated Data Overview
+### **4. Generated Data Overview**
 
 The generated mock data includes:
 
-**Students**
+#### **Programme**
+
+7 programmes
+
+File:
+
+``````
+programme.csv
+``````
+
+#### **Students**
+
+File:
 
 ```
 students.csv
@@ -303,22 +333,28 @@ Columns:
 
 - student_id (7-digit, starting with 5)
 - name
-- email (@warwick.ac.uk)
-- modules (comma-separated module codes)
+- email (e.g. @warwick.ac.uk)
+- programme id
 
-**Modules**
+#### **Modules**
+
+File:
 
 ```
 modules.csv
 ```
 
-**Student–Module Relationships**
+#### **Student–Module Relationships**
+
+File:
 
 ```
 student_modules.csv
 ```
 
-**Weekly Attendance**
+#### **Weekly Attendance**
+
+Files:
 
 ```
 attendance_week1.csv
@@ -326,8 +362,15 @@ attendance_week2.csv
 ...
 ```
 
-Binary attendance (0 = absent, 1 = present)
-**Weekly Wellbeing**
+Binary attendance:
+
+- 0 = absent
+
+- 1 = present
+
+#### **Weekly Wellbeing**
+
+Files:
 
 ```
 wellbeing_week1.csv
@@ -335,75 +378,135 @@ wellbeing_week2.csv
 ...
 ```
 
-Includes stress levels, sleep hours, and simulated behavioural patterns.
+Includes:
 
-Coursework Submissions (Per Module)
+- Stress levels
+
+- Sleep hours
+
+- Simulated behavioural patterns
+
+
+#### **Coursework Submissions (Per Module)**
+
+Files:
 
 ```
 submissions-<module_code>.csv
 ```
 
-Binary submission (submitted=1 / not submitted=0), with realistic grade distributions.
+Binary submission:
 
-## API
+- 1 = submitted
 
-### 用户登录
+- 0 = not submitted
 
-Author: Luowei
 
-| URL         | request | version | status |
-| :---------- | :------ | :------ | :----- |
-| /getstudent | POST    | 1.0     | true   |
+with realistic grade distributions where applicable.
 
-#### 请求参数说明
+## **API Design**
 
-| 请求参数 | 类型   | 必填 | 参数说明   | 示例    |
-| :------- | :----- | :--- | :--------- | :------ |
-| username | String | true | 登录用户名 | carozhu |
-| password | String | true | 登录密码   | 123456  |
+This section contains **Service-layer Python function** designs used internally by the application.
 
-#### 返回参数说明
+You can treat this section as living documentation of the backend capabilities.
 
-| 返回参数     | 参数类型 | 参数说明  |
-| :----------- | :------- | :-------- |
-| responseCode | Integer  | 200：成功 |
-| accessToken  | String   | 用户token |
-| ...          | ...      | ...       |
+- **For more details, see the** **API Document.md** **file in the root folder.**
 
-#### 返回示例JSON
+## **Git Commit Guidelines**
 
-```json
-{
-    "responseCode": 200,
-    "data": {
-        "name": "carozhu",
-        "type": 4,
-        "version": "1.2.4",
-        "file": "http://versions.update.com/xxx.apk",
-        "md5": "6ed86ad3f14db4db716c808cfc1ca392",
-        "description": "update for simple to you！"
-    }
-}
-```
+### **1. Commit Message Structure**
 
-#### code码说明
-
-| code | msg     | desc |
-| :--- | :------ | :--- |
-| 200  | success |      |
-
-#### 接口详细说明 
-
-``` 
-如有特别说明请描述
+Each commit message has two parts:
 
 ```
-
----
-
-#### 备注
-
-``` 
-关于其它错误返回值与错误代码，参见 [Code码说明](#Link)
-
+<type>: <short summary>
+(optional detailed description...)
 ```
+
+### **2. Allowed Types**
+
+Use only the following 6 types:
+
+| **type** | **Use case**                                        |
+| -------- | --------------------------------------------------- |
+| feat     | New feature (new modules, endpoints, scripts, etc.) |
+| fix      | Bug fix, logic fix                                  |
+| data     | Mock data related (generation scripts, CSV, schema) |
+| refactor | Refactor code without changing behaviour            |
+| docs     | Documentation (README, design docs, comments)       |
+| test     | Add or modify tests (pytest/unittest)               |
+
+### **3. Good vs Bad Examples**
+
+**Good examples:**
+
+- feat: add attendance generator by week
+
+- fix: correct module_code mapping in submissions
+
+- refactor: split mock_core into 4 modules
+
+- docs: add guide for using generate_all script
+
+- data: regenerate wellbeing mock data for week 1-8
+
+- test: add tests for write_csv helper
+
+
+**Bad examples (avoid):**
+
+- update code
+
+- fix something
+
+- changes
+
+- final version
+
+
+### **4. One Commit = One Logical Change**
+
+Avoid mixing multiple unrelated changes in one commit. For example, do **not** combine:
+
+- Mock data changes
+
+- UI changes
+
+- Database schema updates
+
+- Test changes
+
+
+into a single commit.
+
+### **5. Commit Frequency**
+
+- Aim for **2–4 commits per day** (per feature / milestone).
+
+- Commit small, incremental changes frequently rather than one huge commit.
+
+
+### **6. Branching Strategy (Minimal)**
+
+- main: stable branch
+
+- dev: development branch
+
+- feature/...: feature branches
+
+- fix/...: bug-fix branches
+
+
+## **Out-of-scope / Not Implemented Yet**
+
+The following ideas are **not included** in the current prototype:
+
+* **Implementation of real user authentication and role-based access control** : The system does not include production-level login, session management, or permission policies.
+
+* **Integration of advanced analytical models or predictive algorithms** : Current analytics focus on descriptive summaries rather than statistical modelling, forecasting, or machine-learning-based risk prediction.
+
+* **Full simulation of real-world academic schedules, programme structures, and teaching patterns**: In reality, different modules may run for varying numbers of weeks, have multiple assessment points, or follow programme-specific timetables.
+* **The prototype uses simplified assumptions**: e.g., uniform 12-week teaching blocks, fixed weekly attendance slots, and standardised submission frequencies—which do not capture the full complexity of actual university courses operations.
+* **Exploring how Large Language Models can be integrated into business workflows**: Enabling non-technical users to generate insights effortlessly while ensuring the accuracy and reliability of analytical outputs—remains a valuable direction for future development.
+
+These can be considered for future iterations.

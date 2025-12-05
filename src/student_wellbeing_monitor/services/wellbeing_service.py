@@ -1,38 +1,36 @@
-from typing import Optional, Dict, Any, List, Tuple
 from collections import defaultdict
-import sys
-import os
+from typing import Any, Dict, List, Optional, Tuple
+
 from student_wellbeing_monitor.database.read import (
     get_all_students,
     get_students_by_programme,
-    get_student_by_id,
     get_wellbeing_records,
 )
 
 
 # =========================================================
-# WellbeingService 类
+# Class: WellbeingService
 # =========================================================
-
-
 class WellbeingService:
     """
-    学生健康服务类，提供仪表盘、趋势分析、出勤率和风险学生等功能
+    Service layer for student wellbeing data processing and analysis
+    contain the method in APIdocuemnt.md:
+    - get_dashboard_summary
+    - get_stress_sleep_trend
+    - get_risk_students
     """
 
     def __init__(self):
-        """初始化 WellbeingService 实例"""
         pass
 
-    # =========================================================
-    # private tool function
-    # =========================================================
-
+    # --------------------------------------------------------
+    # count student
+    # --------------------------------------------------------
     def _get_student_count(self, programme_id: Optional[str]) -> int:
         """
-        统计在当前筛选范围内的学生总数：
-        - programme_id = None  → 所有学生
-        - programme_id = 某专业 → 该专业的所有的学生
+        statistics student count
+        - programme_id = None  → all students
+        - programme_id = not None → students in the specified programme
         """
         if programme_id is None:
             rows = get_all_students()
@@ -41,11 +39,9 @@ class WellbeingService:
             rows = get_students_by_programme(programme_id)
             return len(rows)
 
-    # =========================================================
-    # dashboard
-    #  get card: summary data
-    # =========================================================
-
+    # -------------------------------------------------
+    # 9️⃣ get_dashboard_summary
+    # -------------------------------------------------
     def get_dashboard_summary(
         self,
         start_week: int,
@@ -53,14 +49,14 @@ class WellbeingService:
         programme_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
-        对应前端接口 GET /getDashboardSummary
+        Corresponding frontend interface: GET /getDashboardSummary
 
-        输入:
-            - start_week: 起始周 (含)
-            - end_week:   结束周 (含)
-            - programme_id: 专业 ID None 表示全部课程
+        input:
+            - start_week:
+            - end_week:
+            - programme_id: if None, means all programmes
 
-        输出结构：
+        output structure:
             {
               "avgHoursSlept": 7.1,
               "avgStressLevel": 3.2,
@@ -73,7 +69,7 @@ class WellbeingService:
         if end_week < start_week:
             raise ValueError("end_week must be >= start_week")
 
-        # 1) 查询 wellbeing 原始数据
+        # 1) search wellbeing origin data
         rows = get_wellbeing_records(start_week, end_week, programme_id)
         # rows: (student_id, week, stress_level, hours_slept,programme_id)
 
@@ -83,7 +79,7 @@ class WellbeingService:
         n_sleep = 0
         responded_students = set()
 
-        for student_id, week, stress_level, hours_slept, programme_id in rows:
+        for student_id, week, stress_level, hours_slept, programme_id_record in rows:
             if stress_level is not None:
                 try:
                     total_stress += float(stress_level)
@@ -103,7 +99,7 @@ class WellbeingService:
         avg_stress = round(total_stress / n_stress, 2) if n_stress > 0 else 0.0
         avg_sleep = round(total_sleep / n_sleep, 2) if n_sleep > 0 else 0.0
 
-        # 2) 计算问卷参与人数 & 响应率
+        # 2) Count the responser & Response rate
         total_students = self._get_student_count(programme_id)
         responded_count = len(responded_students)
         response_rate = (
@@ -114,15 +110,13 @@ class WellbeingService:
             "avgStressLevel": avg_stress,
             "surveyResponses": {
                 "studentCount": responded_count,
-                "responseRate": round(response_rate, 2),
+                "responseRate": round(response_rate, 2) * 100,
             },
         }
 
-    # =========================================================
-    # getStressSleepTrend
-    # 获取每周的平均压力与平均睡眠
-    # =========================================================
-
+    # -------------------------------------------------
+    # 🔟 get_stress_sleep_trend
+    # -------------------------------------------------
     def get_stress_sleep_trend(
         self,
         start_week: int,
@@ -130,15 +124,13 @@ class WellbeingService:
         programme_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
-        对应前端接口 GET /getStressSleepTrend
+        Corresponding frontend interface: GET /getStressSleepTrend
 
-        输出结构：
+        ouput structure:
             {
-              "items": [
-                {"week": 1, "avgStress": 3.1, "avgSleep": 7.2},
-                {"week": 2, "avgStress": 3.3, "avgSleep": 7.0},
-                ...
-              ]
+              "weeks": [1, 2, 3, ...],      # X axis: week
+              "stress": [3.1, 3.3, ...],     #  Y axis: average stress level
+              "sleep": [7.2, 7.0, ...]      #  Y axis: average sleep hours
             }
         """
         if end_week < start_week:
@@ -171,8 +163,11 @@ class WellbeingService:
                 except (TypeError, ValueError):
                     pass
 
-        items: List[Dict[str, Any]] = []
         all_weeks = sorted(set(list(stress_sum.keys()) + list(sleep_sum.keys())))
+
+        weeks: List[int] = []
+        stress: List[float] = []
+        sleep: List[float] = []
 
         for w in all_weeks:
             avg_stress = (
@@ -181,20 +176,15 @@ class WellbeingService:
             avg_sleep = (
                 round(sleep_sum[w] / sleep_cnt[w], 2) if sleep_cnt[w] > 0 else 0.0
             )
-            items.append(
-                {
-                    "week": w,
-                    "avgStress": avg_stress,
-                    "avgSleep": avg_sleep,
-                }
-            )
+            weeks.append(w)
+            stress.append(avg_stress)
+            sleep.append(avg_sleep)
 
-        return {"items": items}
+        return {"weeks": weeks, "stress": stress, "sleep": sleep}
 
-    # =========================================================
-    # getRiskStudents: 报告的高风险学生列表
-    # =========================================================
-
+    # -------------------------------------------------
+    # 1️⃣1️⃣ get_risk_students
+    # -------------------------------------------------=
     def get_risk_students(
         self,
         start_week: int,
@@ -205,27 +195,28 @@ class WellbeingService:
         student_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
-        对应前端接口：GET /getRiskStudents
+        Corresponding frontend interface: GET /getRiskStudents
 
-        风险规则：
+        rules of risk:
           - high_risk:
-              存在连续 3 周，同时满足 stress >= threshold 且 sleep < sleep_threshold
+              3 consecutive weeks, simultaneously satisfy stress >= threshold and sleep < sleep_threshold
           - potential_risk:
-              有任意一周，同时满足 stress >= threshold 且 sleep < sleep_threshold
-          - normal (仅当指定 student_id 且不满足风险条件时):
-              不满足任何风险条件
+              1 week, simultaneously satisfy stress >= threshold and sleep < sleep_threshold suddenly
+          - normal:
+              no risk detected
 
-        输入参数：
-          - student_id: 可选的学生ID，如果指定则只返回该学生的信息
+        input:
+          - student_id: if specified, only return the risk status of the given student, or return all risk students
 
-        输出结构：
-            正常情况：
+        output structure:
+            normal case:
             {
               "items": [
                 {
                   "studentId": "5000001",
-                  "name": "学生姓名",
-                  "riskType": "high_risk" 或 "potential_risk" 或 "normal",
+                  "name": "Alice",
+                  "riskType": "high_risk" or "potential_risk" or "normal",
+                  "email": "alice@warwick.ac.uk",
                   "reason": "...",
                   "details": "...",
                   "modules": ["WM9QF"]
@@ -234,14 +225,14 @@ class WellbeingService:
               ]
             }
 
-            当指定 student_id 但找不到学生时：
+            if student_id is not available:
             {
               "items": [],
-              "status": "not_found" 或 "no_data",
-              "message": "错误信息描述"
+              "status": "not_found" or "no_data",
+              "message": "wrong message discription"
             }
-            - status="not_found": 学生不存在
-            - status="no_data": 学生存在但没有wellbeing数据
+            - status="not_found": student does not exist
+            - status="no_data": student exists but has no data
         """
         if end_week < start_week:
             raise ValueError("end_week must be >= start_week")
@@ -249,7 +240,7 @@ class WellbeingService:
         rows = get_wellbeing_records(start_week, end_week, programme_id)
         # rows: (student_id, week, stress_level, hours_slept,programme_id)
 
-        # 1) 获取学生姓名映射
+        # 1) get student name mapping
         if programme_id is None:
             student_rows = get_all_students()
         else:
@@ -261,24 +252,29 @@ class WellbeingService:
             for row in student_rows
             if row[0] is not None
         }
+        student_email_map: Dict[str, str] = {
+            str(row[0]): row[2]  # 0 = student_id, 1 = name
+            for row in student_rows
+            if row[0] is not None
+        }
 
-        # 如果指定了 student_id，确保该学生的姓名在映射中（即使不在当前 module_code 范围内）
+        # if specific student_id is given, ensure it exists in the name map
         if student_id is not None:
             student_id_str = str(student_id)
             if student_id_str not in student_name_map:
-                # 从所有学生中查找该学生
+                # check in all students
                 all_student_rows = get_all_students()
                 for sid, name, email, pid in all_student_rows:
                     if sid is not None and str(sid) == student_id_str:
                         student_name_map[student_id_str] = name
                         break
 
-        # 2) 按学生分组
+        # 2) group wellbeing data by student
         per_student: Dict[str, List[Tuple[int, float, float, str]]] = defaultdict(list)
         for row_student_id, week, stress, sleep, programme_id in rows:
             if row_student_id is None or week is None or stress is None:
                 continue
-            # 如果指定了 student_id，只处理该学生的数据
+            # if specific student_id is given, only process that student
             if student_id is not None and str(row_student_id) != str(student_id):
                 continue
             try:
@@ -290,29 +286,29 @@ class WellbeingService:
             cid = str(programme_id) if programme_id is not None else ""
             per_student[str(row_student_id)].append((w, s, sl, cid))
 
-        # 如果指定了 student_id，只处理该学生
+        # if specific student_id is given, only process that student
         if student_id is not None:
             student_id_str = str(student_id)
             if student_id_str not in per_student:
-                # 检查学生是否在数据库中存在
+                # check if the student exists
                 if student_id_str in student_name_map:
-                    # 学生存在但没有wellbeing数据
+                    # student exists but has no data
                     return {
                         "items": [],
                         "status": "no_data",
                         "message": f"Student {student_id_str} exists but has no wellbeing data for the specified period",
                     }
                 else:
-                    # 学生不存在
+                    # student does not exist
                     return {
                         "items": [],
                         "status": "not_found",
                         "message": f"Student {student_id_str} not found",
                     }
-            # 只处理指定的学生
+            # only process the specified student
             students_to_process = [(student_id_str, per_student[student_id_str])]
         else:
-            # 处理所有学生
+            # process all students
             students_to_process = list(per_student.items())
 
         items: List[Dict[str, Any]] = []
@@ -325,14 +321,14 @@ class WellbeingService:
             sleeps = [r[2] for r in recs]
             courses = list({r[3] for r in recs if r[3]})
 
-            # ---------- High Risk：连续 3 周，同时满足 stress >= threshold 且 sleep < sleep_threshold ----------
+            # ---------- High Risk：3 consecutive weeks simultaneously satisfy stress >= threshold and sleep < sleep_threshold ----------
             high_risk = False
             high_weeks: List[int] = []
             streak = 0
             streak_weeks: List[int] = []
 
             for w, s, sl in zip(weeks, stresses, sleeps):
-                # 同时满足：压力 >= threshold 且 睡眠 < sleep_threshold
+                # both conditions met
                 if s >= threshold and sl is not None and sl < sleep_threshold:
                     streak += 1
                     streak_weeks.append(w)
@@ -344,7 +340,8 @@ class WellbeingService:
                     streak = 0
                     streak_weeks = []
 
-            # ---------- Potential Risk：至少一周，同时满足 stress >= threshold 且 sleep < sleep_threshold ----------
+            # ---------- Potential Risk：1 week simultaneously satisfy stress >= threshold and sleep < sleep_threshold suddenly ----------
+            potential = False
             potential = False
             potential_week_idx = None
             for i, (s, sl) in enumerate(zip(stresses, sleeps)):
@@ -353,10 +350,9 @@ class WellbeingService:
                     potential_week_idx = i
                     break
 
-            # 如果指定了 student_id，即使不满足风险条件也要返回该学生的信息
+            # if user specified student_id, through student not belong to any risk, still need to return normal status
             if not (high_risk or potential):
                 if student_id is not None:
-                    # 返回正常状态
                     risk_type = "normal"
                     avg_stress = sum(stresses) / len(stresses) if stresses else 0.0
                     valid_sleeps = [sl for sl in sleeps if sl is not None]
@@ -372,13 +368,14 @@ class WellbeingService:
                         {
                             "studentId": sid,
                             "name": student_name_map.get(sid),
+                            "email": student_email_map.get(sid),
                             "riskType": risk_type,
                             "reason": reason,
                             "details": details,
                             "modules": courses if courses else [],
                         }
                     )
-                continue  # 不属于任何风险，且未指定 student_id，直接跳过
+                continue  # skip non-risk students if no specific student_id
 
             if high_risk:
                 risk_type = "high_risk"
@@ -393,6 +390,7 @@ class WellbeingService:
                 {
                     "studentId": sid,
                     "name": student_name_map.get(sid),
+                    "email": student_email_map.get(sid),
                     "riskType": risk_type,
                     "reason": reason,
                     "details": details,

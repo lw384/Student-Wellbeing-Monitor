@@ -2,6 +2,9 @@ import random
 from .base import fake
 import random
 import string
+from collections import defaultdict
+import random
+from typing import List, Dict
 
 
 # ------------------------------
@@ -135,20 +138,20 @@ def generate_modules(
 
     for prog in programmes:
         prog_id = prog["programme_id"]
-        # 用 programme_id 的前两个字母作为前缀，例如 "AI" / "DS"
+        # Use the first two letters of programme_id as a prefix, such as "AI"/"DS"
         prefix = prog_id[:2].upper()
 
         num_modules = random.randint(min_per_prog, max_per_prog)
 
         for _ in range(num_modules):
-            # module_code：如 AI1F6 / DS2B3
+            # module_code：AI1F6 / DS2B3
             prefix = random.choice(letters) + random.choice(letters)
             level = str(random.randint(1, 3))
             mid_letter = random.choice(letters)
             tail_digit = str(random.randint(1, 9))
             module_code = prefix + level + mid_letter + tail_digit
 
-            # module_id：7 位数字
+            # module_id：7 numbers
             while True:
                 module_id = random.randint(1000000, 9999999)
                 if module_id not in used_ids:
@@ -168,70 +171,143 @@ def generate_modules(
 
 
 # ------------------------------
-# 4. Student-Modules 关系表
+# 4. Student-Modules Relationship Table
 # ------------------------------
 
 
 def generate_student_modules(
     students: list[dict],
     modules: list[dict],
-    min_courses: int = 2,
-    max_courses: int = 4,
-    cross_programme_prob: float = 0.1,
+    min_courses: int = 3,  # Each student must take at least three courses
+    max_courses: int = 5,  # Each student can take up to five courses at most
 ) -> list[dict]:
     """
-    Assign 2-4 modules to each student and generate a `student_modules` table.
-    规则：
-    - 默认从“学生所属 programme 下的 module”中选课
-    - 少量课程可以跨专业（cross_programme_prob）
-    - 同时把学生选的 module_code 写入 students['modules'] 方便导出到 CSV
+    Requirements:
+        At least five students are required for each module
+        Each student takes 3 to 5 courses
+        students belong to only one programme (there is already programme_id in students).
+        Each module in the modules also has programme_id
 
-    返回：
-    - records: 关系表列表，每行 { student_id, module_id }
+    Return
+    - records: [{ "student_id": ..., "module_id": ... }, ...]
+    students[i]["modules"] = "AY2V2, FK1E6, ..."
     """
-    records: list[dict] = []
 
-    # 先按 programme 分组 modules，方便针对某专业筛选可选课程
-    modules_by_prog: dict[str, list[dict]] = {}
+    records: list[dict] = []
+    assignment_set: set[tuple[int, int]] = (
+        set()
+    )  # (student_id, module_id) deduplication
+
+    # 1) Group modules & students by programme
+    modules_by_prog: dict[str, list[dict]] = defaultdict(list)
     for m in modules:
-        modules_by_prog.setdefault(m["programme_id"], []).append(m)
+        modules_by_prog[m["programme_id"]].append(m)
+
+    students_by_prog: dict[str, list[dict]] = defaultdict(list)
+    for s in students:
+        students_by_prog[s["programme_id"]].append(s)
+
+    # Count the number of courses each student has selected
+    student_course_count: dict[int, int] = defaultdict(int)
+
+    # Round One: Ensure that each module has at least five students
+    MIN_PER_MODULE = 5
+
+    for m in modules:
+        prog_id = m["programme_id"]
+        module_id = m["module_id"]
+
+        # Give priority to choosing from the students of this programme
+        candidates = students_by_prog.get(prog_id, [])
+
+        # If there are too few students in this major, they will be supplemented from all the students
+        if len(candidates) < MIN_PER_MODULE:
+            candidates = students
+
+        if not candidates:
+            continue
+
+        # Try to give priority to students who haven't taken five courses yet
+        flexible_candidates = [
+            s for s in candidates if student_course_count[s["student_id"]] < max_courses
+        ]
+        if len(flexible_candidates) >= MIN_PER_MODULE:
+            pool = flexible_candidates
+        else:
+            #  If it's really not enough, the upper limit can be relaxed (to avoid deadlock)
+            pool = candidates
+
+        k = min(MIN_PER_MODULE, len(pool))
+        chosen_students = random.sample(pool, k)
+
+        for s in chosen_students:
+            sid = s["student_id"]
+            key = (sid, module_id)
+            if key in assignment_set:
+                continue
+            assignment_set.add(key)
+            records.append({"student_id": sid, "module_id": module_id})
+            student_course_count[sid] += 1
+
+    # 3) Round Two: Ensure that each student takes at least three courses (within the range of 3 to 5)
+    for s in students:
+        sid = s["student_id"]
+        prog_id = s["programme_id"]
+
+        current_count = student_course_count.get(sid, 0)
+        if current_count >= min_courses:
+            continue
+
+        need = min_courses - current_count
+        max_extra = max_courses - current_count
+        if max_extra <= 0:
+            continue  # This student has taken the most classes
+
+        need = min(need, max_extra)
+        #   Candidate Courses: Modules under this programme are preferred
+        candidate_modules = modules_by_prog.get(prog_id, [])
+
+        # Filter out the courses that the student has already selected
+        available_modules = [
+            m for m in candidate_modules if (sid, m["module_id"]) not in assignment_set
+        ]
+
+        #  If the courses in one's own major are insufficient, it is allowed to make up for them from a global perspective
+        if len(available_modules) < need:
+            more_modules = [
+                m for m in modules if (sid, m["module_id"]) not in assignment_set
+            ]
+            available_modules = more_modules
+
+        if not available_modules:
+            continue
+
+        k = min(need, len(available_modules))
+        extra_modules = random.sample(available_modules, k)
+
+        for m in extra_modules:
+            mid = m["module_id"]
+            key = (sid, mid)
+            if key in assignment_set:
+                continue
+            assignment_set.add(key)
+            records.append({"student_id": sid, "module_id": mid})
+            student_course_count[sid] += 1
+
+    # write module_code in student["modules"]
+    modules_by_id: dict[int, str] = {m["module_id"]: m["module_code"] for m in modules}
+    modules_for_student: dict[int, list[str]] = defaultdict(list)
+
+    for r in records:
+        sid = r["student_id"]
+        mid = r["module_id"]
+        code = modules_by_id.get(mid)
+        if code and code not in modules_for_student[sid]:
+            modules_for_student[sid].append(code)
 
     for s in students:
-        prog_id = s["programme_id"]
-        same_prog_modules = modules_by_prog.get(prog_id, [])
-
-        # 选课数量
-        count = random.randint(min_courses, max_courses)
-
-        chosen_modules: list[dict] = []
-
-        if same_prog_modules:
-            # 绝大部分课从自己专业选
-            k = min(count, len(same_prog_modules))
-            chosen_modules = random.sample(same_prog_modules, k)
-
-            # 有少量概率加一两门跨专业课
-            if random.random() < cross_programme_prob:
-                other_modules = [m for m in modules if m["programme_id"] != prog_id]
-                if other_modules:
-                    extra = random.choice(other_modules)
-                    if extra not in chosen_modules:
-                        chosen_modules.append(extra)
-
-        else:
-            # 极端情况：该专业暂时没有绑课程，就全局抽
-            chosen_modules = random.sample(modules, min(count, len(modules)))
-
-        # 写入关系表
-        for m in chosen_modules:
-            records.append(
-                {
-                    "student_id": s["student_id"],
-                    "module_id": m["module_id"],
-                }
-            )
-
-        # 同时在 student 记录上加一个易读字段：module_code 列表
-        s["modules"] = ", ".join(m["module_code"] for m in chosen_modules)
+        sid = s["student_id"]
+        codes = modules_for_student.get(sid, [])
+        s["modules"] = ", ".join(codes)
 
     return records

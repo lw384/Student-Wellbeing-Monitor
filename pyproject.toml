@@ -13,9 +13,11 @@ dependencies = [
     "flask (>=3.1.2,<4.0.0)",
     "faker (>=38.2.0,<39.0.0)",
     "pandas (>=2.3.3,<3.0.0)",
-    "pytest (>=9.0.1,<10.0.0)"
+    "pytest (>=9.0.1,<10.0.0)",
+    "requests (>=2.32.3,<3.0.0)",
+    "google-genai (>=1.53.0,<2.0.0)",
+    "python-dotenv (>=1.2.1,<2.0.0)"
 ]
-
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -25,3 +27,44 @@ build-backend = "poetry.core.masonry.api"
 wellbeing-web = "student_wellbeing_monitor.ui.app:run_app"
 setup-demo = "student_wellbeing_monitor.tools.setup_demo:setup_demo"
 start = "student_wellbeing_monitor.tools.start:run"
+archive-data = "student_wellbeing_monitor.tools.archive:main"
+
+[dependency-groups]
+dev = [
+    "pylint (>=4.0.4,<5.0.0)",
+    "ruff (>=0.14.8,<0.15.0)",
+    "black (>=25.11.0,<26.0.0)",
+    "pytest-cov (>=5.0,<6.0)",
+    "coverage[toml] (>=7.6,<8.0)"
+]
+
+[tool.coverage.run]
+branch = true
+source = ["student_wellbeing_monitor"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = [
+    "missing-function-docstring",
+    "missing-module-docstring",
+    "missing-class-docstring"
+    ]
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+ignore = [
+    "E501",  
+]
