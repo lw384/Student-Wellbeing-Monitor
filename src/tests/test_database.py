@@ -6,7 +6,7 @@ from typing import Dict, Any
 import sqlite3
 import pytest
 
-# --------- 让测试能 import 到 src 下面的包 ---------
+# --------- Allow tests to import packages under src ---------
 SRC_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SRC_DIR))
 
@@ -21,31 +21,32 @@ from student_wellbeing_monitor.database import (  # noqa: E402
 
 
 # =========================================================
-#                 全局测试数据库初始化
+#             Global Test Database Initialization
 # =========================================================
 @pytest.fixture(autouse=True)
 def setup_test_db(tmp_path, monkeypatch):
     """
-    每个测试函数使用一个独立的临时 SQLite 文件，保证互不干扰。
+    Each test uses a separate temporary SQLite file,
+    ensuring no cross-test interference.
     """
     db_file = tmp_path / "student.db"
-    # patch DB_PATH，让所有 get_conn() 都连到临时库
+    # Patch DB_PATH so all get_conn() calls point to the temp DB
     monkeypatch.setattr(db_core, "DB_PATH", db_file)
 
-    # 初始化 schema（多次调用也应该是幂等的）
+    # Initialize schema (should be idempotent)
     schema.init_db_schema()
 
     yield
-    # 不需要显式清理，tmp_path 会由 pytest 删除
+    # No explicit cleanup required — tmp_path auto-deleted by pytest
 
 
 # =========================================================
-#                     基础测试数据
+#                   Sample Data Fixtures
 # =========================================================
 @pytest.fixture
 def sample_data() -> Dict[str, Any]:
     """
-    在空库上插入一套示例数据，供后续测试使用。
+    Insert seed test data into an empty database for use in tests.
     """
     data: Dict[str, Any] = {}
 
@@ -61,18 +62,18 @@ def sample_data() -> Dict[str, Any]:
     data["student_ids"] = ["S1", "S2", "S3"]
 
     # ----- Module -----
-    # 注意：insert_module 使用 (module_id, module_name, module_code, programme_id)
+    # Note: insert_module = (module_id, module_name, module_code, programme_id)
     create.insert_module("M1", "Intro to CS", "CS101", "P1")
     create.insert_module("M2", "Data Analysis", "DS201", "P2")
     data["module_ids"] = ["M1", "M2"]
 
-    # ----- Student - Module 关系 -----
+    # ----- Student-Module relationships -----
     create.insert_student_module("S1", "M1")
     create.insert_student_module("S2", "M1")
     create.insert_student_module("S3", "M2")
 
     # ----- Wellbeing -----
-    # 设计：S1 在 week 1-3 全部高压力 (>=4) 且睡眠<6，用于 at-risk / 连续高压力。
+    # Design: S1 has week 1–3 with high stress (>=4) and sleep <6 → used for at-risk / continuous stress tests.
     w_ids = {}
     w_ids["S1_w1"] = create.insert_wellbeing("S1", 1, 4, 5.0, "tired")
     w_ids["S1_w2"] = create.insert_wellbeing("S1", 2, 5, 4.0, "more tired")
@@ -140,7 +141,7 @@ def sample_data() -> Dict[str, Any]:
     )
     data["submission_ids"] = sub_ids
 
-    # ----- Users 表（代码中使用的是 users，而 schema 里是 user，所以在测试里单独建） -----
+    # ----- Users table (code refers to users but schema created user — so manually create it here) -----
     conn = db_core.get_conn()
     cur = conn.cursor()
     cur.execute(
@@ -156,7 +157,7 @@ def sample_data() -> Dict[str, Any]:
     conn.commit()
     conn.close()
 
-    # 插入一个初始用户
+    # Insert initial admin user
     create.create_user("admin", "secret123", "swo")
 
     return data
@@ -166,7 +167,7 @@ def sample_data() -> Dict[str, Any]:
 #                    db_core / schema
 # =========================================================
 def test_db_core_hash_and_connection():
-    # _hash_pwd 应该是确定性的
+    # _hash_pwd should be deterministic
     h1 = db_core._hash_pwd("abc")
     h2 = db_core._hash_pwd("abc")
     h3 = db_core._hash_pwd("xyz")
@@ -177,12 +178,12 @@ def test_db_core_hash_and_connection():
     assert conn.row_factory is sqlite3.Row
     conn.close()
 
-    # schema.init_db_schema 幂等
-    schema.init_db_schema()  # 不抛异常即可
+    # schema.init_db_schema should be idempotent (no exception)
+    schema.init_db_schema()
 
 
 # =========================================================
-#                        Student
+#                         Student
 # =========================================================
 def test_student_queries(sample_data):
     assert read.count_students() == 3
@@ -202,7 +203,7 @@ def test_student_queries(sample_data):
 
 
 # =========================================================
-#                        Programme & Module
+#                    Programme & Module
 # =========================================================
 def test_programmes_and_modules(sample_data):
     programmes = read.get_programmes()
@@ -213,73 +214,73 @@ def test_programmes_and_modules(sample_data):
 
     # attendance_for_course & attendance_detail_for_students
     att_course = read.attendance_for_course("P1")
-    # 对于 P1：M1 课程上 S1/S2 3 周各 3 条记录，共 6 条
+    # For P1: module M1 has S1/S2 each 3 weeks — total 6 records
     assert len(att_course) == 6
     assert all(row[0] == "M1" for row in att_course)
 
     att_detail = read.attendance_detail_for_students("M1", programme_id="P1")
-    # 仍然只有 S1、S2
+    # Should only contain S1 and S2
     assert {row[2] for row in att_detail} == {"S1", "S2"}
 
     # programme_wellbeing_engagement
     engagement = read.programme_wellbeing_engagement(
         programme_id="P1", week_start=1, week_end=3
     )
-    assert engagement  # 至少有记录
-    # 返回字段数应该与文档一致
+    assert engagement
+    # Expected number of fields = documented count
     assert len(engagement[0]) == 11
 
 
 # =========================================================
-#                         Wellbeing
+#                        Wellbeing
 # =========================================================
 def test_wellbeing_crud_and_analytics(sample_data):
     w_ids = sample_data["wellbeing_ids"]
 
-    # 总数
+    # Count check
     assert read.count_wellbeing() == 6
     assert read.count_wellbeing("S1") == 3
     assert read.get_all_weeks() == [1, 2, 3]
 
-    # 区间查询
+    # Range query
     records = read.get_wellbeing_records(1, 3)
     assert len(records) == 6
 
-    # 分页 + 排序
+    # Pagination + sorting
     page = read.get_wellbeing_page(limit=10, offset=0, student_id="S1", sort_week="asc")
     weeks = [r["week"] for r in page]
     assert weeks == [1, 2, 3]
 
-    # 按 id 查询
+    # Query by id
     row = read.get_wellbeing_by_id(w_ids["S1_w1"])
     assert row["student_id"] == "S1"
     assert row["week"] == 1
 
     # weekly_wellbeing_summary
     summary = read.weekly_wellbeing_summary(1, 3)
-    # week1：3 条记录
+    # week 1 should have 3 records
     w1 = summary[0]
     assert w1[0] == 1
     assert w1[3] == 3  # count
 
-    # find_high_stress_weeks：平均压力 >=4 的周（按原始数据应该是 week 2、3）
+    # find_high_stress_weeks: average stress >=4 → weeks 2, 3
     high = read.find_high_stress_weeks(threshold=4)
     weeks_high = [r[0] for r in high]
     assert weeks_high == [2, 3]
 
-    # at-risk 学生：S1 在 week1–3 都满足 stress>=4 且 sleep<6
+    # at-risk students: S1 satisfies stress>=4 and sleep<6 for week1–3
     at_risk = read.get_at_risk_students()
     assert list(at_risk.keys()) == ["S1"]
     assert at_risk["S1"] == [1, 2, 3]
 
-    # 连续高压力（>=3 周）：S1 应该有 3 周连续
+    # Continuous high stress (>=3 weeks): S1 should have 3
     cont = read.get_continuous_high_stress_students()
     assert cont
     s1_entry = next(e for e in cont if e["student_id"] == "S1")
     assert s1_entry["weeks"] >= 3
     assert "Week 1" in s1_entry["weeks_list"]
 
-    # stress_vs_attendance / attendance_trend：
+    # stress_vs_attendance / attendance_trend:
     sva = read.stress_vs_attendance()
     assert sva
     assert all(row[2] == 0.0 for row in sva)
@@ -295,62 +296,62 @@ def test_wellbeing_crud_and_analytics(sample_data):
 
 
 # =========================================================
-#                         Attendance
+#                        Attendance
 # =========================================================
 def test_attendance_crud(sample_data):
     a_ids = sample_data["attendance_ids"]
 
-    # count
+    # Count
     assert read.count_attendance() == 9
     assert read.count_attendance("S1") == 3
 
-    # 按学生
+    # Per-student
     rows = read.get_attendance_by_student("S1")
     weeks = [r["week"] for r in rows]
     statuses = [r["status"] for r in rows]
     assert weeks == [1, 2, 3]
     assert statuses == [1, 1, 0]
 
-    # 分页 + 排序
+    # Pagination + sorting
     page = read.get_attendance_page(
         limit=5, offset=0, student_id="S1", sort_week="desc"
     )
     assert [r["week"] for r in page] == [3, 2, 1]
 
-    # 过滤查询
+    # Filtered query
     filtered = read.get_attendance_filtered(
         programme_id="P1", module_id="M1", week_start=1, week_end=2
     )
-    # P1 中 S1/S2 在 M1 的 week1-2 共 4 条
+    # S1/S2 in P1, M1, weeks 1–2 → 4 rows
     assert len(filtered) == 4
 
-    # 按 id 查询
+    # Query by id
     row = read.get_attendance_by_id(a_ids["S1_w1"])
     assert row["student_id"] == "S1"
     assert row["week"] == 1
 
-    # 更新：不改 week
+    # Update without modifying week
     update.update_attendance(a_ids["S1_w1"], status=0)
     row2 = read.get_attendance_by_id(a_ids["S1_w1"])
     assert row2["status"] == 0
 
-    # 更新：同时修改 week
+    # Update modifying week
     update.update_attendance(a_ids["S1_w2"], status=0, week=5)
     row3 = read.get_attendance_by_id(a_ids["S1_w2"])
     assert row3["status"] == 0
     assert row3["week"] == 5
 
-    # get_attendance_rate：由于实现按 'present' 字符串统计，这里应为 0.0
+    # get_attendance_rate: implementation counts string 'present', so returns 0.0 here
     rate = read.get_attendance_rate("S1")
     assert rate == 0.0
 
-    # 删除所有出勤
+    # Delete all attendance
     delete.delete_all_attendance()
     assert read.count_attendance() == 0
 
 
 # =========================================================
-#                         Submission
+#                        Submission
 # =========================================================
 def test_submission_crud_and_queries(sample_data):
     sub_ids = sample_data["submission_ids"]
@@ -358,33 +359,33 @@ def test_submission_crud_and_queries(sample_data):
     assert read.count_submission() == 4
     assert read.count_submission("S1") == 2
 
-    # 分页
+    # Pagination
     page = read.get_submission_page(limit=10, offset=0)
     assert len(page) == 4
 
     page_s1 = read.get_submission_page(limit=10, offset=0, student_id="S1")
     assert len(page_s1) == 2
 
-    # 按 id
+    # Query by id
     row = read.get_submission_by_id(sub_ids["S1_a1"])
     assert row["student_id"] == "S1"
     assert row["module_id"] == "M1"
 
-    # 过滤
+    # Filtering
     filtered = read.get_submissions_filtered(programme_id="P1", module_id="M1")
-    # P1 中 S1/S2 的 M1 作业
+    # In P1, module M1 submissions from S1 & S2
     assert {r["student_id"] for r in filtered} == {"S1", "S2"}
 
-    # submissions_for_course：M1，assignment_no=1 → S1、S2 两人
+    # submissions_for_course: M1, assignment 1 → S1 and S2
     subs_course = read.submissions_for_course("M1", assignment_no=1)
     assert len(subs_course) == 2
     assert {r[2] for r in subs_course} == {"S1", "S2"}
 
-    # unsubmissions_for_repeated_issues：在修改前，M1 中 S1 至少有一个未交（submitted=0）
+    # unsubmissions_for_repeated_issues: before updating, S1 has an unsubmitted record
     unsub = read.unsubmissions_for_repeated_issues(module_id="M1")
     assert any(r[3] == "S1" and r[6] == 0 for r in unsub)
 
-    # ---- 再测试更新功能（把 S1 第二次作业改成已交并赋分数） ----
+    # ---- Update test: make S1 assignment 2 submitted with grade ----
     update.update_submission(
         sub_ids["S1_a2"],
         submitted=1,
@@ -396,28 +397,28 @@ def test_submission_crud_and_queries(sample_data):
     assert row2["submitted"] == 1
     assert pytest.approx(row2["grade"]) == 65.0
 
-    # attendance_and_grades：M1 + P1
+    # attendance_and_grades: P1 + M1
     ag = read.attendance_and_grades(module_id="M1", programme_id="P1")
     assert ag
-    # 返回字段：module_id, module_name, student_id, student_name, week, status, grade
+    # Returned fields: module_id, module_name, student_id, student_name, week, status, grade
     assert len(ag[0]) == 7
 
-    # 删除所有 submission
+    # Delete all submissions
     delete.delete_all_submissions()
     assert read.count_submission() == 0
 
 
 # =========================================================
-#                         Delete helpers
+#                        Delete helpers
 # =========================================================
 def test_delete_helpers(sample_data):
-    # 先确认都有数据
+    # Ensure data exists
     assert read.count_students() == 3
     assert read.count_wellbeing() > 0
     assert read.count_attendance() > 0
     assert read.count_submission() > 0
 
-    # 删除顺序注意外键约束
+    # Deletion order due to foreign key dependencies
     delete.delete_all_attendance()
     delete.delete_all_wellbeing()
     delete.delete_all_submissions()
@@ -429,7 +430,7 @@ def test_delete_helpers(sample_data):
     assert read.count_attendance() == 0
     assert read.count_submission() == 0
 
-    # student_module 没有读函数，用原生 SQL 验证
+    # No read function for student_module; validate via raw SQL
     conn = db_core.get_conn()
     cur = conn.cursor()
     cur.execute("SELECT COUNT(*) FROM student_module")
@@ -438,15 +439,16 @@ def test_delete_helpers(sample_data):
 
 
 # =========================================================
-#                          Users
+#                           Users
 # =========================================================
 def test_user_and_auth(sample_data):
-    # sample_data 已经创建了 admin 用户
+    # sample_data already created admin user
     assert read.check_login("admin", "secret123") is True
     assert read.check_login("admin", "wrong") is False
 
     assert read.get_user_role("admin") == "swo"
 
-    # 再创建一个用户
+    # Create another user
     create.create_user("leader", "pass456", "cd")
     assert read.get_user_role("leader") == "cd"
+    
