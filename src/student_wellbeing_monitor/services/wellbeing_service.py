@@ -401,3 +401,14 @@ class WellbeingService:
 
 
 wellbeing_service = WellbeingService()
+
+
+# test function
+def get_dashboard_summary(start_week, end_week, programme_id=None):
+    return wellbeing_service.get_dashboard_summary(start_week, end_week, programme_id)
+
+def get_stress_sleep_trend(start_week, end_week, programme_id=None):
+    return wellbeing_service.get_stress_sleep_trend(start_week, end_week, programme_id)
+
+def get_risk_students(start_week, end_week, programme_id=None, student_id=None):
+    return wellbeing_service.get_risk_students(start_week, end_week, programme_id, student_id)
