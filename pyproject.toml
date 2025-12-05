@@ -51,6 +51,7 @@ disable = [
     "missing-function-docstring",
     "missing-module-docstring",
     "missing-class-docstring"
+    ]
 
 [tool.black]
 line-length = 88
@@ -66,5 +67,4 @@ select = ["E", "F", "W", "I"]
 
 ignore = [
     "E501",  
-]
 ]
