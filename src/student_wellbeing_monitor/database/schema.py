@@ -118,7 +118,7 @@ def init_db_schema():
             assignment_no  INTEGER NOT NULL DEFAULT 1, 
             due_date     TEXT NOT NULL,                -- YYYY-MM-DD
             submit_date  TEXT,                         -- NULL if not submitted
-            FOREIGN KEY(student_id) REFERENCES student(student_id)
+            FOREIGN KEY(student_id) REFERENCES student(student_id),
             FOREIGN KEY(module_id)  REFERENCES module(module_id),  
             UNIQUE(student_id, module_id, assignment_no)       
         )
@@ -130,8 +130,10 @@ def init_db_schema():
     # --------------------
     cur.execute(
         """
-        CREATE TABLE IF NOT EXISTS user (
+        CREATE TABLE IF NOT EXISTS users (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            username      TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
             role          TEXT NOT NULL
         )
     """
