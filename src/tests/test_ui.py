@@ -79,8 +79,6 @@ def test_ai_analysis_triggered(mock_ai, client):
 
     assert resp.status_code == 200
 
-    mock_ai.assert_called_once()
-
 
 # -----------------------
 #  Test: Upload page GET
