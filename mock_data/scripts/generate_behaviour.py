@@ -42,7 +42,7 @@ def parse_args():
     parser.add_argument(
         "--weeks",
         type=int,
-        default=12,
+        default=13,
         help="Number of weeks for attendance / wellbeing (default: 8)",
     )
     return parser.parse_args()

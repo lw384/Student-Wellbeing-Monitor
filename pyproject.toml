@@ -19,7 +19,6 @@ dependencies = [
     "python-dotenv (>=1.2.1,<2.0.0)"
 ]
 
-
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
@@ -29,6 +28,7 @@ wellbeing-web = "student_wellbeing_monitor.ui.app:run_app"
 setup-demo = "student_wellbeing_monitor.tools.setup_demo:setup_demo"
 start = "student_wellbeing_monitor.tools.start:run"
 archive-data = "student_wellbeing_monitor.tools.archive:main"
+
 [dependency-groups]
 dev = [
     "pylint (>=4.0.4,<5.0.0)",
@@ -38,6 +38,20 @@ dev = [
     "coverage[toml] (>=7.6,<8.0)"
 ]
 
+[tool.coverage.run]
+branch = true
+source = ["student_wellbeing_monitor"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+
+[tool.pylint.'MESSAGES CONTROL']
+disable = [
+    "missing-function-docstring",
+    "missing-module-docstring",
+    "missing-class-docstring"
+    ]
 
 [tool.black]
 line-length = 88
@@ -54,11 +68,3 @@ select = ["E", "F", "W", "I"]
 ignore = [
     "E501",  
 ]
-
-[tool.coverage.run]
-branch = true
-source = ["student_wellbeing_monitor"]
-
-[tool.coverage.report]
-show_missing = true
-skip_covered = false

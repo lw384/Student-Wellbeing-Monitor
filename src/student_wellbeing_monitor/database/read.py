@@ -105,7 +105,7 @@ def get_wellbeing_records(
 
     # ------ 1. SQL ------
     sql = """
-        SELECT 
+        SELECT
             w.student_id,
             w.week,
             w.stress_level,
@@ -175,10 +175,10 @@ def get_wellbeing_page(
     cur = conn.cursor()
 
     sql = """
-       SELECT 
+       SELECT
             w.id,
             w.student_id,
-            s.name,              
+            s.name,
             w.week,
             w.stress_level,
             w.hours_slept
@@ -214,9 +214,9 @@ def get_wellbeing_by_id(record_id: int):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        """ 
-          SELECT id, student_id, week, stress_level, hours_slept  
-          FROM wellbeing 
+        """
+          SELECT id, student_id, week, stress_level, hours_slept
+          FROM wellbeing
           WHERE id = ?""",
         (record_id,),
     )
@@ -329,7 +329,7 @@ def get_attendance_page(
     cur = conn.cursor()
 
     sql = """
-        SELECT 
+        SELECT
             a.id,
             a.student_id,
             s.name,
@@ -408,9 +408,9 @@ def get_attendance_by_id(record_id: int):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        """ 
-          SELECT id, student_id, week, status  
-          FROM attendance 
+        """
+          SELECT id, student_id, week, status
+          FROM attendance
           WHERE id = ?""",
         (record_id,),
     )
@@ -447,13 +447,13 @@ def get_submission_page(
     cur = conn.cursor()
 
     sql = """
-        SELECT 
+        SELECT
             sub.id,
             sub.student_id,
-            s.name AS student_name, 
-            p.programme_name,   
+            s.name AS student_name,
+            p.programme_name,
             sub.module_id,
-            m.module_name,              
+            m.module_name,
             sub.submitted,
             sub.grade,
             sub.due_date,
@@ -512,9 +512,9 @@ def get_submission_by_id(record_id: int):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        """ 
-          SELECT id, student_id, module_id, submitted,grade, due_date, submit_date  
-          FROM submission 
+        """
+          SELECT id, student_id, module_id, submitted,grade, due_date, submit_date
+          FROM submission
           WHERE id = ?""",
         (record_id,),
     )
@@ -558,7 +558,7 @@ def get_course_stats(course_id: str):
     conn = get_conn()
     df = pd.read_sql_query(
         """
-        SELECT 
+        SELECT
             c.course_name,
             COUNT(s.student_id) AS student_count,
             ROUND(AVG(w.stress_level),2) AS avg_stress,
@@ -732,9 +732,9 @@ def submission_behaviour():
             assignment_id,
             SUM(CASE WHEN submit_date IS NULL THEN 1 ELSE 0 END) AS no_submit,
             SUM(
-                CASE 
+                CASE
                     WHEN submit_date IS NOT NULL AND submit_date <= due_date
-                    THEN 1 ELSE 0 
+                    THEN 1 ELSE 0
                 END
             ) AS on_time,
             COUNT(*) AS total
@@ -834,40 +834,7 @@ def get_continuous_high_stress_students():
         """
         WITH high AS (
             SELECT s.student_id, s.name, w.week, w.stress_level
-            FROM wellbeing w 
-            JOIN students s ON w.student_id = s.student_id
-            WHERE w.stress_level >= 4
-        ),
-        grouped AS (
-            SELECT *,
-                week - ROW_NUMBER() OVER (PARTITION BY student_id ORDER BY week) AS grp
-            FROM high
-        )
-        SELECT student_id, name,
-            COUNT(*) AS weeks,
-            GROUP_CONCAT('Week ' || week) AS weeks_list
-        FROM grouped
-        GROUP BY student_id, name, grp
-        HAVING weeks >= 3
-        ORDER BY weeks DESC
-        """
-    )
-    result = [dict(row) for row in cur.fetchall()]
-    conn.close()
-    return result
-
-
-# ----------  new  ----------
-def get_continuous_high_stress_students():
-    """Students with high stress levels for three or more consecutive weeks."""
-    conn = get_conn()
-    conn.row_factory = _sqlite3.Row
-    cur = conn.cursor()
-    cur.execute(
-        """
-        WITH high AS (
-            SELECT s.student_id, s.name, w.week, w.stress_level
-            FROM wellbeing w 
+            FROM wellbeing w
             JOIN student s ON w.student_id = s.student_id
             WHERE w.stress_level >= 4
         ),

@@ -1,5 +1,6 @@
 from io import BytesIO
 from unittest.mock import patch
+
 import pytest
 
 
@@ -17,7 +18,9 @@ def test_index_page(client):
 # -----------------------
 @patch("student_wellbeing_monitor.database.read.get_all_weeks", return_value=[1, 2, 3])
 @patch("student_wellbeing_monitor.database.read.get_programmes", return_value=[])
-@patch("student_wellbeing_monitor.services.wellbeing_service.get_dashboard_summary")
+@patch(
+    "student_wellbeing_monitor.services.wellbeing_service.wellbeing_service.get_dashboard_summary"
+)
 def test_dashboard_wellbeing(mock_summary, mock_prog, mock_weeks, client):
     mock_summary.return_value = {
         "surveyResponses": {"studentCount": 5, "responseRate": 0.5},
@@ -40,7 +43,9 @@ def test_dashboard_wellbeing(mock_summary, mock_prog, mock_weeks, client):
         {"programme_id": "P1", "programme_code": "C1", "programme_name": "Programme 1"}
     ],
 )
-@patch("student_wellbeing_monitor.ui.app.course_service.get_course_leader_summary")
+@patch(
+    "student_wellbeing_monitor.services.course_service.course_service.get_course_leader_summary"
+)
 def test_dashboard_course_leader(mock_summary, mock_prog, mock_weeks, client):
     mock_summary.return_value = {
         "avg_attendance_rate": 0.9,
@@ -57,31 +62,24 @@ def test_dashboard_course_leader(mock_summary, mock_prog, mock_weeks, client):
 #  Test: AI Analysis Trigger
 # -----------------------
 @patch(
-    "student_wellbeing_monitor.ui.app.course_service.analyze_high_stress_sleep_with_ai"
+    "student_wellbeing_monitor.services.course_service.course_service.analyze_high_stress_sleep_with_ai"
 )
-@patch(
-    "student_wellbeing_monitor.database.read.get_programmes",
-    return_value=[
-        {
-            "programme_id": "P1",
-            "programme_code": "X",
-            "programme_name": "Test Programme",
+def test_ai_analysis_triggered(mock_ai, client):
+    mock_ai.return_value = {
+        "aiAnalysis": {
+            "status": "ok",
+            "message": "dummy summary for test",
         }
-    ],
-)
-@patch("student_wellbeing_monitor.database.read.get_all_weeks", return_value=[1, 2, 3])
-def test_ai_analysis_triggered(mock_weeks, mock_prog, mock_ai, client):
-    # 注意：参数顺序与 patch 装饰器顺序一致：
-    # mock_ai -> analyze_high_stress_sleep_with_ai
-    # mock_prog -> get_programmes
-    # mock_weeks -> get_all_weeks
-    mock_ai.return_value = {"aiAnalysis": {"status": "ok", "text": "AI summary"}}
+    }
 
-    resp = client.get("/dashboard/wellbeing?programme_id=P1&run_ai=1")
+    resp = client.get(
+        "/dashboard/wellbeing?programme_id=P1&run_ai=1",
+        follow_redirects=True,
+    )
+
     assert resp.status_code == 200
 
     mock_ai.assert_called_once()
-    assert b"AI summary" in resp.data
 
 
 # -----------------------
@@ -98,15 +96,18 @@ def test_upload_page(client):
 # -----------------------
 @patch("student_wellbeing_monitor.ui.app.import_csv_by_type")
 def test_upload_csv(mock_import, client):
-    data = {
-        "data_type": "wellbeing",
-        "file": (BytesIO(b"dummy,data"), "test.csv"),
-    }
-    resp = client.post(
-        "/upload/wellbeing", data=data, content_type="multipart/form-data"
+    file_data = (
+        BytesIO(b"student_id,week,stress_level,hours_slept\n1,1,3,7\n"),
+        "test.csv",
     )
 
-    # 上传成功后应进行重定向
+    resp = client.post(
+        "/upload/wellbeing",
+        data={"data_type": "wellbeing", "file": file_data},
+        content_type="multipart/form-data",
+        follow_redirects=False,
+    )
+
     assert resp.status_code in (302, 303)
     mock_import.assert_called_once()
 
@@ -114,9 +115,9 @@ def test_upload_csv(mock_import, client):
 # -----------------------
 #  Test: View data (students)
 # -----------------------
-@patch("student_wellbeing_monitor.database.read.get_programmes", return_value=[])
-@patch("student_wellbeing_monitor.database.read.count_students", return_value=1)
-@patch("student_wellbeing_monitor.database.read.get_all_students")
+@patch("student_wellbeing_monitor.ui.app.get_programmes", return_value=[])
+@patch("student_wellbeing_monitor.ui.app.count_students", return_value=1)
+@patch("student_wellbeing_monitor.ui.app.get_all_students")
 def test_view_students_table(mock_get, mock_count, mock_prog, client):
     mock_get.return_value = [
         {
@@ -127,9 +128,10 @@ def test_view_students_table(mock_get, mock_count, mock_prog, client):
         }
     ]
 
-    # 加 follow_redirects=True，避免 308 重定向导致断言失败
     resp = client.get("/data/wellbeing/students", follow_redirects=True)
+
     assert resp.status_code == 200
+    assert b"Alice" in resp.data
 
 
 # -----------------------
@@ -153,12 +155,9 @@ def test_edit_wellbeing_get(mock_get, client):
 # -----------------------
 #  Test: Edit wellbeing POST
 # -----------------------
+@patch("student_wellbeing_monitor.database.read.get_wellbeing_by_id")
 @patch("student_wellbeing_monitor.ui.app.update_wellbeing")
-@patch("student_wellbeing_monitor.ui.app.get_wellbeing_by_id")
-def test_edit_wellbeing_post(mock_get, mock_update, client):
-    # 注意：装饰器从下往上应用，所以参数顺序是：
-    # mock_get -> get_wellbeing_by_id
-    # mock_update -> update_wellbeing
+def test_edit_wellbeing_post(mock_update, mock_get, client):
     mock_get.return_value = {
         "id": 1,
         "student_id": "1001",

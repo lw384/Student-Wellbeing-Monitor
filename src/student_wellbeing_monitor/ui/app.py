@@ -11,16 +11,13 @@ from student_wellbeing_monitor.database.read import (
     count_students,
     count_submission,
     count_wellbeing,
-    get_all_modules,
     get_all_students,
-    get_all_weeks,
     get_attendance_by_id,
     get_attendance_page,
     get_programmes,
     get_student_by_id,
     get_submission_by_id,
     get_submission_page,
-    # get_course_summary,
     get_wellbeing_by_id,
     get_wellbeing_page,
 )
@@ -29,10 +26,15 @@ from student_wellbeing_monitor.database.update import (
     update_submission,
     update_wellbeing,
 )
-from student_wellbeing_monitor.services.attendance_service import attendance_service
-from student_wellbeing_monitor.services.course_service import course_service
+from student_wellbeing_monitor.services.dashboard_service import (
+    build_charts,
+    build_risks,
+    build_summary,
+    load_modules_by_programme,
+    resolve_programme_and_module,
+    resolve_week_range,
+)
 from student_wellbeing_monitor.services.upload_service import import_csv_by_type
-from student_wellbeing_monitor.services.wellbeing_service import wellbeing_service
 
 load_dotenv()
 
@@ -97,263 +99,57 @@ def dashboard(role):
         return redirect(url_for("index"))
 
     # ---------- 1. Base parameters ----------
-    weeks = get_all_weeks() or [1]
-    start_week = request.args.get("start_week", type=int, default=min(weeks))
-    end_week = request.args.get("end_week", type=int, default=max(weeks))
+    week_ctx = resolve_week_range(request.args)
+    prog_ctx = resolve_programme_and_module(request.args, role)
+    modules_by_programme = load_modules_by_programme()
 
-    # programme
-    programme_rows = get_programmes()
-    programmes = [
-        {
-            "id": r["programme_id"],
-            "code": r["programme_code"],
-            "name": r["programme_name"],
-        }
-        for r in programme_rows
-    ]
-    current_programme = request.args.get("programme_id")
+    # ---------- 2. Summary cards ----------
+    summary = build_summary(
+        role,
+        week_ctx["start_week"],
+        week_ctx["end_week"],
+        prog_ctx["current_programme"],
+        prog_ctx["current_module"],
+    )
 
-    # If course_leader, force default to first programme
-    if role == "course_leader" and not current_programme and programmes:
-        current_programme = programmes[0]["id"]
+    # ---------- 3. chart ----------
+    # wellbeing: stress/sleep line + programme bar
+    # course: attendance/ line + submission vs module bar + attendance vs grade scatter
+    charts = build_charts(
+        role,
+        week_ctx["start_week"],
+        week_ctx["end_week"],
+        prog_ctx["current_programme"],
+        prog_ctx["current_module"],
+        modules_by_programme,
+    )
 
-    # module
-    current_module = request.args.get("module_id", default="", type=str)
-
-    # ---------- 2. Module data (load once) ----------
-    modules_by_programme = {}
-    all_module_rows = get_all_modules()
-
-    for r in all_module_rows:
-        pid = r["programme_id"]
-        modules_by_programme.setdefault(pid, []).append(
-            {"id": r["module_id"], "code": r["module_code"], "name": r["module_name"]}
-        )
-
-    # ---------- 3. Summary cards ----------
-    if role == "wellbeing":
-        s = wellbeing_service.get_dashboard_summary(
-            start_week, end_week, programme_id=current_programme or None
-        )
-        summary = {
-            "response_count": s["surveyResponses"]["studentCount"],
-            "response_rate": s["surveyResponses"]["responseRate"],
-            "avg_sleep": s["avgHoursSlept"],
-            "avg_stress": s["avgStressLevel"],
-        }
-    else:
-        summary = course_service.get_course_leader_summary(
-            programme_id=current_programme,
-            module_id=current_module,
-            week_start=start_week,
-            week_end=end_week,
-        )
-
-    # ---------- 4. Line chart ----------
-    weeks_for_chart = []
-    avg_stress = []
-    avg_sleep = []
-    attendance_trend = []
-    grade_trend = []
-
-    programme_labels = []
-    programme_avg_stress = []
-    programme_attendance_rate = []
-    programme_submission_rate = []
-    programme_avg_grade = []
-
-    if role == "wellbeing":
-        line = wellbeing_service.get_stress_sleep_trend(
-            start_week, end_week, programme_id=current_programme or None
-        )
-        weeks_for_chart = line.get("weeks", [])
-        avg_stress = line.get("stress", [])
-        avg_sleep = line.get("sleep", [])
-
-        prog_stats = course_service.get_programme_wellbeing_engagement(
-            programme_id=current_programme if current_programme else None,
-            week_start=start_week,
-            week_end=end_week,
-        )
-
-        programme_bar = prog_stats.get("programmes", [])
-
-        programme_labels = [
-            p.get("programmeName") or p.get("programmeId") or "Unknown"
-            for p in programme_bar
-        ]
-        programme_avg_stress = [p.get("avgStress") for p in programme_bar]
-        programme_attendance_rate = [
-            p.get("attendanceRate") for p in programme_bar
-        ]  # 0–1
-        programme_submission_rate = [
-            p.get("submissionRate") for p in programme_bar
-        ]  # 0–1
-        programme_avg_grade = [p.get("avgGrade") for p in programme_bar]  # 0–100
-
-    else:  # course_leader
-        trend = attendance_service.get_attendance_trends(
-            course_id=current_module,
-            programme_id=current_programme,
-            week_start=start_week,
-            week_end=end_week,
-        )
-        points = trend.get("points", [])
-
-        weeks_for_chart = [p["week"] for p in points]
-        attendance_trend = [p["attendanceRate"] for p in points]
-        grade_trend = [p.get("avgGrade") for p in points]
-
-    # 4) attendance vs grade scatter
-    if role == "course_leader" and current_programme:
-        scatter = course_service.get_attendance_vs_grades(
-            course_id=current_module,  # currently selected module
-            programme_id=current_programme,  # current programme
-            week_start=start_week,
-            week_end=end_week,
-        )
-        scatter_points = scatter.get("points", [])
-    else:
-        scatter_points = []
-
-    # ---------- 5. Submission bar chart ----------
-    submission_labels = []
-    submission_submitted = []
-    submission_unsubmitted = []
-
-    if role == "course_leader" and current_programme:
-        programme_modules = modules_by_programme.get(current_programme, [])
-
-        # Decide which modules to plot
-        if current_module:
-            target_modules = [m for m in programme_modules if m["id"] == current_module]
-        else:
-            target_modules = programme_modules
-
-        for m in target_modules:
-            ss = course_service.get_submission_summary(
-                programme_id=current_programme,
-                course_id=m["id"],
-                assignment_no=None,
-            )
-            submission_labels.append(m["code"])
-            submission_submitted.append(ss.get("submit", 0))
-            submission_unsubmitted.append(ss.get("unsubmit", 0))
-
-    # ---------- 6. Risk students ----------
-    students_to_contact = []
-    attendance_risk_students = []
-    submission_risk_students = []
-
-    if role == "wellbeing":
-        table = wellbeing_service.get_risk_students(
-            start_week, end_week, programme_id=current_programme or None
-        )
-        for item in table.get("items", []):
-            students_to_contact.append(
-                {
-                    "student_id": int(item["studentId"]),
-                    "name": item["name"],
-                    "email": item["email"],
-                    "reason": item["reason"],
-                    "detail": item["details"],
-                }
-            )
-
+    # ---------- 5. chart ----------
     run_ai = request.args.get("run_ai") == "1"
-    ai_result = None
-
-    if role == "wellbeing" and current_programme and run_ai:
-        ai_result = course_service.analyze_high_stress_sleep_with_ai(
-            programme_id=current_programme,
-            week_start=start_week,
-            week_end=end_week,
-        )
-    else:  # course leader
-        # -------- A. Attendance risk --------
-        if current_programme:
-            programme_modules = modules_by_programme.get(current_programme, [])
-            if current_module:
-                target_modules = [
-                    m for m in programme_modules if m["id"] == current_module
-                ]
-            else:
-                target_modules = programme_modules
-
-            for m in target_modules:
-                low = attendance_service.get_low_attendance_students(
-                    course_id=m["id"],
-                    programme_id=current_programme,
-                    week_start=start_week,
-                    week_end=end_week,
-                    threshold_rate=0.8,
-                    min_absences=2,
-                )
-                for stu in low.get("students", []):
-                    attendance_risk_students.append(
-                        {
-                            "module_code": m["code"],
-                            "student_id": stu["studentId"],
-                            "name": stu["name"],
-                            "email": stu["email"],
-                            "attendance_rate": stu["attendanceRate"],
-                            "absent_sessions": stu["absentSessions"],
-                        }
-                    )
-
-        # -------- B. Submission risk (cross-course) --------
-        repeated = course_service.get_repeated_missing_students(
-            course_id=current_module or None,
-            programme_id=current_programme or None,
-            start_week=start_week,
-            end_week=end_week,
-            min_offending_modules=2,
-        )
-
-        for stu in repeated.get("students", []):
-            submission_risk_students.append(
-                {
-                    "student_id": stu["studentId"],
-                    "name": stu["name"],
-                    "email": stu["email"],
-                    "offending_module_count": stu["offendingModuleCount"],
-                    "details": stu.get("details", []),
-                }
-            )
-    print(ai_result, "jhjdhfjh")
+    risks = build_risks(
+        role,
+        week_ctx["start_week"],
+        week_ctx["end_week"],
+        prog_ctx["current_programme"],
+        prog_ctx["current_module"],
+        modules_by_programme,
+        run_ai,
+    )
 
     # ---------- 7. Render ----------
     return render_template(
         "dashboard.html",
         role=role,
-        weeks=weeks,
-        current_start_week=start_week,
-        current_end_week=end_week,
-        programmes=programmes,
+        weeks=week_ctx["weeks"],
+        current_start_week=week_ctx["start_week"],
+        current_end_week=week_ctx["end_week"],
+        programmes=prog_ctx["programmes"],
         modules_by_programme=modules_by_programme,
-        current_programme=current_programme,
-        current_module=current_module,
+        current_programme=prog_ctx["current_programme"],
+        current_module=prog_ctx["current_module"],
         summary=summary,
-        weeks_for_chart=weeks_for_chart,
-        avg_stress=avg_stress,
-        avg_sleep=avg_sleep,
-        attendance_trend=attendance_trend,
-        grade_trend=grade_trend,
-        scatter_points=scatter_points,
-        submission_labels=submission_labels,
-        submission_submitted=submission_submitted,
-        submission_unsubmitted=submission_unsubmitted,
-        students_to_contact=students_to_contact,
-        attendance_risk_students=attendance_risk_students,
-        submission_risk_students=submission_risk_students,
-        ai_result=ai_result,
-        programme_stats={
-            "labels": programme_labels,
-            "avgStress": programme_avg_stress,
-            "attendanceRate": programme_attendance_rate,  # 0–1
-            "submissionRate": programme_submission_rate,  # 0–1
-            "avgGrade": programme_avg_grade,  # 0–100
-        },
+        **charts,
+        **risks,
     )
 
 
@@ -591,24 +387,6 @@ def edit_record(role, data_type, record_id):
         # Other data_type not implemented yet
     else:
         flash("Editing this data type is not supported yet.", "warning")
-
-    return redirect(url_for("view_data", role=role, data_type=data_type, page=page))
-
-
-@app.post("/data/<role>/<data_type>/<int:record_id>/delete")
-def delete_record(role, data_type, record_id):
-    page = request.args.get("page", default=1, type=int)
-
-    if data_type == "wellbeing":
-
-        delete_wellbeing(record_id)
-        flash("Wellbeing record deleted", "success")
-
-    # elif data_type == "attendance": delete_attendance(record_id)
-    # elif data_type == "submissions": delete_submissions(record_id)
-
-    else:
-        flash("Delete not supported for this data type.", "warning")
 
     return redirect(url_for("view_data", role=role, data_type=data_type, page=page))
 
