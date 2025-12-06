@@ -90,7 +90,7 @@
         </select>
       </div>
 
-      {# ---- Module only show role = course_leader  ---- #}
+      {# ---- Module only show role = course_leader ---- #}
       {% if role == 'course_leader' %}
       <div class="filter-field">
         <label class="form-label fw-semibold small text-uppercase text-muted mb-1">
@@ -310,8 +310,9 @@
   {% endif %}
 
   {# ==== student at risk ==== #}
+
+  {% if role == "wellbeing" %}
   <div class="card-elevated mb-3">
-    {% if role == "wellbeing" %}
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h6 class="mb-0">
         Students to contact (wellbeing risk)
@@ -359,145 +360,152 @@
       No students currently flagged for follow-up in the selected period.
     </p>
     {% endif %}
-
-    {% elif role == "course_leader" %}
-    {# --- Attendance risk --- #}
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <h6 class="mb-0">Students to contact (attendance risk)</h6>
-      <span class="text-muted small">
-        Low attendance over selected weeks.
-      </span>
-    </div>
-    {% if attendance_risk_students %}
-    <div class="table-responsive mb-3">
-      <table class="table table-hover align-middle">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Module</th>
-            <th>Student ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Attendance rate</th>
-            <th>Absent sessions</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in attendance_risk_students %}
-          <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ s.module_code }}</td>
-            <td>{{ s.student_id }}</td>
-            <td>{{ s.name }}</td>
-            <td>{{ s.email }}</td>
-            <td>{{ (s.attendance_rate * 100)|round(1) }}%</td>
-            <td>{{ s.absent_sessions }}</td>
-            <td>
-              <a class="btn btn-sm btn-outline-primary"
-                href="{{ url_for('view_data', role=role, data_type='attendance',student_id=s.student_id)}}">
-                View record
-              </a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p class="text-muted small">
-      No students with low attendance in the selected range.
-    </p>
-    {% endif %}
-    {# --- submission risk --- #}
-    <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
-      <h6 class="mb-0">Students to contact (submission risk)</h6>
-      <span class="text-muted small">
-        Missing or late submissions.
-      </span>
-    </div>
-
-    {% if submission_risk_students %}
-    <div class="table-responsive">
-      <table class="table table-hover align-middle">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Student ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Missing submissions</th>
-            <th>Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in submission_risk_students %}
-          <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ s.student_id }}</td>
-            <td>{{ s.name }}</td>
-            <td>{{ s.email }}</td>
-            <td>{{ s.offending_module_count }}</td>
-            <td>
-             {# Expand details: What's Missing in Each Course #}
-              <ul class="mb-0 ps-3">
-                {% for d in s.details %}
-                <li>
-                  {{ d.courseId }} – {{ d.courseName }}
-                  (Assignment {{ d.assignmentNo }}, {{ d.status }})
-                </li>
-                {% endfor %}
-              </ul>
-            </td>
-            <td>
-              <a class="btn btn-sm btn-outline-primary"
-                href="{{ url_for('view_data', role=role, data_type='submissions',student_id=s.student_id)}}">
-                View record
-              </a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <p class="text-muted small mb-0">
-      No students with submission issues in the selected range.
-    </p>
-    {% endif %}
-    {% endif %}
   </div>
+
   {# --- AI insight: high stress & low sleep vs engagement --- #}
-    <div class="mt-3 pt-3 border-top">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h6 class="mb-0">AI insight: high stress & low sleep group</h6>
+  <div class="mt-3 pt-3 card-elevated">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h6 class="mb-0">AI insight: high stress & low sleep group</h6>
 
-        <form method="get" action="{{ url_for('dashboard', role=role) }}" class="d-inline">
-           {# Keep the current filter conditions #}
-          <input type="hidden" name="start_week" value="{{ current_start_week }}">
-          <input type="hidden" name="end_week" value="{{ current_end_week }}">
-          <input type="hidden" name="programme_id" value="{{ current_programme }}">
-          <input type="hidden" name="run_ai" value="1">
-          <button type="submit" class="btn btn-sm btn-outline-primary">
-            Run AI analysis
-          </button>
-        </form>
-      </div>
-  {% if ai_result %}
-  {% if ai_result.aiAnalysis.status == 'ok' %}
-  <div class="small p-2 rounded bg-light" style="white-space: pre-line;">
-    {{ ai_result.aiAnalysis.text }}
+      <form method="get" action="{{ url_for('dashboard', role=role) }}" class="d-inline">
+        {# Keep the current filter conditions #}
+        <input type="hidden" name="start_week" value="{{ current_start_week }}">
+        <input type="hidden" name="end_week" value="{{ current_end_week }}">
+        <input type="hidden" name="programme_id" value="{{ current_programme or '' }}">
+        <input type="hidden" name="run_ai" value="1">
+        <button type="submit" class="btn btn-sm btn-outline-primary">
+          Run AI analysis
+        </button>
+      </form>
+    </div>
+    {% if ai_result %}
+    {% if ai_result.aiAnalysis.status == 'ok' %}
+    <div class="small p-2 rounded bg-light" style="white-space: pre-line;">
+      {{ ai_result.aiAnalysis.text }}
+    </div>
+    {% else %}
+    <div class="small text-danger">
+      AI analysis error: {{ ai_result.aiAnalysis.message }}
+    </div>
+    {% endif %}
+    {% else %}
+    <p class="small text-muted mb-0">
+      Click "Run AI analysis" to generate a short summary comparing high stress & low sleep students with others.
+    </p>
+  </div>
+</div>
+{% endif %}
+
+
+
+{% elif role == "course_leader" %}
+{# --- Attendance risk --- #}
+<div class="card-elevated mb-3">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h6 class="mb-0">Students to contact (attendance risk)</h6>
+    <span class="text-muted small">
+      Low attendance over selected weeks.
+    </span>
+  </div>
+  {% if attendance_risk_students %}
+  <div class="table-responsive mb-3">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Module</th>
+          <th>Student ID</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Attendance rate</th>
+          <th>Absent sessions</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in attendance_risk_students %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ s.module_code }}</td>
+          <td>{{ s.student_id }}</td>
+          <td>{{ s.name }}</td>
+          <td>{{ s.email }}</td>
+          <td>{{ (s.attendance_rate * 100)|round(1) }}%</td>
+          <td>{{ s.absent_sessions }}</td>
+          <td>
+            <a class="btn btn-sm btn-outline-primary"
+              href="{{ url_for('view_data', role=role, data_type='attendance',student_id=s.student_id)}}">
+              View record
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
   {% else %}
-  <div class="small text-danger">
-    AI analysis error: {{ ai_result.aiAnalysis.message }}
-  </div>
-  {% endif %}
-  {% else %}
-  <p class="small text-muted mb-0">
-    Click "Run AI analysis" to generate a short summary comparing high stress & low sleep students with others.
+  <p class="text-muted small">
+    No students with low attendance in the selected range.
   </p>
   {% endif %}
+  {# --- submission risk --- #}
+  <div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+    <h6 class="mb-0">Students to contact (submission risk)</h6>
+    <span class="text-muted small">
+      Missing or late submissions.
+    </span>
+  </div>
+
+  {% if submission_risk_students %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Student ID</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Missing submissions</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in submission_risk_students %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ s.student_id }}</td>
+          <td>{{ s.name }}</td>
+          <td>{{ s.email }}</td>
+          <td>{{ s.offending_module_count }}</td>
+          <td>
+            {# Expand details: What's Missing in Each Course #}
+            <ul class="mb-0 ps-3">
+              {% for d in s.details %}
+              <li>
+                {{ d.courseId }} – {{ d.courseName }}
+                (Assignment {{ d.assignmentNo }}, {{ d.status }})
+              </li>
+              {% endfor %}
+            </ul>
+          </td>
+          <td>
+            <a class="btn btn-sm btn-outline-primary"
+              href="{{ url_for('view_data', role=role, data_type='submissions',student_id=s.student_id)}}">
+              View record
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="text-muted small mb-0">
+    No students with submission issues in the selected range.
+  </p>
+  {% endif %}
+</div>
+{% endif %}
 </div>
 </div>
 
@@ -579,7 +587,7 @@
     const ctxProg = document.getElementById("programmeEngagementChart");
     if (ctxProg) {
       const ctx = ctxProg.getContext("2d");
-      
+
       const toPercent = (arr) =>
         (arr || []).map(v => (v == null ? null : v * 100));
 
@@ -632,7 +640,7 @@
             x: {
               title: { display: true, text: "Programme" },
             },
-             // Left axis: Percentage + grade
+            // Left axis: Percentage + grade
             y: {
               position: "left",
               beginAtZero: true,
@@ -645,7 +653,7 @@
               min: 0,
               max: 5,
               title: { display: true, text: "Average stress (1–5)" },
-              grid: { drawOnChartArea: false } 
+              grid: { drawOnChartArea: false }
             }
           },
           plugins: {
@@ -675,7 +683,7 @@
     const scatterCanvas = document.getElementById("attendanceGradeScatter");
     if (scatterCanvas && Array.isArray(scatterPoints) && scatterPoints.length > 0) {
 
-      //  Chart.js need {x, y} 
+      //  Chart.js need {x, y}
       const scatterData = scatterPoints
         .filter(p => p.attendanceRate != null && p.avgGrade != null)
         .map(p => ({
@@ -793,7 +801,7 @@
 </script>
 
 {% if role == 'course_leader' %}
-<script>  
+<script>
   const MODULES_BY_PROGRAMME = {{ modules_by_programme | tojson }};
   const CURRENT_PROGRAMME = {{ current_programme | tojson }};
   let CURRENT_MODULE = {{ current_module | tojson }};
@@ -804,7 +812,7 @@
     const moduleSelect = document.getElementById("module-select");
     if (!moduleSelect) return;
 
-   // programme Not selected → Disabled
+    // programme Not selected → Disabled
     if (!programmeId || !MODULES_BY_PROGRAMME[programmeId]) {
       moduleSelect.innerHTML = "<option value=''>Select programme first</option>";
       moduleSelect.disabled = true;
@@ -842,7 +850,7 @@
 
     // first loading
     updateModuleOptions(CURRENT_PROGRAMME || programmeSelect.value);
-    
+
     // When the programme changes, link with the module
     programmeSelect.addEventListener("change", (e) => {
       CURRENT_MODULE = "";   // clear old module
