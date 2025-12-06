@@ -156,6 +156,12 @@ def dashboard(role):
     attendance_trend = []
     grade_trend = []
 
+    programme_labels = []
+    programme_avg_stress = []
+    programme_attendance_rate = []
+    programme_submission_rate = []
+    programme_avg_grade = []
+
     if role == "wellbeing":
         line = wellbeing_service.get_stress_sleep_trend(
             start_week, end_week, programme_id=current_programme or None
