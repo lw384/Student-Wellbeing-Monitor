@@ -197,8 +197,9 @@ def build_charts(
 
 def build_risks_for_wellbeing(start_week, end_week, current_programme, run_ai):
     students_to_contact = []
+    ai_result = None
     table = wellbeing_service.get_risk_students(
-        start_week, end_week, programme_id=current_programme or None
+        start_week, end_week, programme_id=current_programme
     )
     for item in table.get("items", []):
         students_to_contact.append(
@@ -210,9 +211,7 @@ def build_risks_for_wellbeing(start_week, end_week, current_programme, run_ai):
                 "detail": item["details"],
             }
         )
-
-    ai_result = None
-    if current_programme and run_ai:
+    if students_to_contact and run_ai:
         ai_result = course_service.analyze_high_stress_sleep_with_ai(
             programme_id=current_programme,
             week_start=start_week,
@@ -228,7 +227,11 @@ def build_risks_for_wellbeing(start_week, end_week, current_programme, run_ai):
 
 
 def build_risks_for_course_leader(
-    start_week, end_week, current_programme, current_module, modules_by_programme
+    start_week,
+    end_week,
+    current_programme,
+    current_module,
+    modules_by_programme,
 ):
     attendance_risk_students = []
     submission_risk_students = []
@@ -297,7 +300,10 @@ def build_risks(
 ):
     if role == "wellbeing":
         return build_risks_for_wellbeing(
-            start_week, end_week, current_programme, run_ai
+            start_week,
+            end_week,
+            current_programme,
+            run_ai,
         )
     return build_risks_for_course_leader(
         start_week, end_week, current_programme, current_module, modules_by_programme
