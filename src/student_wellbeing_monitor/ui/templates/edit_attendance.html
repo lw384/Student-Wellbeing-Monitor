@@ -6,6 +6,9 @@
     <div class="card-body">
         <h5 class="card-title mb-3">Edit Attendance Record</h5>
         <form method="post">
+            <input type="hidden" name="page" value="{{ page }}">
+            <input type="hidden" name="student_id" value="{{ student_id }}">
+            <input type="hidden" name="sort_week" value="{{ sort_week }}">
             <div class="mb-3">
                 <label class="form-label">Student ID</label>
                 <input type="text" class="form-control" value="{{ record.student_id }}" disabled>
@@ -25,8 +28,8 @@
             </div>
 
             <div class="d-flex justify-content-between">
-                <a href="{{ url_for('view_data', role=role, data_type=data_type, page=page) }}"
-                    class="btn btn-outline-secondary">
+                <a href="{{ url_for('view_data', role=role, data_type=data_type, page=page, student_id=student_id,
+                   sort_week=sort_week) }}" class="btn btn-outline-secondary">
                     Cancel
                 </a>
 

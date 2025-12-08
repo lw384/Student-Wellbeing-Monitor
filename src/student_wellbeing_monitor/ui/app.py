@@ -298,7 +298,16 @@ def view_data(role, data_type):
 # app.py
 @app.route("/data/<role>/<data_type>/<int:record_id>/edit", methods=["GET", "POST"])
 def edit_record(role, data_type, record_id):
-    page = request.args.get("page", default=1, type=int)
+    if request.method == "POST":
+        # 从表单里拿回原来的筛选条件
+        page = int(request.form.get("page", 1))
+        student_id = request.form.get("student_id", "")
+        sort_week = request.form.get("sort_week", "")
+    else:
+        # 第一次从列表页点进来，用 URL 参数
+        page = request.args.get("page", default=1, type=int)
+        student_id = request.args.get("student_id", "")
+        sort_week = request.args.get("sort_week", "")
 
     if data_type == "wellbeing":
         # First find the record
@@ -320,7 +329,14 @@ def edit_record(role, data_type, record_id):
             # 3. Show message + return to list page (or stay on edit page, depends on needs)
             flash("Wellbeing record updated", "success")
             return redirect(
-                url_for("view_data", role=role, data_type=data_type, page=page)
+                url_for(
+                    "view_data",
+                    role=role,
+                    data_type=data_type,
+                    page=page,
+                    student_id=student_id or None,
+                    sort_week=sort_week or None,
+                )
             )
 
         # GET: Render edit form page with current record pre-filled
@@ -330,6 +346,8 @@ def edit_record(role, data_type, record_id):
             data_type=data_type,
             record=record,
             page=page,
+            student_id=student_id,
+            sort_week=sort_week,
         )
     elif data_type == "attendance":
         record = get_attendance_by_id(record_id)
@@ -346,7 +364,14 @@ def edit_record(role, data_type, record_id):
 
             flash("Attendance record updated", "success")
             return redirect(
-                url_for("view_data", role=role, data_type=data_type, page=page)
+                url_for(
+                    "view_data",
+                    role=role,
+                    data_type=data_type,
+                    page=page,
+                    student_id=student_id or None,
+                    sort_week=sort_week or None,
+                )
             )
 
         return render_template(
@@ -355,6 +380,8 @@ def edit_record(role, data_type, record_id):
             data_type=data_type,
             record=record,
             page=page,
+            student_id=student_id,
+            sort_week=sort_week,
         )
     elif data_type == "submissions":
         record = get_submission_by_id(record_id)
@@ -374,7 +401,13 @@ def edit_record(role, data_type, record_id):
 
             flash("Submission record updated", "success")
             return redirect(
-                url_for("view_data", role=role, data_type=data_type, page=page)
+                url_for(
+                    "view_data",
+                    role=role,
+                    data_type=data_type,
+                    page=page,
+                    student_id=student_id or None,
+                )
             )
 
         return render_template(
@@ -383,6 +416,7 @@ def edit_record(role, data_type, record_id):
             data_type=data_type,
             record=record,
             page=page,
+            student_id=student_id,
         )
         # Other data_type not implemented yet
     else:
