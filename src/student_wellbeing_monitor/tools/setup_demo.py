@@ -40,13 +40,21 @@ def parse_args():
         default=12,
         help="Number of teaching weeks to seed for wellbeing and attendance (default: 12).",
     )
+    parser.add_argument(
+        "--students",
+        type=int,
+        default=30,
+        help="Number of students (default: 50).",
+    )
     return parser.parse_args()
 
 
-def run_generate_entities():
+def run_generate_entities(students):
     print("🛠 Generating mock entities CSV...")
     result = subprocess.run(
-        [sys.executable, str(MOCK_SCRIPT)], capture_output=True, text=True
+        [sys.executable, str(MOCK_SCRIPT), "--students", str(students)],
+        capture_output=True,
+        text=True,
     )
     print(result.stdout)
     if result.returncode != 0:
@@ -235,7 +243,7 @@ def setup_demo():
     args = parse_args()
 
     # 1. generate mock data
-    run_generate_entities()
+    run_generate_entities(args.students)
     # 2. clear database
     reset_database()
     # 3. create data schema
