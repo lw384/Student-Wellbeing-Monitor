@@ -21,6 +21,7 @@ The system is intentionally lightweight and designed for teaching and experiment
 ![](https://github.com/lw384/picx-images-hosting/raw/master/Screenshot-2025-12-05-at-17.15.49.8l0jahy89s.webp)
 
 ![](https://github.com/lw384/picx-images-hosting/raw/master/Screenshot-2025-12-05-at-17.18.38.464qum773.webp)
+![](https://github.com/lw384/picx-images-hosting/raw/master/Screenshot-2025-12-09-at-16.28.56.4n85zhnw6s.webp)
 
 ## **Features**
 
